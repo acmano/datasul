@@ -2,6 +2,7 @@
 
 import { Router, Request, Response } from 'express';
 import { itemLimiter } from '@shared/middlewares/rateLimiter.middleware';
+import { itemCache } from '@shared/middlewares/cachePresets';
 
 const router = Router();
 
@@ -102,7 +103,7 @@ const router = Router();
  *               error: 'Timeout da requisição'
  *               details: 'A consulta ao banco de dados demorou mais de 30 segundos'
  */
-router.get('/:itemCodigo', itemLimiter, async (req: Request, res: Response) => {
+router.get('/:itemCodigo', itemLimiter, itemCache, async (req: Request, res: Response) => {
   try {
     // Importação dinâmica para evitar problemas de circular dependency
     const { ItemInformacoesGeraisController } = await import('../controller/informacoesGerais.controller');

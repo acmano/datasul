@@ -6,6 +6,7 @@ import { setupGracefulShutdown } from '@shared/utils/gracefulShutdown';
 import { ConfigValidator } from './config/configValidator';
 import { DatabaseManager } from './infrastructure/database/DatabaseManager';
 import { App } from './app';
+import { CacheManager } from '@shared/utils/cacheManager';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -88,6 +89,9 @@ async function startServer(): Promise<void> {
         });
       },
     });
+
+    // Inicializa cache global
+    CacheManager.getInstance();
 
     log.info('🎉 Sistema pronto para receber requisições!');
 

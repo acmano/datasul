@@ -6,11 +6,12 @@ import compression from 'compression';
 import timeout from 'connect-timeout';
 import swaggerUi from 'swagger-ui-express';
 import { rateLimit } from 'express-rate-limit';
-
 import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
 import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import { cacheMiddleware } from '@shared/middlewares/cache.middleware';
+import { healthCache } from '@shared/middlewares/cachePresets';
 
 export class App {
   public app: Application;
@@ -110,6 +111,9 @@ export class App {
     // Health check
     this.setupHealthCheck();
 
+    // Configura rotas de cache
+    this.setupCacheRoutes();
+
     // Documentação Swagger
     this.setupSwaggerDocs();
 
@@ -181,7 +185,7 @@ export class App {
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
      */
-    this.app.get('/health', async (req: Request, res: Response) => {
+    this.app.get('/health', healthCache, async (req: Request, res: Response) => {
       const { DatabaseManager } = await import('./infrastructure/database/DatabaseManager');
       
       const startTime = Date.now();
@@ -234,6 +238,232 @@ export class App {
       });
 
       res.status(statusCode).json(health);
+    });
+  }
+
+  // src/app.ts - Adicionar estas rotas no setupRoutes()
+
+// Adicionar no método setupRoutes(), após setupHealthCheck()
+
+  private setupCacheRoutes(): void {
+    /**
+     * @openapi
+     * /cache/stats:
+     *   get:
+     *     summary: Estatísticas do Cache
+     *     description: |
+     *       Retorna estatísticas de uso do cache:
+     *       - Total de hits (acertos)
+     *       - Total de misses (erros)
+     *       - Taxa de acerto (hit rate)
+     *       - Número de chaves em cache
+     *       - Informações de configuração
+     *     tags:
+     *       - Cache
+     *     responses:
+     *       200:
+     *         description: Estatísticas do cache
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 stats:
+     *                   type: object
+     *                   properties:
+     *                     hits:
+     *                       type: number
+     *                     misses:
+     *                       type: number
+     *                     keys:
+     *                       type: number
+     *                     hitRate:
+     *                       type: number
+     *                 config:
+     *                   type: object
+     *                   properties:
+     *                     stdTTL:
+     *                       type: number
+     *                     checkperiod:
+     *                       type: number
+     *                     enabled:
+     *                       type: boolean
+     *             example:
+     *               stats:
+     *                 hits: 150
+     *                 misses: 30
+     *                 keys: 45
+     *                 hitRate: 83.33
+     *               config:
+     *                 stdTTL: 300
+     *                 checkperiod: 600
+     *                 enabled: true
+     */
+    this.app.get('/cache/stats', (req: Request, res: Response) => {
+      const { CacheManager } = require('@shared/utils/cacheManager');
+      const cache = CacheManager.getInstance();
+      const info = cache.getInfo();
+
+      res.json({
+        stats: info.stats,
+        config: {
+          ...info.config,
+          enabled: process.env.CACHE_ENABLED === 'true',
+        },
+        correlationId: req.id,
+      });
+    });
+
+    /**
+     * @openapi
+     * /cache/keys:
+     *   get:
+     *     summary: Listar Chaves do Cache
+     *     description: |
+     *       Lista todas as chaves armazenadas no cache com seus TTLs.
+     *       Útil para debug e monitoramento.
+     *     tags:
+     *       - Cache
+     *     responses:
+     *       200:
+     *         description: Lista de chaves
+     *         content:
+     *           application/json:
+     *             schema:
+     *               type: object
+     *               properties:
+     *                 keys:
+     *                   type: array
+     *                   items:
+     *                     type: object
+     *                     properties:
+     *                       key:
+     *                         type: string
+     *                       ttl:
+     *                         type: number
+     *                 total:
+     *                   type: number
+     *             example:
+     *               keys:
+     *                 - key: 'item:7530110:informacoesGerais'
+     *                   ttl: 1735995600000
+     *                 - key: 'GET:/health'
+     *                   ttl: 1735995630000
+     *               total: 2
+     */
+    this.app.get('/cache/keys', (req: Request, res: Response) => {
+      const { CacheManager } = require('@shared/utils/cacheManager');
+      const cache = CacheManager.getInstance();
+      const info = cache.getInfo();
+
+      res.json({
+        keys: info.keys,
+        total: info.keys.length,
+        correlationId: req.id,
+      });
+    });
+
+    /**
+     * @openapi
+     * /cache/clear:
+     *   post:
+     *     summary: Limpar Cache
+     *     description: |
+     *       Limpa todo o cache e reseta estatísticas.
+     *       **ATENÇÃO**: Use com cuidado em produção!
+     *     tags:
+     *       - Cache
+     *     responses:
+     *       200:
+     *         description: Cache limpo com sucesso
+     *         content:
+     *           application/json:
+     *             example:
+     *               message: 'Cache limpo com sucesso'
+     *               keysRemoved: 45
+     */
+    this.app.post('/cache/clear', (req: Request, res: Response) => {
+      const { CacheManager } = require('@shared/utils/cacheManager');
+      const cache = CacheManager.getInstance();
+      
+      const keysBefore = cache.keys().length;
+      cache.flush();
+
+      log.warn('Cache limpo manualmente', {
+        correlationId: req.id,
+        keysRemoved: keysBefore,
+        ip: req.ip,
+      });
+
+      res.json({
+        message: 'Cache limpo com sucesso',
+        keysRemoved: keysBefore,
+        correlationId: req.id,
+      });
+    });
+
+    /**
+     * @openapi
+     * /cache/invalidate/{pattern}:
+     *   delete:
+     *     summary: Invalidar Cache por Padrão
+     *     description: |
+     *       Invalida cache usando padrão de chaves.
+     *       Suporta wildcard (*).
+     *       
+     *       Exemplos:
+     *       - `item:*` - Todas as chaves de itens
+     *       - `item:7530110:*` - Todas as chaves do item 7530110
+     *       - `GET:/api/*` - Todas as requisições GET da API
+     *     tags:
+     *       - Cache
+     *     parameters:
+     *       - in: path
+     *         name: pattern
+     *         required: true
+     *         schema:
+     *           type: string
+     *         description: Padrão de chaves (suporta *)
+     *         examples:
+     *           allItems:
+     *             value: 'item:*'
+     *             summary: Todos os itens
+     *           singleItem:
+     *             value: 'item:7530110:*'
+     *             summary: Item específico
+     *           apiRequests:
+     *             value: 'GET:/api/*'
+     *             summary: Todas as requisições GET
+     *     responses:
+     *       200:
+     *         description: Cache invalidado
+     *         content:
+     *           application/json:
+     *             example:
+     *               message: 'Cache invalidado'
+     *               pattern: 'item:*'
+     *               keysRemoved: 12
+     */
+    this.app.delete('/cache/invalidate/:pattern', (req: Request, res: Response) => {
+      const { CacheManager } = require('@shared/utils/cacheManager');
+      const cache = CacheManager.getInstance();
+      
+      const pattern = req.params.pattern;
+      const removed = cache.invalidate(pattern);
+
+      log.info('Cache invalidado via API', {
+        correlationId: req.id,
+        pattern,
+        removed,
+        ip: req.ip,
+      });
+
+      res.json({
+        message: 'Cache invalidado',
+        pattern,
+        keysRemoved: removed,
+        correlationId: req.id,
+      });
     });
   }
 
