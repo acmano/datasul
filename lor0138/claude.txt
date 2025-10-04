@@ -1,0 +1,135 @@
+Por Que o Limite do Chat é Problema
+Limite de tokens: Cada chat tem ~190k tokens. Este chat já usou ~90k. Quando passa de ~150k:
+
+Eu perco contexto das primeiras mensagens
+Não consigo ver o código que mostrei antes
+Começo a "esquecer" decisões anteriores
+
+Por que perco referências entre chats:
+
+Cada chat é isolado
+Eu uso project_knowledge_search para buscar em chats passados
+Mas só encontro se você mencionar explicitamente algo do passado
+Não tenho "memória contínua" automática
+
+O Que Fazer Para Evitar Isso
+1. Documente Mudanças Importantes
+Crie um arquivo CHANGELOG.md:
+markdown## 2025-01-04 - Correção de Timeouts
+- PROBLEMA: Timeouts configurados em segundos ('30s') mas sqlServerConfig usa parseInt()
+- SOLUÇÃO: Usar milissegundos diretos (30000)
+- ARQUIVOS: .env, sqlServerConfig.ts
+2. Mantenha Backups Antes de Grandes Mudanças
+bash# Antes de aceitar mudanças grandes:
+git add .
+git commit -m "backup antes de mudanças"
+3. Peça Revisões Incrementais
+Ao invés de "corrija tudo", peça:
+
+"Mostre o que vai mudar primeiro"
+"Explique por que precisa mudar isso"
+"Me mostre um diff antes de aplicar"
+
+4. Use Arquivos de Contexto
+Crie ARCHITECTURE.md no projeto:
+markdown## Arquivos de Configuração
+- `sqlServerConfig.ts` - USADO pelo DatabaseManager (usa parseInt direto)
+- `env.config.ts` - NÃO usado pelo DatabaseManager (tem parseTimeout)
+
+## Formato de Variáveis .env
+- Timeouts: usar MILISSEGUNDOS puros (30000, não '30s')
+- Database: deixar vazio para usar default do usuário
+
+5. Inicie Novos Chats com Contexto
+No próximo chat, comece com:
+"Continuando projeto lor0138. Principais pontos:
+- sqlServerConfig.ts usa parseInt() direto
+- Timeouts devem ser em milissegundos
+- Database vazio usa default do SQL Server
+Ver ARCHITECTURE.md para detalhes"
+
+6. Teste Imediatamente
+Depois de qualquer mudança:
+bash# Sempre teste antes de continuar
+curl http://10.105.0.56:3000/health
+curl http://10.105.0.56:3000/api/lor0138/item/dadosCadastrais/informacoesGerais/7530110
+Se falhar, reverta:
+bashgit reset --hard HEAD~1
+Checklist Final Agora
+Execute isso para garantir que está tudo funcionando:
+bash# 1. Health check
+curl http://10.105.0.56:3000/health | jq
+
+# 2. API real
+curl http://10.105.0.56:3000/api/lor0138/item/dadosCadastrais/informacoesGerais/7530110 | jq
+
+# 3. Commit do estado atual
+git add .
+git commit -m "fix: corrigido timeout de queries (usar ms ao invés de 's')"
+
+
+Não tenho acesso a repositórios do GitHub (públicos ou privados) nem ao sistema de arquivos local do seu computador.
+O Que EU Consigo Acessar
+Apenas arquivos que você explicitamente adicionar ao Project Knowledge do Claude:
+
+Você faz upload manual de arquivos no projeto
+Eu uso project_knowledge_search para buscar neles
+Funciona bem para documentação, código-fonte, configs
+
+O Que NÃO Consigo Acessar
+
+Repositórios Git (local ou remoto)
+Sistema de arquivos do servidor
+GitHub, GitLab, Bitbucket
+Qualquer arquivo que não esteja no Project Knowledge
+
+Alternativa Prática para Este Projeto
+
+Opção 1: Adicionar Arquivos-Chave ao Project
+Faça upload destes arquivos importantes:
+ARCHITECTURE.md
+CHANGELOG.md
+package.json
+tsconfig.json
+.env.example
+src/infrastructure/database/DatabaseManager.ts
+src/infrastructure/database/config/sqlServerConfig.ts
+
+
+Opção 2: Contexto Explícito em Cada Chat
+Inicie novos chats assim:
+
+"Continuando projeto lor0138 - API Datasul/Progress.
+
+Pontos críticos (ver ARCHITECTURE.md):
+- sqlServerConfig.ts usa parseInt() direto, não parseTimeout()
+- Timeouts devem ser em ms puros (30000, não '30s')
+- DB_DATABASE_EMP vazio = usa default do SQL user
+- Senha com # precisa aspas simples: DB_PASSWORD='#senha#'
+
+Última mudança: [descrever o que mudou]
+"
+Opção 3: Criar README.md com Quickstart
+markdown# Início Rápido para Claude
+
+## Arquivos de Config Importantes
+- DatabaseManager usa: `sqlServerConfig.ts`
+- Validação usa: `env.config.ts`
+
+## Formato .env
+- Timeouts: milissegundos puros (30000)
+- Senha: aspas simples se tiver #
+- Database: vazio usa default
+
+## Última Sessão
+[Link para chat anterior ou resumo do que foi feito]
+A melhor estratégia é combinar as 3: adicionar arquivos-chave ao projeto + dar contexto inicial + manter README atualizado.
+
+
+ARCHITECTURE.md
+CHANGELOG.md
+package.json
+tsconfig.json
+.env.example
+src/infrastructure/database/DatabaseManager.ts
+src/infrastructure/database/config/sqlServerConfig.ts
