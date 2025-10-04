@@ -1,96 +1,108 @@
 // src/server.ts
 
-import { App } from './app'; // ✅ CORRIGIDO: import named export
-import { envConfig } from './config/env.config'; // ✅ CORRIGIDO: path relativo
-import { DatabaseManager } from './infrastructure/database/DatabaseManager'; // ✅ CORRIGIDO: path relativo
-import { ConfigValidator } from './config/configValidator'; // ✅ CORRIGIDO: path relativo
+import dotenv from 'dotenv';
+import { log } from '@shared/utils/logger';
+import { setupGracefulShutdown } from '@shared/utils/gracefulShutdown';
+import { ConfigValidator } from './config/configValidator';
+import { DatabaseManager } from './infrastructure/database/DatabaseManager';
+import { App } from './app';
+
+// Carregar variáveis de ambiente
+dotenv.config();
 
 /**
- * Inicializa o servidor
+ * Inicializa a aplicação
+ * 
+ * Ordem de execução:
+ * 1. Validação de configurações (Fail Fast)
+ * 2. Inicialização do banco de dados
+ * 3. Inicialização do Express
+ * 4. Setup de Graceful Shutdown
  */
-async function startServer() {
+async function startServer(): Promise<void> {
   try {
-    // ========================================
-    // 1. VALIDA CONFIGURAÇÕES (Fail Fast)
-    // ========================================
-    ConfigValidator.validateAndExit(); // Encerra se houver erros
-    ConfigValidator.printSummary(); // Mostra resumo
+    log.info('🚀 Iniciando servidor lor0138...');
 
-    // ========================================
-    // 2. INICIALIZA BANCO DE DADOS
-    // ========================================
-    console.log('🔌 Inicializando conexões com banco de dados...');
+    // 1. Validar configurações do .env
+    log.info('📋 Validando configurações...');
+    ConfigValidator.validate();
+    log.info('✅ Configurações válidas');
+
+    // 2. Inicializar conexões do banco de dados
+    log.info('🗄️  Inicializando banco de dados...');
     await DatabaseManager.initialize();
-    console.log('✅ Banco de dados conectado!\n');
+    
+    const dbStatus = DatabaseManager.getConnectionStatus();
+    if (dbStatus.mode === 'MOCK_DATA') {
+      log.warn('⚠️  Sistema em modo MOCK_DATA', {
+        type: dbStatus.type,
+        error: dbStatus.error,
+      });
+    } else {
+      log.info('✅ Banco de dados conectado', {
+        type: dbStatus.type,
+        mode: dbStatus.mode,
+      });
+    }
 
-    // ========================================
-    // 3. CRIA INSTÂNCIA DA APLICAÇÃO
-    // ========================================
-    // ✅ CORRIGIDO: instanciar a classe App
-    const appInstance = new App();
+    // 3. Inicializar aplicação Express
+    const app = new App();
+    const PORT = parseInt(process.env.PORT || '3000', 10);
+    const HOST = process.env.HOST || '0.0.0.0';
 
-    // ========================================
-    // 4. INICIA SERVIDOR HTTP
-    // ========================================
-    // ✅ CORRIGIDO: usar appInstance.app para acessar o Express
-    const server = appInstance.app.listen(envConfig.port, () => {
-      console.log('🚀 Servidor iniciado com sucesso!');
-      console.log(`   URL: http://localhost:${envConfig.port}`);
-      console.log(`   Ambiente: ${envConfig.nodeEnv}`);
-      console.log(`   Health Check: http://localhost:${envConfig.port}/health`);
-      console.log(`   API Docs: http://localhost:${envConfig.port}/api-docs`);
-      console.log('');
-    });
-
-    // ========================================
-    // 5. GRACEFUL SHUTDOWN
-    // ========================================
-    const gracefulShutdown = async (signal: string) => {
-      console.log(`\n${signal} recebido, fechando servidor...`);
-
-      // Para de aceitar novas conexões
-      server.close(async () => {
-        console.log('🔌 Servidor HTTP fechado');
-
-        try {
-          // Fecha conexões do banco
-          await DatabaseManager.close();
-          console.log('🔌 Conexões com banco fechadas');
-
-          // Encerra o processo
-          process.exit(0);
-        } catch (error) {
-          console.error('Erro ao fechar conexões:', error);
-          process.exit(1);
-        }
+    const server = app.getExpressApp().listen(PORT, HOST, () => {
+      log.info('✅ Servidor HTTP iniciado', {
+        port: PORT,
+        host: HOST,
+        url: `http://${HOST}:${PORT}`,
+        env: process.env.NODE_ENV || 'development',
+        pid: process.pid,
       });
 
-      // Timeout: força encerramento após 10 segundos
-      setTimeout(() => {
-        console.error('❌ Timeout ao fechar servidor, forçando encerramento...');
-        process.exit(1);
-      }, 10000);
-    };
-
-    // Escuta sinais de encerramento
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-
-    // Trata erros não capturados
-    process.on('unhandledRejection', (reason, promise) => {
-      console.error('❌ Unhandled Rejection:', reason);
-      console.error('   Promise:', promise);
+      log.info('📚 Documentação disponível', {
+        swagger: `http://lor0138.lorenzetti.ibe:${PORT}/api-docs`,
+        health: `http://lor0138.lorenzetti.ibe:${PORT}/health`,
+      });
     });
 
-    process.on('uncaughtException', (error) => {
-      console.error('❌ Uncaught Exception:', error);
-      process.exit(1);
+    // 4. Setup de Graceful Shutdown
+    const shutdownTimeout = parseInt(
+      process.env.SHUTDOWN_TIMEOUT || '10000',
+      10
+    );
+
+    setupGracefulShutdown(server, {
+      timeout: shutdownTimeout,
+      
+      onShutdownStart: () => {
+        log.info('🛑 Shutdown iniciado', {
+          pid: process.pid,
+          uptime: process.uptime(),
+        });
+      },
+
+      onShutdownComplete: () => {
+        log.info('👋 Adeus!', {
+          pid: process.pid,
+          finalUptime: process.uptime(),
+        });
+      },
     });
+
+    log.info('🎉 Sistema pronto para receber requisições!');
+
   } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error);
-    process.exit(1);
+    log.error('❌ Erro fatal ao iniciar servidor', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    // Aguarda logs serem gravados antes de encerrar
+    setTimeout(() => {
+      process.exit(1);
+    }, 100);
   }
 }
 
-// Inicia o servidor
+// Iniciar servidor
 startServer();
