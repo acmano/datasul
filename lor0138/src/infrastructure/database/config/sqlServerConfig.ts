@@ -1,33 +1,47 @@
+// src/infrastructure/database/config/sqlServerConfig.ts
+
 import { DatabaseConfig } from '../types';
+import { config } from '@config/env.config';
+
+/**
+ * ✅ CORRIGIDO: Agora usa env.config.ts centralizado
+ * 
+ * IMPORTANTE: Este arquivo é apenas um WRAPPER.
+ * Todas as configurações vêm de env.config.ts que usa parseTimeout()
+ * corretamente para TODOS os timeouts.
+ * 
+ * Antes: parseInt('30s') = 30 (30ms - impossível!)
+ * Agora: parseTimeout('30s') = 30000 (30s - correto!)
+ */
 
 export function getSqlServerConfigEmp(): DatabaseConfig {
-  // ✅ DEBUG: Veja o que está vindo do .env
-  console.log('🔍 sqlServerConfig - DB_DATABASE_EMP:', process.env.DB_DATABASE_EMP);
-  console.log('🔍 sqlServerConfig - É undefined?', process.env.DB_DATABASE_EMP === undefined);
-  console.log('🔍 sqlServerConfig - É vazio?', process.env.DB_DATABASE_EMP === '');
-  
-  const config = {
-    server: process.env.DB_SERVER || '',
-    port: parseInt(process.env.DB_PORT || '1433', 10),
-    user: process.env.DB_USER || '',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_DATABASE_EMP || '',
-    connectionTimeout: parseInt(process.env.DB_CONNECTION_TIMEOUT || '30000', 10),
-    requestTimeout: parseInt(process.env.DB_REQUEST_TIMEOUT || '30000', 10),
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
+  const dbConfig = config.database.sqlServer;
+
+  return {
+    server: dbConfig.server,
+    port: dbConfig.port,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.databaseEmp,
+    connectionTimeout: dbConfig.connectionTimeout,
+    requestTimeout: dbConfig.requestTimeout,
+    encrypt: dbConfig.encrypt,
+    trustServerCertificate: dbConfig.trustServerCertificate,
   };
-  
-  console.log('🔍 sqlServerConfig - config.database final:', config.database);
-  
-  return config;
 }
 
 export function getSqlServerConfigMult(): DatabaseConfig {
-  console.log('🔍 sqlServerConfig - DB_DATABASE_MULT:', process.env.DB_DATABASE_MULT);
-  
+  const dbConfig = config.database.sqlServer;
+
   return {
-    ...getSqlServerConfigEmp(),
-    database: process.env.DB_DATABASE_MULT || '',
+    server: dbConfig.server,
+    port: dbConfig.port,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.databaseMult,
+    connectionTimeout: dbConfig.connectionTimeout,
+    requestTimeout: dbConfig.requestTimeout,
+    encrypt: dbConfig.encrypt,
+    trustServerCertificate: dbConfig.trustServerCertificate,
   };
 }
