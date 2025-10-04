@@ -1,19 +1,22 @@
-// src/shared/types/express/index.d.ts
+// src/shared/types/express.d.ts
+
 import { Request } from 'express';
 
 declare global {
   namespace Express {
     interface Request {
       /**
-       * ID único da requisição para rastreamento (Correlation ID)
-       * Gerado automaticamente para cada requisição usando UUID v4
+       * Correlation ID único para rastreamento da requisição
+       * - Gerado automaticamente se não fornecido pelo cliente
+       * - Propagado em todos os logs
+       * - Retornado no header X-Correlation-ID
        */
       id: string;
       
       /**
-       * Flag indicando se a requisição atingiu o timeout
+       * Timestamp de quando a requisição foi recebida
        */
-      timedout?: boolean;
+      startTime?: number;
     }
   }
 }

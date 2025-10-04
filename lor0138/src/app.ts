@@ -6,11 +6,10 @@ import compression from 'compression';
 import timeout from 'connect-timeout';
 import swaggerUi from 'swagger-ui-express';
 import { rateLimit } from 'express-rate-limit';
-import { v4 as uuidv4 } from 'uuid';
 
-// ✅ Import correto do logger
 import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
+import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
 
 export class App {
@@ -30,58 +29,54 @@ export class App {
   }
 
   private setupMiddlewares(): void {
-    // Request ID (Correlation ID) - DEVE vir primeiro
-    this.app.use((req: Request, res: Response, next: NextFunction) => {
-      req.id = uuidv4();
-      res.setHeader('X-Request-ID', req.id);
-      next();
-    });
+    // ✅ 1. Correlation ID - DEVE ser o PRIMEIRO middleware
+    this.app.use(correlationIdMiddleware);
 
-    // Logging de requisições
+    // 2. Logging de requisições
     this.app.use((req: Request, res: Response, next: NextFunction) => {
-      const start = Date.now();
-      
       res.on('finish', () => {
-        const duration = Date.now() - start;
+        const duration = req.startTime ? Date.now() - req.startTime : 0;
+        
         log.info('HTTP Request', {
-          requestId: req.id,
+          correlationId: req.id,
           method: req.method,
           url: req.url,
           statusCode: res.statusCode,
           duration: duration,
-          userAgent: req.get('user-agent')
+          userAgent: req.get('user-agent'),
         });
       });
 
       next();
     });
 
-    // Security headers
+    // 3. Security headers
     this.app.use(helmet({
       contentSecurityPolicy: false, // Desabilita CSP para Swagger funcionar
     }));
 
-    // CORS
+    // 4. CORS
     this.app.use(cors({
       origin: process.env.CORS_ORIGIN || '*',
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'X-Request-ID'],
+      exposedHeaders: ['X-Correlation-ID'], // Permite cliente ler o header
     }));
 
-    // Body parser
+    // 5. Body parser
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // Compressão de resposta
+    // 6. Compressão de resposta
     this.app.use(compression());
 
-    // Request timeout
+    // 7. Request timeout
     this.app.use(timeout('30s'));
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       if (!req.timedout) next();
     });
 
-    // Rate limiting
+    // 8. Rate limiting
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutos
       max: 100, // limite de 100 requisições por IP
@@ -94,7 +89,7 @@ export class App {
       legacyHeaders: false,
       handler: (req: Request, res: Response) => {
         log.warn('Rate limit excedido', {
-          requestId: req.id,
+          correlationId: req.id,
           ip: req.ip,
           url: req.url
         });
@@ -103,7 +98,7 @@ export class App {
           message: 'Muitas requisições. Tente novamente em alguns minutos.',
           timestamp: new Date().toISOString(),
           path: req.url,
-          requestId: req.id
+          correlationId: req.id
         });
       }
     });
@@ -143,6 +138,7 @@ export class App {
      *       - Tempo de resposta do banco
      *       - Uso de memória da aplicação
      *       - Tempo de atividade (uptime)
+     *       - **Correlation ID** para rastreamento
      *       
      *       **Status possíveis:**
      *       - `healthy`: Sistema operacional (DB < 100ms)
@@ -150,69 +146,42 @@ export class App {
      *       - `unhealthy`: Sistema com falhas (DB não conectado)
      *     tags:
      *       - Health
+     *     parameters:
+     *       - in: header
+     *         name: X-Correlation-ID
+     *         schema:
+     *           type: string
+     *           format: uuid
+     *         required: false
+     *         description: Correlation ID para rastreamento (gerado automaticamente se não fornecido)
+     *         example: '550e8400-e29b-41d4-a716-446655440000'
      *     responses:
      *       200:
      *         description: Sistema saudável ou degradado
+     *         headers:
+     *           X-Correlation-ID:
+     *             description: Correlation ID da requisição
+     *             schema:
+     *               type: string
+     *               format: uuid
      *         content:
      *           application/json:
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
-     *             examples:
-     *               healthy:
-     *                 summary: Sistema saudável
-     *                 value:
-     *                   status: 'healthy'
-     *                   timestamp: '2025-01-04T14:30:00.000Z'
-     *                   uptime: 3600
-     *                   database:
-     *                     connected: true
-     *                     responseTime: 45
-     *                     status: 'healthy'
-     *                     type: 'sqlserver'
-     *                   memory:
-     *                     used: 125.50
-     *                     total: 256.00
-     *                     percentage: 49.02
-     *                   requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
-     *               degraded:
-     *                 summary: Sistema degradado (lento)
-     *                 value:
-     *                   status: 'degraded'
-     *                   timestamp: '2025-01-04T14:30:00.000Z'
-     *                   uptime: 3600
-     *                   database:
-     *                     connected: true
-     *                     responseTime: 250
-     *                     status: 'degraded'
-     *                     type: 'sqlserver'
-     *                   memory:
-     *                     used: 180.75
-     *                     total: 256.00
-     *                     percentage: 70.61
-     *                   requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
      *       503:
      *         description: Sistema não saudável
+     *         headers:
+     *           X-Correlation-ID:
+     *             description: Correlation ID da requisição
+     *             schema:
+     *               type: string
+     *               format: uuid
      *         content:
      *           application/json:
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
-     *             example:
-     *               status: 'unhealthy'
-     *               timestamp: '2025-01-04T14:30:00.000Z'
-     *               uptime: 3600
-     *               database:
-     *                 connected: false
-     *                 responseTime: 0
-     *                 status: 'unhealthy'
-     *                 type: 'sqlserver'
-     *               memory:
-     *                 used: 125.50
-     *                 total: 256.00
-     *                 percentage: 49.02
-     *               requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
      */
     this.app.get('/health', async (req: Request, res: Response) => {
-      // ✅ Usa métodos estáticos do DatabaseManager
       const { DatabaseManager } = await import('./infrastructure/database/DatabaseManager');
       
       const startTime = Date.now();
@@ -221,7 +190,6 @@ export class App {
       let dbConnected = false;
 
       try {
-        // ✅ Usa queryEmp ao invés de getConnection
         await DatabaseManager.queryEmp('SELECT 1 as test');
         dbResponseTime = Date.now() - startTime;
         dbConnected = true;
@@ -230,7 +198,7 @@ export class App {
         dbStatus = 'unhealthy';
         dbConnected = false;
         log.error('Health check - Erro ao verificar banco', {
-          requestId: req.id,
+          correlationId: req.id,
           error: error instanceof Error ? error.message : 'Unknown error'
         });
       }
@@ -254,13 +222,13 @@ export class App {
           total: Math.round(memTotalMB * 100) / 100,
           percentage: Math.round((memUsedMB / memTotalMB) * 100 * 100) / 100
         },
-        requestId: req.id
+        correlationId: req.id
       };
 
       const statusCode = health.status === 'healthy' ? 200 : 503;
       
       log.info('Health check executado', {
-        requestId: req.id,
+        correlationId: req.id,
         status: health.status,
         dbResponseTime: dbResponseTime
       });
@@ -292,12 +260,28 @@ export class App {
      * /:
      *   get:
      *     summary: Informações da API
-     *     description: Retorna informações básicas sobre a API e links úteis para navegação
+     *     description: |
+     *       Retorna informações básicas sobre a API e links úteis para navegação.
+     *       Inclui **Correlation ID** para rastreamento de requisições.
      *     tags:
      *       - Health
+     *     parameters:
+     *       - in: header
+     *         name: X-Correlation-ID
+     *         schema:
+     *           type: string
+     *           format: uuid
+     *         required: false
+     *         description: Correlation ID para rastreamento
      *     responses:
      *       200:
      *         description: Informações da API
+     *         headers:
+     *           X-Correlation-ID:
+     *             description: Correlation ID da requisição
+     *             schema:
+     *               type: string
+     *               format: uuid
      *         content:
      *           application/json:
      *             example:
@@ -307,7 +291,7 @@ export class App {
      *               health: '/health'
      *               endpoints:
      *                 informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
-     *               requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+     *               correlationId: '550e8400-e29b-41d4-a716-446655440000'
      */
     this.app.get('/', (req: Request, res: Response) => {
       res.json({
@@ -318,7 +302,7 @@ export class App {
         endpoints: {
           informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
         },
-        requestId: req.id
+        correlationId: req.id
       });
     });
   }
@@ -326,7 +310,7 @@ export class App {
   private setup404Handler(): void {
     this.app.use((req: Request, res: Response) => {
       log.warn('Rota não encontrada', {
-        requestId: req.id,
+        correlationId: req.id,
         method: req.method,
         url: req.url
       });
@@ -336,7 +320,7 @@ export class App {
         message: `A rota ${req.method} ${req.url} não existe`,
         timestamp: new Date().toISOString(),
         path: req.url,
-        requestId: req.id,
+        correlationId: req.id,
         availableRoutes: {
           documentation: '/api-docs',
           health: '/health',
@@ -350,7 +334,7 @@ export class App {
     // Error handler global - deve ser o ÚLTIMO middleware
     this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
       log.error('Erro não tratado', {
-        requestId: req.id,
+        correlationId: req.id,
         error: err.message,
         stack: err.stack,
         url: req.url,
@@ -364,7 +348,7 @@ export class App {
           message: 'A requisição demorou muito tempo para ser processada',
           timestamp: new Date().toISOString(),
           path: req.url,
-          requestId: req.id
+          correlationId: req.id
         });
       }
 
@@ -376,7 +360,7 @@ export class App {
           : err.message,
         timestamp: new Date().toISOString(),
         path: req.url,
-        requestId: req.id
+        correlationId: req.id
       });
     });
   }
