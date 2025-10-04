@@ -1,56 +1,99 @@
 // src/api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository.ts
-// EXEMPLO: Como integrar cache no repository (READ-ONLY)
 
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
-import { CacheManager, generateCacheKey } from '@shared/utils/cacheManager';
+import { QueryParameter } from '@infrastructure/database/types';
 
-export class InformacoesGeraisRepository {
-  private cache: CacheManager;
-  private cacheEnabled: boolean;
-  private cacheTTL: number;
-
-  constructor() {
-    this.cache = CacheManager.getInstance();
-    this.cacheEnabled = process.env.CACHE_ENABLED === 'true';
-    this.cacheTTL = parseInt(process.env.CACHE_ITEM_TTL || '600', 10);
-  }
-
+/**
+ * Repository para consultas de Informações Gerais do Item
+ */
+export class ItemInformacoesGeraisRepository {
+  
   /**
-   * Busca informações gerais do item com cache
+   * Busca dados mestres do item
    */
-  async getItemInformacoesGerais(itemCodigo: string): Promise<any> {
-    // Se cache desabilitado, busca direto do banco
-    if (!this.cacheEnabled) {
-      return this.fetchFromDatabase(itemCodigo);
-    }
+  static async getItemMaster(itemCodigo: string): Promise<any | null> {
+    try {
+      const query = `
+        DECLARE @itemCodigo varchar(16) = @paramItemCodigo;
+        DECLARE @sql nvarchar(max);
+        
+        SET @sql = N'
+          SELECT 
+            item."it-codigo" as itemCodigo,
+            item."desc-item" as itemDescricao,
+            item."un" as itemUnidade
+          FROM OPENQUERY(PRD_EMS2EMP, ''
+            SELECT 
+              item."it-codigo",
+              item."desc-item", 
+              item."un"
+            FROM pub.item
+            WHERE item."it-codigo" = ''''' + @itemCodigo + '''''
+          '') as item
+        ';
+        
+        EXEC sp_executesql @sql;
+      `;
 
-    // Gera chave de cache
-    const cacheKey = generateCacheKey('item', itemCodigo, 'informacoesGerais');
+      const params: QueryParameter[] = [
+        { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
+      ];
 
-    // Usa cache-aside pattern: busca do cache ou executa query
-    return this.cache.getOrSet(
-      cacheKey,
-      () => this.fetchFromDatabase(itemCodigo),
-      this.cacheTTL
-    );
-  }
-
-  /**
-   * Busca dados do banco (método privado)
-   */
-  private async fetchFromDatabase(itemCodigo: string): Promise<any> {
-    const query = `
-      DECLARE @itemCodigo varchar(16) = @paramItemCodigo;
+      const result = await DatabaseManager.queryEmpWithParams(query, params);
       
-      -- Sua query completa aqui
-      SELECT * FROM OPENQUERY(...)
-    `;
+      return result && result.length > 0 ? result[0] : null;
+      
+    } catch (error) {
+      console.error('Erro ao buscar item master:', error);
+      throw error;
+    }
+  }
 
-    const params = [
-      { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
-    ];
+  /**
+   * Busca estabelecimentos do item
+   */
+  static async getItemEstabelecimentos(itemCodigo: string): Promise<any[]> {
+    try {
+      const query = `
+        DECLARE @itemCodigo varchar(16) = @paramItemCodigo;
+        DECLARE @sql nvarchar(max);
+        
+        SET @sql = N'
+          SELECT 
+            itemEstab."it-codigo" as itemCodigo,
+            itemEstab."cod-estabel" as estabCodigo,
+            estab."nome" as estabNome,
+            itemEstab."cod-obsoleto" as codObsoleto
+          FROM OPENQUERY(PRD_EMS2EMP, ''
+            SELECT 
+              "item-uni-estab"."it-codigo",
+              "item-uni-estab"."cod-estabel",
+              "item-uni-estab"."cod-obsoleto"
+            FROM pub."item-uni-estab"
+            WHERE "item-uni-estab"."it-codigo" = ''''' + @itemCodigo + '''''
+          '') as itemEstab
+          LEFT JOIN OPENQUERY(PRD_EMS2MULT, ''
+            SELECT 
+              estabelec."ep-codigo" as cod_estabel,
+              estabelec."nome"
+            FROM pub.estabelec
+          '') as estab ON itemEstab."cod-estabel" = estab.cod_estabel
+        ';
+        
+        EXEC sp_executesql @sql;
+      `;
 
-    const result = await DatabaseManager.queryEmpWithParams(query, params);
-    return result;
+      const params: QueryParameter[] = [
+        { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
+      ];
+
+      const result = await DatabaseManager.queryEmpWithParams(query, params);
+      
+      return result || [];
+      
+    } catch (error) {
+      console.error('Erro ao buscar estabelecimentos:', error);
+      throw error;
+    }
   }
 }

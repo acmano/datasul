@@ -17,6 +17,7 @@ declare global {
        * Timestamp de quando a requisição foi recebida
        */
       startTime?: number;
+      timedout?: boolean;   // Timeout flag
     }
   }
 }

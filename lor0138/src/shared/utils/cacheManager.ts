@@ -1,327 +1,311 @@
 // src/shared/utils/cacheManager.ts
+// ✅ VERSÃO ATUALIZADA: Suporta Memory, Redis e Layered (L1+L2)
 
-import NodeCache from 'node-cache';
+import { CacheAdapter } from './cache/CacheAdapter';
+import { MemoryCacheAdapter } from './cache/MemoryCacheAdapter';
+import { RedisCacheAdapter } from './cache/RedisCacheAdapter';
+import { LayeredCacheAdapter } from './cache/LayeredCacheAdapter';
 import { log } from './logger';
 
-interface CacheStats {
-  hits: number;
-  misses: number;
-  keys: number;
-  hitRate: number;
-}
-
-interface CacheConfig {
-  /**
-   * TTL padrão em segundos
-   * @default 300 (5 minutos)
-   */
-  stdTTL?: number;
-
-  /**
-   * Intervalo de verificação de chaves expiradas (em segundos)
-   * @default 600 (10 minutos)
-   */
-  checkperiod?: number;
-
-  /**
-   * Usar clones ao retornar valores (evita mutação)
-   * @default true
-   */
-  useClones?: boolean;
-
-  /**
-   * Delete on expire
-   * @default true
-   */
-  deleteOnExpire?: boolean;
-}
-
 /**
- * Gerenciador de Cache em Memória
- * 
- * Usa node-cache para armazenar resultados de queries e reduzir carga no banco.
- * 
- * Features:
- * - TTL configurável por chave
- * - Métricas de hit/miss
- * - Invalidação manual e automática
- * - Suporte a namespaces
- * - Clonagem de objetos (evita mutação)
- * 
- * @example
- * const cache = CacheManager.getInstance();
- * 
- * // Set
- * cache.set('user:123', userData, 300); // 5 minutos
- * 
- * // Get
- * const user = cache.get('user:123');
- * 
- * // Invalidar
- * cache.invalidate('user:*'); // Todas as chaves que começam com 'user:'
+ * Gerenciador de cache com suporte a múltiplos backends
+ * - Memory: Cache local (padrão)
+ * - Redis: Cache compartilhado
+ * - Layered: L1 (memory) + L2 (Redis)
  */
 export class CacheManager {
-  private static instance: CacheManager | null = null;
-  private cache: NodeCache;
-  private stats = {
-    hits: 0,
-    misses: 0,
-  };
+  private static adapter: CacheAdapter;
+  private static strategy: string = 'memory';
+  private static enabled: boolean = true;
 
-  private constructor(config: CacheConfig = {}) {
-    this.cache = new NodeCache({
-      stdTTL: config.stdTTL || 300, // 5 minutos padrão
-      checkperiod: config.checkperiod || 600, // Verifica a cada 10 minutos
-      useClones: config.useClones !== false, // true por padrão
-      deleteOnExpire: config.deleteOnExpire !== false, // true por padrão
-    });
+  /**
+   * Inicializa o cache com a estratégia escolhida
+   */
+  static initialize(strategy?: string): void {
+    this.enabled = process.env.CACHE_ENABLED !== 'false';
+    this.strategy = strategy || process.env.CACHE_STRATEGY || 'memory';
 
-    // Eventos de cache
-    this.cache.on('set', (key, value) => {
-      log.debug('Cache SET', { key, ttl: this.cache.getTtl(key) });
-    });
+    if (!this.enabled) {
+      log.warn('❌ Cache desabilitado (CACHE_ENABLED=false)');
+      return;
+    }
 
-    this.cache.on('del', (key, value) => {
-      log.debug('Cache DEL', { key });
-    });
+    const ttl = parseInt(process.env.CACHE_DEFAULT_TTL || '300', 10);
 
-    this.cache.on('expired', (key, value) => {
-      log.debug('Cache EXPIRED', { key });
-    });
+    try {
+      switch (this.strategy) {
+        case 'layered':
+          this.initializeLayered(ttl);
+          break;
 
-    log.info('Cache Manager inicializado', {
-      stdTTL: config.stdTTL || 300,
-      checkperiod: config.checkperiod || 600,
-    });
+        case 'redis':
+          this.initializeRedis(ttl);
+          break;
+
+        case 'memory':
+        default:
+          this.initializeMemory(ttl);
+          break;
+      }
+
+      log.info('✅ Cache inicializado', { 
+        strategy: this.strategy, 
+        enabled: this.enabled,
+        ttl 
+      });
+    } catch (error) {
+      log.error('❌ Erro ao inicializar cache', { strategy: this.strategy, error });
+      // Fallback para memória em caso de erro
+      this.initializeMemory(ttl);
+    }
+  }
+
+  private static initializeMemory(ttl: number): void {
+    this.adapter = new MemoryCacheAdapter(ttl, 'Cache-Memory');
+    this.strategy = 'memory';
+  }
+
+  private static initializeRedis(ttl: number): void {
+    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://localhost:6379';
+    this.adapter = new RedisCacheAdapter(redisUrl, 'Cache-Redis');
+    this.strategy = 'redis';
+  }
+
+  private static initializeLayered(ttl: number): void {
+    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://localhost:6379';
+    
+    const l1 = new MemoryCacheAdapter(ttl, 'L1-Memory');
+    const l2 = new RedisCacheAdapter(redisUrl, 'L2-Redis');
+    
+    this.adapter = new LayeredCacheAdapter(l1, l2, 'Cache-Layered');
+    this.strategy = 'layered';
   }
 
   /**
-   * Singleton instance
+   * Retorna instância singleton (compatibilidade)
    */
-  public static getInstance(config?: CacheConfig): CacheManager {
-    if (!this.instance) {
-      this.instance = new CacheManager(config);
+  static getInstance(): CacheManager {
+    if (!this.adapter) {
+      this.initialize();
     }
-    return this.instance;
+    return this;
+  }
+
+  /**
+   * Busca valor no cache
+   */
+  static async get<T>(key: string): Promise<T | undefined> {
+    if (!this.enabled || !this.adapter) {
+      return undefined;
+    }
+
+    try {
+      return await this.adapter.get<T>(key);
+    } catch (error) {
+      log.error('Cache GET error', { key, error });
+      return undefined;
+    }
   }
 
   /**
    * Armazena valor no cache
-   * 
-   * @param key Chave única
-   * @param value Valor a ser armazenado
-   * @param ttl TTL em segundos (opcional, usa padrão se não informado)
    */
-  public set<T>(key: string, value: T, ttl?: number): boolean {
+  static async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
+    if (!this.enabled || !this.adapter) {
+      return false;
+    }
+
     try {
-      const success = ttl 
-        ? this.cache.set(key, value, ttl)
-        : this.cache.set(key, value);
-
-      if (success) {
-        log.debug('Cache armazenado', { 
-          key, 
-          ttl: ttl || this.cache.options.stdTTL,
-          size: JSON.stringify(value).length 
-        });
-      }
-
-      return success;
+      return await this.adapter.set(key, value, ttl);
     } catch (error) {
-      log.error('Erro ao armazenar no cache', { 
-        key, 
-        error: error instanceof Error ? error.message : 'Unknown' 
-      });
+      log.error('Cache SET error', { key, error });
       return false;
     }
   }
 
   /**
-   * Recupera valor do cache
-   * 
-   * @param key Chave
-   * @returns Valor ou undefined se não existir/expirado
-   */
-  public get<T>(key: string): T | undefined {
-    const value = this.cache.get<T>(key);
-
-    if (value !== undefined) {
-      this.stats.hits++;
-      log.debug('Cache HIT', { key, hitRate: this.getHitRate() });
-    } else {
-      this.stats.misses++;
-      log.debug('Cache MISS', { key, hitRate: this.getHitRate() });
-    }
-
-    return value;
-  }
-
-  /**
-   * Recupera ou computa valor (cache-aside pattern)
-   * 
-   * @param key Chave
-   * @param fetchFn Função para buscar valor se não estiver em cache
-   * @param ttl TTL em segundos
-   * @returns Valor do cache ou resultado de fetchFn
-   */
-  public async getOrSet<T>(
-    key: string,
-    fetchFn: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
-    // Tenta pegar do cache
-    const cached = this.get<T>(key);
-    if (cached !== undefined) {
-      return cached;
-    }
-
-    // Cache miss - busca valor
-    log.debug('Cache MISS - Buscando valor', { key });
-    const value = await fetchFn();
-
-    // Armazena no cache
-    this.set(key, value, ttl);
-
-    return value;
-  }
-
-  /**
    * Remove valor do cache
-   * 
-   * @param key Chave
    */
-  public delete(key: string): number {
-    return this.cache.del(key);
-  }
-
-  /**
-   * Invalida cache por padrão (suporta wildcard *)
-   * 
-   * @param pattern Padrão de chave (ex: 'user:*', 'item:*')
-   * @returns Número de chaves removidas
-   */
-  public invalidate(pattern: string): number {
-    const keys = this.cache.keys();
-    
-    // Converte padrão para regex
-    const regex = new RegExp(
-      '^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$'
-    );
-
-    const keysToDelete = keys.filter(key => regex.test(key));
-    
-    if (keysToDelete.length > 0) {
-      this.cache.del(keysToDelete);
-      log.info('Cache invalidado', { pattern, keysRemoved: keysToDelete.length });
+  static async delete(key: string): Promise<number> {
+    if (!this.enabled || !this.adapter) {
+      return 0;
     }
 
-    return keysToDelete.length;
+    try {
+      return await this.adapter.delete(key);
+    } catch (error) {
+      log.error('Cache DELETE error', { key, error });
+      return 0;
+    }
   }
 
   /**
    * Limpa todo o cache
    */
-  public flush(): void {
-    this.cache.flushAll();
-    this.stats = { hits: 0, misses: 0 };
-    log.info('Cache limpo completamente');
+  static async flush(): Promise<void> {
+    if (!this.enabled || !this.adapter) {
+      return;
+    }
+
+    try {
+      await this.adapter.flush();
+      log.info('Cache limpo completamente');
+    } catch (error) {
+      log.error('Cache FLUSH error', { error });
+    }
   }
 
   /**
-   * Verifica se chave existe
+   * Lista chaves em cache
    */
-  public has(key: string): boolean {
-    return this.cache.has(key);
+  static async keys(pattern?: string): Promise<string[]> {
+    if (!this.enabled || !this.adapter) {
+      return [];
+    }
+
+    try {
+      return await this.adapter.keys(pattern);
+    } catch (error) {
+      log.error('Cache KEYS error', { pattern, error });
+      return [];
+    }
   }
 
   /**
-   * Retorna todas as chaves
+   * Invalida chaves por padrão (wildcards)
    */
-  public keys(): string[] {
-    return this.cache.keys();
+  static async invalidate(pattern: string): Promise<number> {
+    if (!this.enabled || !this.adapter) {
+      return 0;
+    }
+
+    try {
+      const keys = await this.adapter.keys(pattern);
+      
+      if (keys.length === 0) {
+        log.debug('Nenhuma chave encontrada para invalidar', { pattern });
+        return 0;
+      }
+
+      const deletePromises = keys.map(key => this.adapter.delete(key));
+      const results = await Promise.all(deletePromises);
+      const total = results.reduce((sum, count) => sum + count, 0);
+
+      log.info('Cache invalidado', { pattern, keys: total });
+      return total;
+    } catch (error) {
+      log.error('Cache INVALIDATE error', { pattern, error });
+      return 0;
+    }
+  }
+
+  /**
+   * Cache-aside pattern: busca ou executa função
+   */
+  static async getOrSet<T>(
+    key: string,
+    fetchFn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    // Tenta buscar do cache
+    const cached = await this.get<T>(key);
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    // Executa função para buscar dados
+    const value = await fetchFn();
+
+    // Armazena no cache
+    await this.set(key, value, ttl);
+
+    return value;
+  }
+
+  /**
+   * Verifica se cache está pronto
+   */
+  static async isReady(): Promise<boolean> {
+    if (!this.enabled || !this.adapter) {
+      return false;
+    }
+
+    try {
+      return await this.adapter.isReady();
+    } catch (error) {
+      log.error('Cache isReady error', { error });
+      return false;
+    }
   }
 
   /**
    * Retorna estatísticas do cache
    */
-  public getStats(): CacheStats {
-    return {
-      hits: this.stats.hits,
-      misses: this.stats.misses,
-      keys: this.cache.keys().length,
-      hitRate: this.getHitRate(),
-    };
-  }
+  static getStats(): any {
+    if (!this.enabled || !this.adapter) {
+      return {
+        enabled: false,
+        strategy: 'none'
+      };
+    }
 
-  /**
-   * Calcula taxa de acerto (hit rate)
-   */
-  private getHitRate(): number {
-    const total = this.stats.hits + this.stats.misses;
-    if (total === 0) return 0;
-    return Math.round((this.stats.hits / total) * 100 * 100) / 100; // 2 decimais
-  }
+    // LayeredCacheAdapter tem método getStats()
+    if (this.adapter instanceof LayeredCacheAdapter) {
+      return {
+        enabled: true,
+        strategy: this.strategy,
+        ...this.adapter.getStats()
+      };
+    }
 
-  /**
-   * Reseta estatísticas
-   */
-  public resetStats(): void {
-    this.stats = { hits: 0, misses: 0 };
-    log.info('Estatísticas do cache resetadas');
-  }
-
-  /**
-   * Retorna informações detalhadas
-   */
-  public getInfo(): {
-    stats: CacheStats;
-    config: {
-      stdTTL: number;
-      checkperiod: number;
-      useClones: boolean;
-    };
-    keys: Array<{ key: string; ttl: number | undefined }>;
-  } {
-    const keys = this.cache.keys().map(key => ({
-      key,
-      ttl: this.cache.getTtl(key),
-    }));
+    // MemoryCacheAdapter tem método getStats()
+    if (this.adapter instanceof MemoryCacheAdapter) {
+      return {
+        enabled: true,
+        strategy: this.strategy,
+        ...this.adapter.getStats()
+      };
+    }
 
     return {
-      stats: this.getStats(),
-      config: {
-        stdTTL: this.cache.options.stdTTL || 0,
-        checkperiod: this.cache.options.checkperiod || 0,
-        useClones: this.cache.options.useClones || false,
-      },
-      keys,
+      enabled: true,
+      strategy: this.strategy
     };
+  }
+
+  /**
+   * Fecha conexões (chamado no graceful shutdown)
+   */
+  static async close(): Promise<void> {
+    if (!this.adapter) {
+      return;
+    }
+
+    try {
+      await this.adapter.close();
+      log.info('Cache fechado');
+    } catch (error) {
+      log.error('Cache CLOSE error', { error });
+    }
   }
 }
 
 /**
- * Helper: Gera chave de cache consistente
- * 
- * @example
- * generateCacheKey('item', '7530110', 'informacoesGerais')
- * // Retorna: 'item:7530110:informacoesGerais'
+ * Gera chave de cache consistente
  */
-export function generateCacheKey(...parts: Array<string | number>): string {
-  return parts.map(part => String(part).trim()).join(':');
+export function generateCacheKey(...parts: (string | number)[]): string {
+  return parts.filter(p => p !== undefined && p !== null).join(':');
 }
 
 /**
- * Decorator para cachear métodos automaticamente
- * 
+ * Decorator para cachear métodos de classe
  * @example
- * class ItemService {
- *   @Cacheable('item', 300) // TTL de 5 minutos
- *   async getItem(id: string) {
- *     return await this.repository.findById(id);
- *   }
+ * class MyService {
+ *   @Cacheable({ ttl: 600, keyPrefix: 'service' })
+ *   async getData(id: string) { ... }
  * }
  */
-export function Cacheable(namespace: string, ttl: number = 300) {
+export function Cacheable(options: { ttl?: number; keyPrefix?: string } = {}) {
   return function (
     target: any,
     propertyKey: string,
@@ -330,22 +314,14 @@ export function Cacheable(namespace: string, ttl: number = 300) {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
-      const cache = CacheManager.getInstance();
-      const cacheKey = generateCacheKey(namespace, ...args);
+      const keyPrefix = options.keyPrefix || target.constructor.name;
+      const cacheKey = generateCacheKey(keyPrefix, propertyKey, ...args);
 
-      // Tenta pegar do cache
-      const cached = cache.get(cacheKey);
-      if (cached !== undefined) {
-        return cached;
-      }
-
-      // Cache miss - executa método original
-      const result = await originalMethod.apply(this, args);
-
-      // Armazena no cache
-      cache.set(cacheKey, result, ttl);
-
-      return result;
+      return CacheManager.getOrSet(
+        cacheKey,
+        () => originalMethod.apply(this, args),
+        options.ttl
+      );
     };
 
     return descriptor;

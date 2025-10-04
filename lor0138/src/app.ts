@@ -10,8 +10,9 @@ import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
 import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
-import { cacheMiddleware } from '@shared/middlewares/cache.middleware';
-import { healthCache } from '@shared/middlewares/cachePresets';
+import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
+import { CacheManager } from '@shared/utils/cacheManager';
+
 
 export class App {
   public app: Application;
@@ -35,8 +36,11 @@ export class App {
 
     // 2. Logging de requisições
     this.app.use((req: Request, res: Response, next: NextFunction) => {
+      // ✅ CORREÇÃO 2: Definir startTime
+      req.startTime = Date.now();
+
       res.on('finish', () => {
-        const duration = req.startTime ? Date.now() - req.startTime : 0;
+        const duration = Date.now() - req.startTime;
         
         log.info('HTTP Request', {
           correlationId: req.id,
@@ -58,7 +62,7 @@ export class App {
 
     // 4. CORS
     this.app.use(cors({
-      origin: process.env.CORS_ORIGIN || '*',
+      origin: process.env.CORS_ALLOWED_ORIGINS || '*', // ✅ CORREÇÃO 1: CORS_ALLOWED_ORIGINS
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID', 'X-Request-ID'],
       exposedHeaders: ['X-Correlation-ID'], // Permite cliente ler o header
@@ -185,61 +189,72 @@ export class App {
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
      */
-    this.app.get('/health', healthCache, async (req: Request, res: Response) => {
-      const { DatabaseManager } = await import('./infrastructure/database/DatabaseManager');
-      
-      const startTime = Date.now();
-      let dbStatus = 'unknown';
-      let dbResponseTime = 0;
+  this.app.get('/health', async (req, res) => {
+    try {
+      // Verificar banco de dados
       let dbConnected = false;
+      let dbResponseTime = 0;
+      let dbType = 'unknown';
 
       try {
-        await DatabaseManager.queryEmp('SELECT 1 as test');
-        dbResponseTime = Date.now() - startTime;
+        const start = Date.now();
+        const connection = DatabaseManager.getConnection();
+        await connection.query('SELECT 1 as test');
+        dbResponseTime = Date.now() - start;
         dbConnected = true;
-        dbStatus = dbResponseTime < 100 ? 'healthy' : 'degraded';
+        
+        const dbStatus = DatabaseManager.getConnectionStatus();
+        dbType = dbStatus.type;
       } catch (error) {
-        dbStatus = 'unhealthy';
+        log.error('Health check database error', { error });
         dbConnected = false;
-        log.error('Health check - Erro ao verificar banco', {
-          correlationId: req.id,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
       }
 
-      const memUsage = process.memoryUsage();
-      const memUsedMB = memUsage.heapUsed / 1024 / 1024;
-      const memTotalMB = memUsage.heapTotal / 1024 / 1024;
+      // Verificar cache
+      const cacheEnabled = process.env.CACHE_ENABLED !== 'false';
+      const cacheStrategy = process.env.CACHE_STRATEGY || 'memory';
+      let cacheReady = false;
 
-      const health = {
-        status: dbConnected ? (dbResponseTime < 100 ? 'healthy' : 'degraded') : 'unhealthy',
+      if (cacheEnabled) {
+        try {
+          cacheReady = await CacheManager.isReady();
+        } catch (error) {
+          log.error('Health check cache error', { error });
+          cacheReady = false;
+        }
+      }
+
+      // Determinar status
+      const isHealthy = dbConnected && (!cacheEnabled || cacheReady);
+      const statusCode = isHealthy ? 200 : 503;
+
+      res.status(statusCode).json({
+        status: isHealthy ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
         database: {
           connected: dbConnected,
           responseTime: dbResponseTime,
-          status: dbStatus,
-          type: process.env.DB_CONNECTION_TYPE || 'unknown'
+          status: dbConnected ? 'healthy' : 'unhealthy',
+          type: dbType
         },
-        memory: {
-          used: Math.round(memUsedMB * 100) / 100,
-          total: Math.round(memTotalMB * 100) / 100,
-          percentage: Math.round((memUsedMB / memTotalMB) * 100 * 100) / 100
-        },
-        correlationId: req.id
-      };
-
-      const statusCode = health.status === 'healthy' ? 200 : 503;
-      
-      log.info('Health check executado', {
-        correlationId: req.id,
-        status: health.status,
-        dbResponseTime: dbResponseTime
+        cache: {
+          enabled: cacheEnabled,
+          strategy: cacheStrategy,
+          ready: cacheReady
+        }
       });
 
-      res.status(statusCode).json(health);
-    });
-  }
+    } catch (error) {
+      log.error('Health check fatal error', { error });
+      
+      res.status(503).json({
+        status: 'unhealthy',
+        timestamp: new Date().toISOString(),
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+ }
 
   // src/app.ts - Adicionar estas rotas no setupRoutes()
 
@@ -299,21 +314,17 @@ export class App {
      *                 checkperiod: 600
      *                 enabled: true
      */
-    this.app.get('/cache/stats', (req: Request, res: Response) => {
-      const { CacheManager } = require('@shared/utils/cacheManager');
-      const cache = CacheManager.getInstance();
-      const info = cache.getInfo();
-
-      res.json({
-        stats: info.stats,
-        config: {
-          ...info.config,
-          enabled: process.env.CACHE_ENABLED === 'true',
-        },
-        correlationId: req.id,
+      this.app.get('/cache/stats', (req, res) => {
+        try {
+          const stats = CacheManager.getStats();
+          res.json(stats);
+        } catch (error) {
+          res.status(500).json({
+            error: 'Erro ao obter estatísticas de cache',
+            message: error instanceof Error ? error.message : String(error)
+          });
+        }
       });
-    });
-
     /**
      * @openapi
      * /cache/keys:
@@ -351,17 +362,18 @@ export class App {
      *                   ttl: 1735995630000
      *               total: 2
      */
-    this.app.get('/cache/keys', (req: Request, res: Response) => {
-      const { CacheManager } = require('@shared/utils/cacheManager');
-      const cache = CacheManager.getInstance();
-      const info = cache.getInfo();
-
-      res.json({
-        keys: info.keys,
-        total: info.keys.length,
-        correlationId: req.id,
+      this.app.get('/cache/keys', async (req, res) => {
+        try {
+          const pattern = req.query.pattern as string | undefined;
+          const keys = await CacheManager.keys(pattern);
+          res.json({ keys, count: keys.length });
+        } catch (error) {
+          res.status(500).json({
+            error: 'Erro ao listar chaves',
+            message: error instanceof Error ? error.message : String(error)
+          });
+        }
       });
-    });
 
     /**
      * @openapi
@@ -382,24 +394,19 @@ export class App {
      *               message: 'Cache limpo com sucesso'
      *               keysRemoved: 45
      */
-    this.app.post('/cache/clear', (req: Request, res: Response) => {
-      const { CacheManager } = require('@shared/utils/cacheManager');
-      const cache = CacheManager.getInstance();
-      
-      const keysBefore = cache.keys().length;
-      cache.flush();
-
-      log.warn('Cache limpo manualmente', {
-        correlationId: req.id,
-        keysRemoved: keysBefore,
-        ip: req.ip,
-      });
-
-      res.json({
-        message: 'Cache limpo com sucesso',
-        keysRemoved: keysBefore,
-        correlationId: req.id,
-      });
+    this.app.post('/cache/clear', async (req, res) => {
+      try {
+        await CacheManager.flush();
+        res.json({ 
+          success: true, 
+          message: 'Cache limpo com sucesso' 
+        });
+      } catch (error) {
+        res.status(500).json({
+          error: 'Erro ao limpar cache',
+          message: error instanceof Error ? error.message : String(error)
+        });
+      }
     });
 
     /**
@@ -444,28 +451,23 @@ export class App {
      *               pattern: 'item:*'
      *               keysRemoved: 12
      */
-    this.app.delete('/cache/invalidate/:pattern', (req: Request, res: Response) => {
-      const { CacheManager } = require('@shared/utils/cacheManager');
-      const cache = CacheManager.getInstance();
-      
-      const pattern = req.params.pattern;
-      const removed = cache.invalidate(pattern);
-
-      log.info('Cache invalidado via API', {
-        correlationId: req.id,
-        pattern,
-        removed,
-        ip: req.ip,
+    this.app.delete('/cache/invalidate/:pattern', async (req, res) => {
+        try {
+          const pattern = req.params.pattern;
+          const deletedCount = await CacheManager.invalidate(pattern);
+          res.json({ 
+            success: true, 
+            deletedCount,
+            pattern 
+          });
+        } catch (error) {
+          res.status(500).json({
+            error: 'Erro ao invalidar cache',
+            message: error instanceof Error ? error.message : String(error)
+          });
+        }
       });
-
-      res.json({
-        message: 'Cache invalidado',
-        pattern,
-        keysRemoved: removed,
-        correlationId: req.id,
-      });
-    });
-  }
+}
 
   private setupSwaggerDocs(): void {
     // Serve Swagger UI
