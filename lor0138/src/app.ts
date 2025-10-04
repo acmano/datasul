@@ -8,7 +8,7 @@ import swaggerUi from 'swagger-ui-express';
 import { rateLimit } from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
 
-// ✅ CORRIGIDO: Import correto do logger
+// ✅ Import correto do logger
 import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
 import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
@@ -123,41 +123,11 @@ export class App {
       informacoesGeraisRoutes
     );
 
-    // Rota raiz
-    this.app.get('/', (req: Request, res: Response) => {
-      res.json({
-        message: 'Datasul API',
-        version: '1.0.0',
-        documentation: '/api-docs',
-        health: '/health',
-        endpoints: {
-          informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
-        },
-        requestId: req.id
-      });
-    });
+    // Rota raiz com documentação
+    this.setupRootRoute();
 
     // 404 - Rota não encontrada
-    this.app.use((req: Request, res: Response) => {
-      log.warn('Rota não encontrada', {
-        requestId: req.id,
-        method: req.method,
-        url: req.url
-      });
-      
-      res.status(404).json({
-        error: 'Rota não encontrada',
-        message: `A rota ${req.method} ${req.url} não existe`,
-        timestamp: new Date().toISOString(),
-        path: req.url,
-        requestId: req.id,
-        availableRoutes: {
-          documentation: '/api-docs',
-          health: '/health',
-          api: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
-        }
-      });
-    });
+    this.setup404Handler();
   }
 
   private setupHealthCheck(): void {
@@ -165,32 +135,84 @@ export class App {
      * @openapi
      * /health:
      *   get:
-     *     tags:
-     *       - Health
-     *     summary: Verifica saúde da aplicação
+     *     summary: Health Check do Sistema
      *     description: |
-     *       Retorna informações sobre o status da aplicação, incluindo:
+     *       Verifica o status de saúde do sistema, incluindo:
      *       - Status geral (healthy/degraded/unhealthy)
      *       - Conectividade com banco de dados
      *       - Tempo de resposta do banco
-     *       - Uso de memória
-     *       - Tempo de atividade
+     *       - Uso de memória da aplicação
+     *       - Tempo de atividade (uptime)
+     *       
+     *       **Status possíveis:**
+     *       - `healthy`: Sistema operacional (DB < 100ms)
+     *       - `degraded`: Sistema lento (DB >= 100ms)
+     *       - `unhealthy`: Sistema com falhas (DB não conectado)
+     *     tags:
+     *       - Health
      *     responses:
      *       200:
-     *         description: Aplicação saudável
+     *         description: Sistema saudável ou degradado
      *         content:
      *           application/json:
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
+     *             examples:
+     *               healthy:
+     *                 summary: Sistema saudável
+     *                 value:
+     *                   status: 'healthy'
+     *                   timestamp: '2025-01-04T14:30:00.000Z'
+     *                   uptime: 3600
+     *                   database:
+     *                     connected: true
+     *                     responseTime: 45
+     *                     status: 'healthy'
+     *                     type: 'sqlserver'
+     *                   memory:
+     *                     used: 125.50
+     *                     total: 256.00
+     *                     percentage: 49.02
+     *                   requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+     *               degraded:
+     *                 summary: Sistema degradado (lento)
+     *                 value:
+     *                   status: 'degraded'
+     *                   timestamp: '2025-01-04T14:30:00.000Z'
+     *                   uptime: 3600
+     *                   database:
+     *                     connected: true
+     *                     responseTime: 250
+     *                     status: 'degraded'
+     *                     type: 'sqlserver'
+     *                   memory:
+     *                     used: 180.75
+     *                     total: 256.00
+     *                     percentage: 70.61
+     *                   requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
      *       503:
-     *         description: Aplicação com problemas
+     *         description: Sistema não saudável
      *         content:
      *           application/json:
      *             schema:
      *               $ref: '#/components/schemas/HealthCheck'
+     *             example:
+     *               status: 'unhealthy'
+     *               timestamp: '2025-01-04T14:30:00.000Z'
+     *               uptime: 3600
+     *               database:
+     *                 connected: false
+     *                 responseTime: 0
+     *                 status: 'unhealthy'
+     *                 type: 'sqlserver'
+     *               memory:
+     *                 used: 125.50
+     *                 total: 256.00
+     *                 percentage: 49.02
+     *               requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
      */
     this.app.get('/health', async (req: Request, res: Response) => {
-      // ✅ CORRIGIDO: Usa métodos estáticos do DatabaseManager
+      // ✅ Usa métodos estáticos do DatabaseManager
       const { DatabaseManager } = await import('./infrastructure/database/DatabaseManager');
       
       const startTime = Date.now();
@@ -199,7 +221,7 @@ export class App {
       let dbConnected = false;
 
       try {
-        // ✅ CORRIGIDO: Usa queryEmp ao invés de getConnection
+        // ✅ Usa queryEmp ao invés de getConnection
         await DatabaseManager.queryEmp('SELECT 1 as test');
         dbResponseTime = Date.now() - startTime;
         dbConnected = true;
@@ -262,6 +284,66 @@ export class App {
     });
 
     log.info('📚 Documentação Swagger disponível em /api-docs');
+  }
+
+  private setupRootRoute(): void {
+    /**
+     * @openapi
+     * /:
+     *   get:
+     *     summary: Informações da API
+     *     description: Retorna informações básicas sobre a API e links úteis para navegação
+     *     tags:
+     *       - Health
+     *     responses:
+     *       200:
+     *         description: Informações da API
+     *         content:
+     *           application/json:
+     *             example:
+     *               message: 'Datasul API'
+     *               version: '1.0.0'
+     *               documentation: '/api-docs'
+     *               health: '/health'
+     *               endpoints:
+     *                 informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
+     *               requestId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890'
+     */
+    this.app.get('/', (req: Request, res: Response) => {
+      res.json({
+        message: 'Datasul API',
+        version: '1.0.0',
+        documentation: '/api-docs',
+        health: '/health',
+        endpoints: {
+          informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
+        },
+        requestId: req.id
+      });
+    });
+  }
+
+  private setup404Handler(): void {
+    this.app.use((req: Request, res: Response) => {
+      log.warn('Rota não encontrada', {
+        requestId: req.id,
+        method: req.method,
+        url: req.url
+      });
+      
+      res.status(404).json({
+        error: 'Rota não encontrada',
+        message: `A rota ${req.method} ${req.url} não existe`,
+        timestamp: new Date().toISOString(),
+        path: req.url,
+        requestId: req.id,
+        availableRoutes: {
+          documentation: '/api-docs',
+          health: '/health',
+          api: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
+        }
+      });
+    });
   }
 
   private setupErrorHandling(): void {
