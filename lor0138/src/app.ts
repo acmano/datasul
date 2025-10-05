@@ -12,6 +12,7 @@ import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middl
 import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { CacheManager } from '@shared/utils/cacheManager';
+import adminRoutes from './api/admin/routes/admin.routes';
 
 // ✅ ÚNICA MUDANÇA: Importar classes de erro do sistema unificado
 import { AppError } from '@shared/errors';
@@ -122,6 +123,8 @@ export class App {
 
     // Documentação Swagger
     this.setupSwaggerDocs();
+
+    this.setupAdminRoutes()
 
     // Rotas da API
     this.app.use('/api/lor0138/item/dadosCadastrais/informacoesGerais', 
@@ -482,6 +485,12 @@ export class App {
     });
 
     log.info('📚 Documentação Swagger disponível em /api-docs');
+  }
+
+  
+  private setupAdminRoutes(): void {
+    this.app.use('/admin', adminRoutes);
+    log.info('🔑 Rotas de administração disponíveis em /admin');
   }
 
   private setupRootRoute(): void {

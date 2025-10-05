@@ -1,7 +1,8 @@
 // src/api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes.ts
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { itemLimiter } from '@shared/middlewares/rateLimiter.middleware';
+import { optionalApiKeyAuth } from '@shared/middlewares/apiKeyAuth.middleware';
+import { userRateLimit } from '@shared/middlewares/userRateLimit.middleware';
 import { itemCache } from '@shared/middlewares/cachePresets';
 
 const router = Router();
@@ -103,7 +104,11 @@ const router = Router();
  *               error: 'Timeout da requisição'
  *               details: 'A consulta ao banco de dados demorou mais de 30 segundos'
  */
-router.get('/:itemCodigo', itemLimiter, itemCache, async (req: Request, res: Response, next) => {
+router.get('/:itemCodigo', 
+  optionalApiKeyAuth,  // Autentica se tiver API Key
+  userRateLimit,       // Rate limit por usuário/tier
+  itemCache,           // Cache HTTP
+  async (req: Request, res: Response, next: NextFunction) => {
   try {
     // ✅ CORRIGIDO: Nome correto do controller
     const { InformacoesGeraisController } = await import('../controller/informacoesGerais.controller');

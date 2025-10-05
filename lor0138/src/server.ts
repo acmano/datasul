@@ -7,6 +7,7 @@ import { DatabaseManager } from './infrastructure/database/DatabaseManager';
 import { App } from './app';
 import { CacheManager } from '@shared/utils/cacheManager';
 import { configValidator } from '@config/configValidator';
+import { ApiKeyService } from '@shared/services/ApiKeyService';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -18,8 +19,9 @@ dotenv.config();
  * 1. Validação de configurações (Fail Fast)
  * 2. Inicialização do cache (L1/L2)
  * 3. Inicialização do banco de dados
- * 4. Inicialização do Express
- * 5. Setup de Graceful Shutdown
+ * 4. Inicialização do sistema de API Keys
+ * 5. Inicialização do Express
+ * 6. Setup de Graceful Shutdown
  */
 async function startServer(): Promise<void> {
   try {
@@ -87,7 +89,15 @@ async function startServer(): Promise<void> {
     }
 
     // ============================================
-    // 4. Inicializar aplicação Express
+    // 4. Inicializar sistema de API Keys
+    // ============================================
+    log.info('🔑 Inicializando sistema de API Keys...');
+    ApiKeyService.initialize();
+    const apiKeyStats = ApiKeyService.getStats();
+    log.info('✅ API Keys inicializadas', apiKeyStats);
+
+    // ============================================
+    // 5. Inicializar aplicação Express
     // ============================================
     log.info('🌐 Inicializando servidor HTTP...');
     
@@ -108,7 +118,15 @@ async function startServer(): Promise<void> {
         swagger: `http://lor0138.lorenzetti.ibe:${PORT}/api-docs`,
         health: `http://lor0138.lorenzetti.ibe:${PORT}/health`,
         cache: cacheEnabled ? `http://lor0138.lorenzetti.ibe:${PORT}/cache/stats` : 'disabled',
+        admin: `http://lor0138.lorenzetti.ibe:${PORT}/admin/api-keys`,
       });
+
+      // Exibir API Keys de exemplo
+      log.info('🔑 API Keys de exemplo:');
+      log.info('   Free:       free-demo-key-123456');
+      log.info('   Premium:    premium-key-abc123');
+      log.info('   Enterprise: enterprise-key-xyz789');
+      log.info('   Admin:      admin-key-superuser');
 
       // Exibir estatísticas de cache (se habilitado)
       if (cacheEnabled) {
@@ -118,7 +136,7 @@ async function startServer(): Promise<void> {
     });
 
     // ============================================
-    // 5. Setup de Graceful Shutdown
+    // 6. Setup de Graceful Shutdown
     // ============================================
     const shutdownTimeout = parseInt(
       process.env.SHUTDOWN_TIMEOUT || '10000',
@@ -134,7 +152,7 @@ async function startServer(): Promise<void> {
           uptime: process.uptime(),
         });
 
-        // ✅ NOVO: Fechar cache (Redis, se estiver usando)
+        // Fechar cache (Redis, se estiver usando)
         if (cacheEnabled) {
           log.info('💾 Fechando conexões de cache...');
           try {
@@ -147,7 +165,7 @@ async function startServer(): Promise<void> {
           }
         }
 
-        // ✅ NOVO: Fechar banco de dados
+        // Fechar banco de dados
         log.info('🗄️  Fechando conexões do banco de dados...');
         try {
           await DatabaseManager.close();
@@ -173,6 +191,7 @@ async function startServer(): Promise<void> {
     log.info('🎉 Sistema pronto para receber requisições!', {
       cache: cacheEnabled ? cacheStrategy : 'disabled',
       database: dbStatus.mode,
+      apiKeys: apiKeyStats.total,
       port: PORT
     });
 
