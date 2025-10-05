@@ -2,6 +2,7 @@
 
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { QueryParameter } from '@infrastructure/database/types';
+import { QueryCacheService } from '@shared/utils/cache/QueryCacheService';
 
 /**
  * Repository para consultas de Informações Gerais do Item
@@ -9,7 +10,7 @@ import { QueryParameter } from '@infrastructure/database/types';
 export class ItemInformacoesGeraisRepository {
   
   /**
-   * Busca dados mestres do item
+   * Busca dados mestres do item (COM CACHE - TTL: 10 minutos)
    */
   static async getItemMaster(itemCodigo: string): Promise<any | null> {
     try {
@@ -39,7 +40,12 @@ export class ItemInformacoesGeraisRepository {
         { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
       ];
 
-      const result = await DatabaseManager.queryEmpWithParams(query, params);
+      // ✅ Query com cache L1/L2 (TTL: 10 minutos)
+      const result = await QueryCacheService.withItemCache(
+        query,
+        params,
+        async () => DatabaseManager.queryEmpWithParams(query, params)
+      );
       
       return result && result.length > 0 ? result[0] : null;
       
@@ -50,7 +56,7 @@ export class ItemInformacoesGeraisRepository {
   }
 
   /**
-   * Busca estabelecimentos do item
+   * Busca estabelecimentos do item (COM CACHE - TTL: 15 minutos)
    */
   static async getItemEstabelecimentos(itemCodigo: string): Promise<any[]> {
     try {
@@ -87,7 +93,12 @@ export class ItemInformacoesGeraisRepository {
         { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
       ];
 
-      const result = await DatabaseManager.queryEmpWithParams(query, params);
+      // ✅ Query com cache L1/L2 (TTL: 15 minutos)
+      const result = await QueryCacheService.withEstabelecimentoCache(
+        query,
+        params,
+        async () => DatabaseManager.queryEmpWithParams(query, params)
+      );
       
       return result || [];
       
@@ -95,5 +106,16 @@ export class ItemInformacoesGeraisRepository {
       console.error('Erro ao buscar estabelecimentos:', error);
       throw error;
     }
+  }
+
+  /**
+   * Invalida cache do item (chamar após UPDATE/DELETE)
+   */
+  static async invalidateCache(itemCodigo: string): Promise<void> {
+    await QueryCacheService.invalidateMultiple([
+      'item:*',
+      'estabelecimento:*'
+    ]);
+    console.log('Cache invalidado para item:', itemCodigo);
   }
 }
