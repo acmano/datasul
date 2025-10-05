@@ -13,6 +13,8 @@ import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informac
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { CacheManager } from '@shared/utils/cacheManager';
 
+// ✅ ÚNICA MUDANÇA: Importar classes de erro do sistema unificado
+import { AppError } from '@shared/errors';
 
 export class App {
   public app: Application;
@@ -255,10 +257,6 @@ export class App {
     }
   });
  }
-
-  // src/app.ts - Adicionar estas rotas no setupRoutes()
-
-// Adicionar no método setupRoutes(), após setupHealthCheck()
 
   private setupCacheRoutes(): void {
     /**
@@ -563,16 +561,8 @@ export class App {
   }
 
   private setupErrorHandling(): void {
-    // Error handler global - deve ser o ÚLTIMO middleware
-    this.app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-      log.error('Erro não tratado', {
-        correlationId: req.id,
-        error: err.message,
-        stack: err.stack,
-        url: req.url,
-        method: req.method
-      });
-
+    // ✅ MUDANÇA: Error handler melhorado usando AppError
+    this.app.use((err: Error | AppError, req: Request, res: Response, next: NextFunction) => {
       // Timeout error
       if (err.message === 'Response timeout' || req.timedout) {
         return res.status(408).json({
@@ -584,7 +574,53 @@ export class App {
         });
       }
 
-      // Erro genérico
+      // Se for AppError (do sistema unificado), usa statusCode e context
+      if (err instanceof AppError) {
+        const response: any = {
+          error: err.name,
+          message: err.message,
+          timestamp: new Date().toISOString(),
+          path: req.url,
+          correlationId: req.id
+        };
+
+        // Adiciona context como details se existir
+        if (err.context) {
+          response.details = err.context;
+        }
+
+        // Log apropriado
+        if (err.isOperational) {
+          log.warn('Erro operacional', {
+            correlationId: req.id,
+            error: err.name,
+            message: err.message,
+            statusCode: err.statusCode,
+            context: err.context
+          });
+        } else {
+          log.error('Erro crítico', {
+            correlationId: req.id,
+            error: err.name,
+            message: err.message,
+            statusCode: err.statusCode,
+            stack: err.stack,
+            context: err.context
+          });
+        }
+
+        return res.status(err.statusCode).json(response);
+      }
+
+      // Erro genérico não tratado
+      log.error('Erro não tratado', {
+        correlationId: req.id,
+        error: err.message,
+        stack: err.stack,
+        url: req.url,
+        method: req.method
+      });
+
       res.status(500).json({
         error: 'Erro interno',
         message: process.env.NODE_ENV === 'production' 

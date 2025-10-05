@@ -1,76 +1,56 @@
 // src/api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service.ts
 
 import { ItemInformacoesGeraisRepository } from '../repository/informacoesGerais.repository';
-import {
-  ItemInformacoesGerais,
-  ItemInformacoesGeraisEstabelecimento,
-  ItemInformacoesGeraisResponseDTO,
-  ItemEstabQueryResult,
-} from '../types/informacoesGerais.types';
+import { DatabaseError, ItemNotFoundError } from '@shared/errors/CustomErrors';
+import { log } from '@shared/utils/logger';
 
-/**
- * Service para lógica de negócio de Informações Gerais
- */
-export class ItemInformacoesGeraisService {
-  /**
-   * Busca informações gerais do item
-   */
-  static async getItemInformacoesGerais(
-    itemCodigo: string
-  ): Promise<ItemInformacoesGeraisResponseDTO> {
+export class InformacoesGeraisService {
+  
+  static async getInformacoesGerais(itemCodigo: string): Promise<any | null> {
     try {
-      // Busca dados mestres
-      const itemMaster = await ItemInformacoesGeraisRepository.getItemMaster(itemCodigo);
-
-      if (!itemMaster) {
-        return {
-          success: false,
-          error: 'Item não encontrado',
-        };
+      // Buscar dados do item
+      const itemData = await ItemInformacoesGeraisRepository.getItemMaster(itemCodigo);
+      
+      // Se não encontrou o item
+      if (!itemData) {
+        log.info('Item não encontrado', { itemCodigo });
+        throw new ItemNotFoundError(itemCodigo);
       }
 
-      // Busca estabelecimentos
-      const estabelecimentos = await ItemInformacoesGeraisRepository.getItemEstabelecimentos(
-        itemCodigo
-      );
+      // Buscar estabelecimentos
+      const estabelecimentos = await ItemInformacoesGeraisRepository.getItemEstabelecimentos(itemCodigo);
 
-      // Transforma dados
-      const itemInformacoesGerais: ItemInformacoesGerais = {
-        identificacaoItemCodigo: itemMaster.itemCodigo,
-        identificacaoItemDescricao: itemMaster.itemDescricao,
-        identificacaoItemUnidade: itemMaster.itemUnidade,
-        identificacaoItensEstabelecimentos: estabelecimentos.map((estab) =>
-          this.mapEstabelecimento(estab)
-        ),
+      // Montar resposta
+      const response = {
+        identificacaoItemCodigo: itemData.itemCodigo,
+        identificacaoItemDescricao: itemData.itemDescricao,
+        identificacaoItemUnidade: itemData.itemUnidade,
+        identificacaoItensEstabelecimentos: estabelecimentos.map(estab => ({
+          itemCodigo: estab.itemCodigo,
+          estabCodigo: estab.estabCodigo,
+          estabNome: estab.estabNome,
+          statusIndex: estab.codObsoleto === 0 ? 1 : 2,
+        })),
       };
 
-      return {
-        success: true,
-        data: itemInformacoesGerais,
-      };
-    } catch (error) {
-      // Loga erro completo no servidor
-      console.error('Erro no service de informações gerais:', error);
+      return response;
       
-      // Retorna mensagem genérica ao usuário
-      return {
-        success: false,
-        error: 'Erro ao buscar informações do item. Tente novamente.',
-      };
-    }
-  }
+    } catch (error) {
+      // Se já é erro customizado, re-lança
+      if (error instanceof ItemNotFoundError) {
+        throw error;
+      }
 
-  /**
-   * Mapeia dados de estabelecimento do banco para o DTO
-   */
-  private static mapEstabelecimento(
-    estab: ItemEstabQueryResult
-  ): ItemInformacoesGeraisEstabelecimento {
-    return {
-      itemCodigo: estab.itemCodigo,
-      estabCodigo: estab.estabCodigo,
-      estabNome: estab.estabNome,
-      statusIndex: estab.codObsoleto,
-    };
+      // Se for erro de banco, converte para DatabaseError
+      log.error('Erro ao buscar informações gerais', {
+        itemCodigo,
+        error: error instanceof Error ? error.message : 'Erro desconhecido',
+      });
+
+      throw new DatabaseError(
+        'Falha ao buscar informações do item',
+        error instanceof Error ? error : undefined
+      );
+    }
   }
 }

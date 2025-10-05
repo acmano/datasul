@@ -1,6 +1,6 @@
 // src/api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes.ts
 
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { itemLimiter } from '@shared/middlewares/rateLimiter.middleware';
 import { itemCache } from '@shared/middlewares/cachePresets';
 
@@ -103,13 +103,13 @@ const router = Router();
  *               error: 'Timeout da requisição'
  *               details: 'A consulta ao banco de dados demorou mais de 30 segundos'
  */
-router.get('/:itemCodigo', itemLimiter, itemCache, async (req: Request, res: Response) => {
+router.get('/:itemCodigo', itemLimiter, itemCache, async (req: Request, res: Response, next) => {
   try {
-    // Importação dinâmica para evitar problemas de circular dependency
-    const { ItemInformacoesGeraisController } = await import('../controller/informacoesGerais.controller');
+    // ✅ CORRIGIDO: Nome correto do controller
+    const { InformacoesGeraisController } = await import('../controller/informacoesGerais.controller');
     
-    // Chama o método do controller
-    await ItemInformacoesGeraisController.getItemInformacoesGerais(req, res);
+    // ✅ CORRIGIDO: Passa req, res, next (3 parâmetros)
+    await InformacoesGeraisController.getInformacoesGerais(req, res, next);
   } catch (error) {
     console.error('Erro ao carregar controller:', error);
     res.status(500).json({

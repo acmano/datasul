@@ -1,50 +1,72 @@
 // src/api/lor0138/item/dadosCadastrais/informacoesGerais/controller/informacoesGerais.controller.ts
 
-import { Request, Response } from 'express';
-import { ItemInformacoesGeraisService } from '../service/informacoesGerais.service';
-import { validateItemInformacoesGeraisRequest } from '../validators/informacoesGerais.validators';
+import { Request, Response, NextFunction } from 'express';
+import { InformacoesGeraisService } from '../service/informacoesGerais.service';
+import { ItemNotFoundError, ValidationError } from '@shared/errors/CustomErrors';
+import { asyncHandler } from '@shared/middlewares/errorHandler.middleware';
 
-/**
- * Controller para endpoints de Informações Gerais
- */
-export class ItemInformacoesGeraisController {
+export class InformacoesGeraisController {
+  
   /**
-   * GET /api/lor0138/item/:itemCodigo/dados-cadastrais/informacoes-gerais
-   * Busca informações gerais de um item
+   * GET /api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo
    */
-  static async getItemInformacoesGerais(req: Request, res: Response): Promise<void> {
-    try {
-      // Valida parâmetros
-      const validation = validateItemInformacoesGeraisRequest({
-        itemCodigo: req.params.itemCodigo,
-      });
+  static getInformacoesGerais = asyncHandler(
+    async (req: Request, res: Response, next: NextFunction) => {
+      const { itemCodigo } = req.params;
 
-      if (!validation.valid) {
-        res.status(400).json({
-          success: false,
-          error: validation.error,
+      // Validação
+      if (!itemCodigo || itemCodigo.trim() === '') {
+        throw new ValidationError('Código do item é obrigatório', {
+          itemCodigo: 'Campo vazio ou ausente'
         });
-        return;
       }
 
-      // Busca dados
-      const result = await ItemInformacoesGeraisService.getItemInformacoesGerais(
-        validation.data!.itemCodigo
-      );
-
-      // Retorna resposta
-      if (result.success) {
-        res.status(200).json(result);
-      } else {
-        const statusCode = result.error === 'Item não encontrado' ? 404 : 500;
-        res.status(statusCode).json(result);
+      if (itemCodigo.length > 16) {
+        throw new ValidationError('Código do item inválido', {
+          itemCodigo: 'Máximo de 16 caracteres'
+        });
       }
-    } catch (error) {
-      console.error('Erro no controller:', error);
-      res.status(500).json({
-        success: false,
-        error: 'Erro interno do servidor',
+
+      // Buscar dados
+      const result = await InformacoesGeraisService.getInformacoesGerais(itemCodigo);
+
+      // Se não encontrou, lançar erro específico
+      if (!result) {
+        throw new ItemNotFoundError(itemCodigo);
+      }
+
+      // Sucesso
+      res.json({
+        success: true,
+        data: result,
       });
+    }
+  );
+}
+
+// Exemplo de controller SEM asyncHandler (forma antiga)
+export class InformacoesGeraisControllerOld {
+  
+  static async getInformacoesGerais(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { itemCodigo } = req.params;
+
+      if (!itemCodigo || itemCodigo.trim() === '') {
+        throw new ValidationError('Código do item é obrigatório');
+      }
+
+      const result = await InformacoesGeraisService.getInformacoesGerais(itemCodigo);
+
+      if (!result) {
+        throw new ItemNotFoundError(itemCodigo);
+      }
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error); // Importante: passar erro para o middleware
     }
   }
 }

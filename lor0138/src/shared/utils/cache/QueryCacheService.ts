@@ -52,12 +52,12 @@ export class QueryCacheService {
     // Tentar buscar do cache
     const cached = await CacheManager.get<T>(cacheKey);
     if (cached !== undefined) {
-      log.debug('Query cache: HIT', { key: cacheKey });
+      log.debug('Query cache: HIT', { key: cacheKey, prefix });
       return cached;
     }
 
     // MISS: executar query
-    log.debug('Query cache: MISS', { key: cacheKey });
+    log.debug('Query cache: MISS', { key: cacheKey, prefix });
     const result = await queryFn();
 
     // Armazenar no cache
@@ -69,13 +69,39 @@ export class QueryCacheService {
   /**
    * Gera chave de cache determinística
    * Hash MD5 de: prefix:sql:params_json
+   * 
+   * ✅ CORRIGIDO: Serializa params corretamente (array ou objeto)
    */
   private static generateCacheKey(sql: string, params: any[], prefix: string): string {
     // Normalizar SQL (remover espaços extras)
     const normalizedSql = sql.replace(/\s+/g, ' ').trim();
 
-    // Serializar params de forma determinística
-    const paramsStr = JSON.stringify(params, Object.keys(params).sort());
+    // ✅ CORREÇÃO: Serializar params de forma determinística
+    // Se for array, mapeia para extrair valores relevantes
+    let paramsStr: string;
+    
+    if (Array.isArray(params)) {
+      // Para array de QueryParameter: [{name, type, value}, ...]
+      const sortedParams = params
+        .map(p => {
+          if (typeof p === 'object' && p !== null) {
+            // Extrai apenas name e value, ordena as chaves
+            return { name: p.name, value: p.value };
+          }
+          return p;
+        })
+        .sort((a, b) => {
+          // Ordena por name se existir
+          const nameA = a?.name || '';
+          const nameB = b?.name || '';
+          return nameA.localeCompare(nameB);
+        });
+      
+      paramsStr = JSON.stringify(sortedParams);
+    } else {
+      // Para objeto simples
+      paramsStr = JSON.stringify(params, Object.keys(params).sort());
+    }
 
     // Gerar hash
     const hash = crypto
