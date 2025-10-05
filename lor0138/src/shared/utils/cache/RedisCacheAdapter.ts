@@ -1,6 +1,7 @@
 // src/shared/utils/cache/RedisCacheAdapter.ts
 
 import Redis from 'ioredis';
+import type { RedisOptions } from 'ioredis';
 import { CacheAdapter } from './CacheAdapter';
 import { log } from '../logger';
 
@@ -15,7 +16,7 @@ export class RedisCacheAdapter implements CacheAdapter {
   private name: string;
   private ready: boolean = false;
 
-  constructor(urlOrOptions: string | Redis.RedisOptions, name: string = 'L2-Redis') {
+  constructor(urlOrOptions: string | RedisOptions, name: string = 'L2-Redis') {
     this.name = name;
 
     // Aceita URL ou objeto de configuração

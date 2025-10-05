@@ -3,10 +3,10 @@
 import dotenv from 'dotenv';
 import { log } from '@shared/utils/logger';
 import { setupGracefulShutdown } from '@shared/utils/gracefulShutdown';
-import { ConfigValidator } from './config/configValidator';
 import { DatabaseManager } from './infrastructure/database/DatabaseManager';
 import { App } from './app';
 import { CacheManager } from '@shared/utils/cacheManager';
+import { configValidator } from '@config/configValidator';
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -29,7 +29,7 @@ async function startServer(): Promise<void> {
     // 1. Validar configurações do .env
     // ============================================
     log.info('📋 Validando configurações...');
-    ConfigValidator.validate();
+    configValidator.validate();
     log.info('✅ Configurações válidas');
 
     // ============================================

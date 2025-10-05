@@ -489,3 +489,16 @@ git commit -m "backup antes de mudanças em X"
 
 **Última atualização:** 2025-01-04  
 **Mantenedor:** Projeto LOR0138
+
+
+## 📄 Histórico de Mudanças Críticas
+
+### 2025-10-04 - Unificação de Configuração
+- **PROBLEMA:** 3 arquivos de config duplicados, parseTimeout inconsistente
+- **SOLUÇÃO:** Unificado em env.config.ts com parseTimeout robusto
+- **BENEFÍCIOS:** 
+  - Aceita '500s', '500000', '500000ms', '5m'
+  - parseTimeout() usado em TODOS os timeouts
+  - 1 único ponto de configuração
+- **ARQUIVOS:** env.config.ts, sqlServerConfig.ts
+

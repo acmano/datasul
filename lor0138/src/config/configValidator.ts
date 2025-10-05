@@ -1,230 +1,219 @@
 // src/config/configValidator.ts
 
-import { envConfig } from './env.config';
+import { config } from './env.config';
+import { log } from '@shared/utils/logger';
 
 /**
- * Resultado da validação
- */
-interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-  warnings: string[];
-}
-
-/**
- * Valida configurações críticas na startup
- * Impede que a aplicação inicie com configurações inválidas
+ * Valida configurações obrigatórias
+ * Fail-fast: Se configuração inválida, app não deve iniciar
  */
 export class ConfigValidator {
-  /**
-   * Valida TODAS as configurações
-   * Falha rápido se houver erros críticos
-   */
-  static validate(): ValidationResult {
-    const errors: string[] = [];
-    const warnings: string[] = [];
+  private errors: string[] = [];
 
-    // Valida cada categoria
-    this.validateServer(errors, warnings);
-    this.validateDatabase(errors, warnings);
-    this.validateCORS(errors, warnings);
-    this.validateTimeouts(errors, warnings);
+  validate(): void {
+    this.validateServer();
+    this.validateDatabase();
+    this.validateCors();
+    this.validateTimeouts();
+    this.validateRetry();
 
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
-    };
-  }
-
-  /**
-   * Valida configurações do servidor
-   */
-  private static validateServer(errors: string[], warnings: string[]): void {
-    // Porta
-    if (!envConfig.port || envConfig.port < 1 || envConfig.port > 65535) {
-      errors.push(`PORT inválida: ${envConfig.port}. Deve estar entre 1 e 65535.`);
+    if (this.errors.length > 0) {
+      this.logErrors();
+      throw new Error(`❌ Configuração inválida. Corrija os erros no .env`);
     }
 
-    // Node Environment
+    this.logSuccess();
+  }
+
+  private validateServer(): void {
+    // Port
+    if (!config.server.port || config.server.port < 1 || config.server.port > 65535) {
+      this.errors.push(`PORT inválida: ${config.server.port}. Deve estar entre 1 e 65535.`);
+    }
+
+    // Node ENV
     const validEnvs = ['development', 'production', 'test'];
-    if (!validEnvs.includes(envConfig.nodeEnv)) {
-      warnings.push(
-        `NODE_ENV inválido: "${envConfig.nodeEnv}". Valores válidos: ${validEnvs.join(', ')}`
+    if (!validEnvs.includes(config.server.nodeEnv)) {
+      this.errors.push(
+        `NODE_ENV inválido: "${config.server.nodeEnv}". Valores válidos: ${validEnvs.join(', ')}`
       );
     }
 
     // API Prefix
-    if (!envConfig.apiPrefix || !envConfig.apiPrefix.startsWith('/')) {
-      errors.push(`API_PREFIX deve começar com "/". Atual: "${envConfig.apiPrefix}"`);
+    if (!config.server.apiPrefix || !config.server.apiPrefix.startsWith('/')) {
+      this.errors.push(`API_PREFIX deve começar com "/". Atual: "${config.server.apiPrefix}"`);
     }
   }
 
-  /**
-   * Valida configurações do banco de dados
-   */
-  private static validateDatabase(errors: string[], warnings: string[]): void {
-    const { database } = envConfig;
+  private validateDatabase(): void {
+    const { database } = config;
 
-    // Tipo de conexão
-    if (database.connectionType !== 'sqlserver' && database.connectionType !== 'odbc') {
-      errors.push(
-        `DB_CONNECTION_TYPE inválido: "${database.connectionType}". Use "sqlserver" ou "odbc".`
+    // Connection Type
+    if (database.type !== 'sqlserver' && database.type !== 'odbc') {
+      this.errors.push(
+        `DB_CONNECTION_TYPE inválido: "${database.type}". Use "sqlserver" ou "odbc".`
       );
     }
 
-    // Mock data warning
-    if (database.useMockData) {
-      warnings.push('⚠️  USE_MOCK_DATA=true - Usando dados falsos! Não use em produção.');
+    // SQL Server validations
+    if (database.type === 'sqlserver' && !database.useMockData) {
+      this.validateSqlServer();
     }
 
-    // Validação SQL Server
-    if (database.connectionType === 'sqlserver' && !database.useMockData) {
-      if (!database.sqlServer.server || database.sqlServer.server === 'localhost') {
-        warnings.push('DB_SERVER está como "localhost" - use IP real em produção.');
-      }
+    // ODBC validations
+    if (database.type === 'odbc' && !database.useMockData) {
+      this.validateOdbc();
+    }
+  }
 
-      if (!database.sqlServer.user) {
-        errors.push('DB_USER não configurado.');
-      }
+  private validateSqlServer(): void {
+    const { sqlServer } = config.database;
 
-      if (!database.sqlServer.password) {
-        errors.push('DB_PASSWORD não configurado.');
-      }
+    if (!sqlServer.server) {
+      this.errors.push('DB_SERVER é obrigatório para SQL Server');
+    }
 
-      if (!database.sqlServer.databaseEmp) {
-        errors.push('DB_NAME_EMP não configurado.');
-      }
+    if (!sqlServer.port || sqlServer.port < 1 || sqlServer.port > 65535) {
+      this.errors.push(`DB_PORT inválida: ${sqlServer.port}`);
+    }
 
-      if (!database.sqlServer.databaseMult) {
-        errors.push('DB_NAME_MULT não configurado.');
-      }
+    if (!sqlServer.user) {
+      this.errors.push('DB_USER é obrigatório para SQL Server');
+    }
 
-      // Timeouts
-      if (database.sqlServer.connectionTimeout < 5000) {
-        warnings.push(
-          `DB_CONNECTION_TIMEOUT muito baixo (${database.sqlServer.connectionTimeout}ms). Recomendado: >= 10000ms`
+    if (!sqlServer.password) {
+      this.errors.push('DB_PASSWORD é obrigatório para SQL Server');
+    }
+
+    // Database pode ser vazio (usa default do user)
+    // Não validar databaseEmp e databaseMult
+
+    // Timeouts
+    if (sqlServer.connectionTimeout < 1000) {
+      this.errors.push(
+        `DB_CONNECTION_TIMEOUT muito baixo: ${sqlServer.connectionTimeout}ms. Mínimo: 1000ms`
+      );
+    }
+
+    if (sqlServer.requestTimeout < 1000) {
+      this.errors.push(
+        `DB_REQUEST_TIMEOUT muito baixo: ${sqlServer.requestTimeout}ms. Mínimo: 1000ms`
+      );
+    }
+  }
+
+  private validateOdbc(): void {
+    const { odbc } = config.database;
+
+    if (!odbc.dsnEmp) {
+      this.errors.push('ODBC_DSN_EMP é obrigatório para ODBC');
+    }
+
+    if (!odbc.dsnMult) {
+      this.errors.push('ODBC_DSN_MULT é obrigatório para ODBC');
+    }
+
+    if (odbc.connectionTimeout < 1000) {
+      this.errors.push(
+        `ODBC_CONNECTION_TIMEOUT muito baixo: ${odbc.connectionTimeout}ms. Mínimo: 1000ms`
+      );
+    }
+  }
+
+  private validateCors(): void {
+    if (!config.cors.allowedOrigins || config.cors.allowedOrigins.length === 0) {
+      this.errors.push('CORS_ALLOWED_ORIGINS não pode estar vazio');
+    }
+
+    // Validar formato de URL
+    config.cors.allowedOrigins.forEach(origin => {
+      if (origin !== '*' && !origin.startsWith('http://') && !origin.startsWith('https://')) {
+        this.errors.push(
+          `CORS origin inválido: "${origin}". Deve começar com http:// ou https://`
         );
       }
-
-      if (database.sqlServer.requestTimeout < 10000) {
-        warnings.push(
-          `DB_REQUEST_TIMEOUT muito baixo (${database.sqlServer.requestTimeout}ms). Recomendado: >= 15000ms`
-        );
-      }
-    }
-
-    // Validação ODBC
-    if (database.connectionType === 'odbc' && !database.useMockData) {
-      if (!database.odbc.dsnEmp) {
-        errors.push('ODBC_DSN_EMP não configurado.');
-      }
-
-      if (!database.odbc.dsnMult) {
-        errors.push('ODBC_DSN_MULT não configurado.');
-      }
-    }
+    });
   }
 
-  /**
-   * Valida configurações de CORS
-   */
-  private static validateCORS(errors: string[], _warnings: string[]): void {
-    const { cors } = envConfig;
+  private validateTimeouts(): void {
+    const { timeout } = config;
 
-    if (!cors.allowedOrigins || cors.allowedOrigins.length === 0) {
-      errors.push('CORS_ALLOWED_ORIGINS não configurado. Defina ao menos uma origem permitida.');
-    }
-
-    // Valida formato das origens
-    for (const origin of cors.allowedOrigins) {
-      if (!origin.startsWith('http://') && !origin.startsWith('https://')) {
-        errors.push(`Origem CORS inválida: "${origin}". Deve começar com http:// ou https://`);
-      }
-    }
-  }
-
-  /**
-   * Valida configurações de timeout
-   */
-  private static validateTimeouts(errors: string[], warnings: string[]): void {
-    const { timeout } = envConfig;
-
-    // Timeout de requisição
-    if (timeout.request < 5000) {
-      warnings.push(
-        `HTTP_REQUEST_TIMEOUT muito baixo (${timeout.request}ms). Recomendado: >= 10000ms`
+    if (timeout.request < 1000) {
+      this.errors.push(
+        `HTTP_REQUEST_TIMEOUT muito baixo: ${timeout.request}ms. Mínimo: 1000ms`
       );
     }
 
-    if (timeout.request > 120000) {
-      warnings.push(
-        `HTTP_REQUEST_TIMEOUT muito alto (${timeout.request}ms). Recomendado: <= 60000ms`
+    if (timeout.healthCheck < 100) {
+      this.errors.push(
+        `HTTP_HEALTH_TIMEOUT muito baixo: ${timeout.healthCheck}ms. Mínimo: 100ms`
       );
     }
 
-    // Timeout de operações pesadas
-    if (timeout.heavyOperation < timeout.request) {
-      errors.push(
-        `HTTP_HEAVY_TIMEOUT (${timeout.heavyOperation}ms) deve ser maior que HTTP_REQUEST_TIMEOUT (${timeout.request}ms)`
-      );
-    }
-
-    // Health check timeout
-    if (timeout.healthCheck > 10000) {
-      warnings.push(
-        `HTTP_HEALTH_TIMEOUT muito alto (${timeout.healthCheck}ms). Health checks devem ser rápidos. Recomendado: <= 5000ms`
+    if (timeout.healthCheck > timeout.request) {
+      this.errors.push(
+        `HTTP_HEALTH_TIMEOUT (${timeout.healthCheck}ms) não pode ser maior que HTTP_REQUEST_TIMEOUT (${timeout.request}ms)`
       );
     }
   }
 
-  /**
-   * Valida e exibe resultados
-   * Encerra o processo se houver erros críticos
-   */
-  static validateAndExit(): void {
-    console.log('🔍 Validando configurações...\n');
+  private validateRetry(): void {
+    const { retry } = config.database;
 
-    const result = this.validate();
-
-    // Exibe warnings
-    if (result.warnings.length > 0) {
-      console.log('⚠️  Avisos de Configuração:');
-      result.warnings.forEach((warning) => {
-        console.log(`   - ${warning}`);
-      });
-      console.log('');
+    if (retry.maxAttempts < 1) {
+      this.errors.push(
+        `DB_RETRY_MAX_ATTEMPTS deve ser >= 1. Atual: ${retry.maxAttempts}`
+      );
     }
 
-    // Exibe erros
-    if (result.errors.length > 0) {
-      console.error('❌ Erros de Configuração:');
-      result.errors.forEach((error) => {
-        console.error(`   - ${error}`);
-      });
-      console.error('\n💡 Corrija as configurações no arquivo .env e tente novamente.\n');
-      process.exit(1); // Encerra o processo com código de erro
+    if (retry.maxAttempts > 10) {
+      this.errors.push(
+        `DB_RETRY_MAX_ATTEMPTS muito alto: ${retry.maxAttempts}. Máximo recomendado: 10`
+      );
     }
 
-    console.log('✅ Configurações válidas!\n');
+    if (retry.initialDelay < 100) {
+      this.errors.push(
+        `DB_RETRY_INITIAL_DELAY muito baixo: ${retry.initialDelay}ms. Mínimo: 100ms`
+      );
+    }
+
+    if (retry.maxDelay < retry.initialDelay) {
+      this.errors.push(
+        `DB_RETRY_MAX_DELAY (${retry.maxDelay}ms) deve ser >= DB_RETRY_INITIAL_DELAY (${retry.initialDelay}ms)`
+      );
+    }
+
+    if (retry.backoffFactor < 1) {
+      this.errors.push(
+        `DB_RETRY_BACKOFF_FACTOR deve ser >= 1. Atual: ${retry.backoffFactor}`
+      );
+    }
   }
 
-  /**
-   * Exibe resumo das configurações atuais
-   */
-  static printSummary(): void {
-    console.log('📋 Resumo das Configurações:');
-    console.log(`   Ambiente: ${envConfig.nodeEnv}`);
-    console.log(`   Porta: ${envConfig.port}`);
-    console.log(`   API Prefix: ${envConfig.apiPrefix}`);
-    console.log(`   Banco: ${envConfig.database.connectionType.toUpperCase()}`);
-    console.log(`   Mock Data: ${envConfig.database.useMockData ? 'SIM' : 'NÃO'}`);
-    console.log(
-      `   Timeout Request: ${envConfig.timeout.request}ms (${envConfig.timeout.request / 1000}s)`
-    );
-    console.log(
-      `   CORS Origins: ${envConfig.cors.allowedOrigins.length} configurada(s)`
-    );
-    console.log('');
+  private logErrors(): void {
+    console.error('\n❌ ERROS DE CONFIGURAÇÃO:\n');
+    this.errors.forEach((error, index) => {
+      console.error(`   ${index + 1}. ${error}`);
+    });
+    console.error('\n');
+  }
+
+  private logSuccess(): void {
+    log.info('✅ Configurações válidas');
+    
+    if (config.server.nodeEnv === 'development') {
+      console.log('\n📋 Configuração Atual:');
+      console.log(`   Ambiente: ${config.server.nodeEnv}`);
+      console.log(`   Porta: ${config.server.port}`);
+      console.log(`   API Prefix: ${config.server.apiPrefix}`);
+      console.log(`   Banco: ${config.database.type.toUpperCase()}`);
+      console.log(`   Mock Data: ${config.database.useMockData ? 'SIM' : 'NÃO'}`);
+      console.log(`   Cache: ${config.cache.strategy} (${config.cache.enabled ? 'habilitado' : 'desabilitado'})`);
+      console.log(`   Retry: ${config.database.retry.maxAttempts} tentativas\n`);
+    }
   }
 }
+
+// Export singleton instance
+export const configValidator = new ConfigValidator();

@@ -87,6 +87,14 @@ export const config = {
       dsnMult: process.env.ODBC_DSN_MULT || '',
       connectionTimeout: parseTimeout(process.env.ODBC_CONNECTION_TIMEOUT, 15000),
     },
+
+    // Retry
+    retry: {
+      maxAttempts: parseInt(process.env.DB_RETRY_MAX_ATTEMPTS || '3', 10),
+      initialDelay: parseTimeout(process.env.DB_RETRY_INITIAL_DELAY, 1000),
+      maxDelay: parseTimeout(process.env.DB_RETRY_MAX_DELAY, 10000),
+      backoffFactor: parseFloat(process.env.DB_RETRY_BACKOFF_FACTOR || '2'),
+    },
   },
 
   // ==================== CORS ====================

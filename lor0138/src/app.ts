@@ -40,7 +40,7 @@ export class App {
       req.startTime = Date.now();
 
       res.on('finish', () => {
-        const duration = Date.now() - req.startTime;
+        const duration = Date.now() - ( req.startTime || 0 );
         
         log.info('HTTP Request', {
           correlationId: req.id,

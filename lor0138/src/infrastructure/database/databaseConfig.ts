@@ -135,7 +135,7 @@ export class DatabaseManager {
       const result = await this.odbcPoolEmp.query(
         'SELECT CURRENT_TIMESTAMP as data FROM pub.sysprogress WHERE rownum = 1'
       );
-      console.log('Teste conexao OK:', result[0]?.data);
+      console.log('Teste conexao OK:', result?.[0]);
     } catch (error) {
       console.error('Erro ao conectar ODBC:', error);
       throw error;

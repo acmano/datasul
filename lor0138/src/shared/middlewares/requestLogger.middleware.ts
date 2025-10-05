@@ -2,14 +2,14 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { log } from '../utils/logger'; // ✅ CORRIGIDO: path relativo
+import { log } from '../utils/logger';
 
-// Estende o Request do Express para incluir requestId
+// Estende o Request do Express para incluir requestId e startTime
 declare global {
   namespace Express {
     interface Request {
       requestId: string;
-      startTime: number;
+      startTime?: number; // ✅ CORRIGIDO: opcional para evitar conflito
     }
   }
 }
@@ -37,7 +37,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction) {
   // Intercepta o fim da resposta para logar
   const originalSend = res.send;
   res.send = function (data: any): Response {
-    const duration = Date.now() - req.startTime;
+    const duration = Date.now() - (req.startTime || 0);
     
     // Loga resposta
     const logLevel = res.statusCode >= 400 ? 'warn' : 'http';
