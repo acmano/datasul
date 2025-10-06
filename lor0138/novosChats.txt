@@ -4,9 +4,11 @@ Pontos críticos (ver ARCHITECTURE.md):
 - Timeouts devem ser em ms puros (30000, não '30s')
 - DB_DATABASE_EMP vazio = usa default do SQL user
 - Senha com # precisa aspas simples: DB_PASSWORD='#senha#'
-- Última mudança: Documentação
+- Última mudança: Estávamos tentando o deploy
 
 Última sessão: https://claude.ai/chat/752be8f4-8399-4bdd-a43c-2fe0a9b4b214
+
+Continue de onde parou.
 
 Nenhum chat novo é um início do zero.
 É sempre a continuação de algo anterior.
@@ -29,23 +31,6 @@ A versão do typescript é a 5.9.3
 Parta sempre da interação anterior para acompanhar o desenvolvimento do projeto
 
 A tarefa agora é a seguinte:
-Continuar o trabalho de refatoração e documentação. o último arquivo que você fez foi o DatabaseManager.ts. Prossiga dai. Veja as instruções:
-Você tem, na pasta de artefatos do projteto, todos seus arquivos com todo o código desenvolvido até agora.
-Preciso que o estilo de codificação seja consistente e padronizado em todos os arquivos.
-Estabeleça um padrão, analise arquivo por arquivo e aplique o estilo. Todos os arquivos precisam ter o mesmo estilo.
-Não altere nenhuma funcionalidade.
-Não remova nada, nem os comentários.
-Só refatore.
-E, após a refatoração, documente o código. Arquivo por arquivo.
-Preciso que todos os métodos estejam documentados, com definição, propósito, parâmetros de entrada e parâmetros de saída.
-Pontos críticos dos métodos também devem ser documentados.
-
-Faça um arquivo por vez.
-Siga a estrutura de diretórios.
-A cada um que fizer, me mostre o resultado para que eu o salve em seu devido local.
-
-Durante esse trabalho, você irá acumular conhecimento sobre o projeto para criar sua documentação oficial. Já existem alguns documentos criados na pasta /docs. Avalie-os. Veja sua relevância, mude o que preciar, inclua o que faltar.
-
-Todos os arquivos de código já foram alterados. Agora você está no trabalho de completar a documentação. O último que fez foi DEPLOYMENT.md. Agora ia começar a melhorar o TESTING.md existente. Parta daí.
+Fazer deploy em produção, com CI/CD
 
 Tem alguma dúvida? Preciso lhe fornecer algum artefato?
