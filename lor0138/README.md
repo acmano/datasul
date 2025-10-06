@@ -10,4 +10,4 @@
 - Database: vazio usa default
 
 ## Última Sessão
-https://claude.ai/chat/268b8a9d-7e74-4129-bce5-d3811a0063d3
+https://claude.ai/chat/268b8a9d-7e74-4129-bce5-d3811a0063d3# Deploy automático funcionando
