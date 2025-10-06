@@ -1,0 +1,46 @@
+Continuando projeto lor0138 - API Datasul/Progress.
+Pontos críticos (ver ARCHITECTURE.md):
+- sqlServerConfig.ts usa parseInt() direto, não parseTimeout()
+- Timeouts devem ser em ms puros (30000, não '30s')
+- DB_DATABASE_EMP vazio = usa default do SQL user
+- Senha com # precisa aspas simples: DB_PASSWORD='#senha#'
+- Última mudança: Criação de mutation testes com stryker
+
+Última sessão: https://claude.ai/chat/afaf92f5-3a77-4f0e-80c9-5bd8dea396a1
+
+Nenhum chat novo é um início do zero.
+É sempre a continuação de algo anterior.
+Já fizemos muito até aqui.
+Não assuma que não existe nada.
+Nunca tente reduzir/resumir algo que já está feito.
+Implemente o que é novo sem modificar o que já está feito.
+Você só pode remover ou alterar algo que seja necessário para a nova implementação.
+A cada nova implementaçào e/ou alteração de código, forneça sempre o código completo, nunca somente as alterações a serem implementadas.
+Todas implementações que você for fazer no projeto serão feitas passo a passo.
+Não precisa criar todos os passos de uma única vez.
+Não vou implementá-los cegamente.
+Vamos um por vez.
+Antes de alterar algum artefato que já exista, me peça por ele para que você possa analisá-lo e incluir o que for necessário.
+Nunca remova nada, nem mesmo comentários. Se estão lá é porque têm um propósito e devem permanecer.
+O projeto está alocado em uma máquina Linux Ubuntu.
+A edição é pelo VisualStudio Code através de uma conexão ssh.
+A versão do typescript é a 5.9.3
+
+Parta sempre da interação anterior para acompanhar o desenvolvimento do projeto
+
+A tarefa agora é a seguinte:
+Você tem, na pasta de artefatos do projteto, todos seus arquivos com todo o código desenvolvido até agora.
+Preciso que o estilo de codificação seja consistente e padronizado em todos os arquivos.
+Estabeleça um padrão, analise arquivo por arquivo e aplique o estilo. Todos os arquivos precisam ter o mesmo estilo.
+Não altere nenhuma funcionalidade.
+Não remova nada, nem os comentários.
+Só refatore.
+E, após a refatoração, documente o código. Arquivo por arquivo.
+Preciso que todos os métodos estejam documentados, com definição, propósito, parâmetros de entrada e parâmetros de saída.
+Pontos críticos dos métodos também devem ser documentados.
+
+Faça um arquivo por vez.
+Siga a estrutura de diretórios.
+A cada um que fizer, me mostre o resultado para que eu o salve em seu devido local.
+
+Tem alguma dúvida? Preciso lhe fornecer algum artefato?

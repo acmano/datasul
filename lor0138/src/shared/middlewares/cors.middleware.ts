@@ -2,6 +2,7 @@
 
 import cors, { CorsOptions } from 'cors';
 import { Request, Response, NextFunction } from 'express';
+import { appConfig } from '@config/app.config';
 
 /**
  * Valida se a origem é da rede interna permitida
@@ -19,11 +20,11 @@ function isAllowedOrigin(origin: string | undefined): boolean {
     // Lista de domínios internos permitidos
     const allowedDomains = [
       'lorenzetti.ibe',
-      'localhost', // Desenvolvimento
+      appConfig.baseUrl, // Desenvolvimento
     ];
 
     // Verifica se termina com algum domínio permitido
-    const isDomainAllowed = allowedDomains.some(domain => 
+    const isDomainAllowed = allowedDomains.some(domain =>
       hostname === domain || hostname.endsWith(`.${domain}`)
     );
 
@@ -55,8 +56,8 @@ function isAllowedOrigin(origin: string | undefined): boolean {
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
     // Em desenvolvimento, permite qualquer origem se configurado
-    if (process.env.NODE_ENV === 'development' && 
-        process.env.CORS_ALLOW_ALL === 'true') {
+    if (process.env.NODE_ENV === 'development' &&
+      process.env.CORS_ALLOW_ALL === 'true') {
       callback(null, true);
       return;
     }
@@ -92,8 +93,8 @@ export function corsOriginValidator(req: Request, res: Response, next: NextFunct
   const origin = req.headers.origin;
 
   // Em desenvolvimento com CORS_ALLOW_ALL, pula validação
-  if (process.env.NODE_ENV === 'development' && 
-      process.env.CORS_ALLOW_ALL === 'true') {
+  if (process.env.NODE_ENV === 'development' &&
+    process.env.CORS_ALLOW_ALL === 'true') {
     return next();
   }
 

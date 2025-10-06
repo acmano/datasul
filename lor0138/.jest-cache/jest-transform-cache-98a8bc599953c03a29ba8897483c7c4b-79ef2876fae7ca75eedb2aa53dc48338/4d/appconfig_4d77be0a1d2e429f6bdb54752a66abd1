@@ -1,0 +1,18 @@
+a816a26e244e22e80c079a8c4be7c11d
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.appConfig = void 0;
+// src/config/app.config.ts
+exports.appConfig = {
+    host: process.env.APP_HOST || 'lor0138.lorenzetti.ibe',
+    port: parseInt(process.env.APP_PORT || '3000', 10),
+    url: process.env.APP_URL || 'http://lor0138.lorenzetti.ibe:3000',
+    // Garantir que NUNCA seja localhost
+    get baseUrl() {
+        if (this.url.includes('localhost')) {
+            throw new Error('ERRO: localhost não é permitido. Use lor0138.lorenzetti.ibe');
+        }
+        return this.url;
+    },
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2hvbWUvbWFuby9wcm9qZXRvcy9kYXRhc3VsL2xvcjAxMzgvc3JjL2NvbmZpZy9hcHAuY29uZmlnLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLDJCQUEyQjtBQUNkLFFBQUEsU0FBUyxHQUFHO0lBQ3ZCLElBQUksRUFBRSxPQUFPLENBQUMsR0FBRyxDQUFDLFFBQVEsSUFBSSx3QkFBd0I7SUFDdEQsSUFBSSxFQUFFLFFBQVEsQ0FBQyxPQUFPLENBQUMsR0FBRyxDQUFDLFFBQVEsSUFBSSxNQUFNLEVBQUUsRUFBRSxDQUFDO0lBQ2xELEdBQUcsRUFBRSxPQUFPLENBQUMsR0FBRyxDQUFDLE9BQU8sSUFBSSxvQ0FBb0M7SUFFaEUsb0NBQW9DO0lBQ3BDLElBQUksT0FBTztRQUNULElBQUksSUFBSSxDQUFDLEdBQUcsQ0FBQyxRQUFRLENBQUMsV0FBVyxDQUFDLEVBQUUsQ0FBQztZQUNuQyxNQUFNLElBQUksS0FBSyxDQUFDLDZEQUE2RCxDQUFDLENBQUM7UUFDakYsQ0FBQztRQUNELE9BQU8sSUFBSSxDQUFDLEdBQUcsQ0FBQztJQUNsQixDQUFDO0NBQ0YsQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvaG9tZS9tYW5vL3Byb2pldG9zL2RhdGFzdWwvbG9yMDEzOC9zcmMvY29uZmlnL2FwcC5jb25maWcudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gc3JjL2NvbmZpZy9hcHAuY29uZmlnLnRzXG5leHBvcnQgY29uc3QgYXBwQ29uZmlnID0ge1xuICBob3N0OiBwcm9jZXNzLmVudi5BUFBfSE9TVCB8fCAnbG9yMDEzOC5sb3JlbnpldHRpLmliZScsXG4gIHBvcnQ6IHBhcnNlSW50KHByb2Nlc3MuZW52LkFQUF9QT1JUIHx8ICczMDAwJywgMTApLFxuICB1cmw6IHByb2Nlc3MuZW52LkFQUF9VUkwgfHwgJ2h0dHA6Ly9sb3IwMTM4LmxvcmVuemV0dGkuaWJlOjMwMDAnLFxuXG4gIC8vIEdhcmFudGlyIHF1ZSBOVU5DQSBzZWphIGxvY2FsaG9zdFxuICBnZXQgYmFzZVVybCgpOiBzdHJpbmcge1xuICAgIGlmICh0aGlzLnVybC5pbmNsdWRlcygnbG9jYWxob3N0JykpIHtcbiAgICAgIHRocm93IG5ldyBFcnJvcignRVJSTzogbG9jYWxob3N0IG7Do28gw6kgcGVybWl0aWRvLiBVc2UgbG9yMDEzOC5sb3JlbnpldHRpLmliZScpO1xuICAgIH1cbiAgICByZXR1cm4gdGhpcy51cmw7XG4gIH0sXG59OyJdLCJ2ZXJzaW9uIjozfQ==

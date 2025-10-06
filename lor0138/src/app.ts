@@ -17,11 +17,19 @@ import adminRoutes from './api/admin/routes/admin.routes';
 // ✅ ÚNICA MUDANÇA: Importar classes de erro do sistema unificado
 import { AppError } from '@shared/errors';
 
+// ✅ NOVO: Imports para métricas
+import { metricsMiddleware } from '@shared/middlewares/metrics.middleware';
+import { MetricsManager, metricsManager } from '@infrastructure/metrics/MetricsManager';
+import metricsRoutes from './api/metrics/routes';
+
 export class App {
   public app: Application;
 
   constructor() {
     this.app = express();
+    
+    // ✅ NOVO: Inicializar métricas ANTES dos middlewares
+    this.initializeMetrics();
     
     // Configura middlewares
     this.setupMiddlewares();
@@ -33,11 +41,24 @@ export class App {
     this.setupErrorHandling();
   }
 
+  // ✅ NOVO: Método para inicializar métricas
+  private initializeMetrics(): void {
+    try {
+      MetricsManager.getInstance();
+      log.info('✅ Sistema de métricas inicializado');
+    } catch (error) {
+      log.error('Erro ao inicializar métricas', { error });
+    }
+  }
+
   private setupMiddlewares(): void {
     // ✅ 1. Correlation ID - DEVE ser o PRIMEIRO middleware
     this.app.use(correlationIdMiddleware);
 
-    // 2. Logging de requisições
+    // ✅ NOVO: 2. Métricas - logo após Correlation ID
+    this.app.use(metricsMiddleware);
+
+    // 3. Logging de requisições
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       // ✅ CORREÇÃO 2: Definir startTime
       req.startTime = Date.now();
@@ -58,12 +79,12 @@ export class App {
       next();
     });
 
-    // 3. Security headers
+    // 4. Security headers
     this.app.use(helmet({
       contentSecurityPolicy: false, // Desabilita CSP para Swagger funcionar
     }));
 
-    // 4. CORS
+    // 5. CORS
     this.app.use(cors({
       origin: process.env.CORS_ALLOWED_ORIGINS || '*', // ✅ CORREÇÃO 1: CORS_ALLOWED_ORIGINS
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -71,20 +92,20 @@ export class App {
       exposedHeaders: ['X-Correlation-ID'], // Permite cliente ler o header
     }));
 
-    // 5. Body parser
+    // 6. Body parser
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-    // 6. Compressão de resposta
+    // 7. Compressão de resposta
     this.app.use(compression());
 
-    // 7. Request timeout
+    // 8. Request timeout
     this.app.use(timeout('30s'));
     this.app.use((req: Request, res: Response, next: NextFunction) => {
       if (!req.timedout) next();
     });
 
-    // 8. Rate limiting
+    // 9. Rate limiting
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutos
       max: 100, // limite de 100 requisições por IP
@@ -111,10 +132,22 @@ export class App {
       }
     });
 
-    this.app.use('/api/', limiter);
+    this.app.use('/api/', (req, res, next) => {
+      // Se tem API key admin, pula rate limit
+      const apiKey = req.headers['x-api-key'];
+      if (apiKey === 'admin-key-superuser') {
+        return next();
+      }
+      // Senão, aplica rate limit
+      return limiter(req, res, next);
+    });
+    
   }
 
   private setupRoutes(): void {
+    // ✅ NOVO: Rota de métricas (PRIMEIRO - antes de tudo)
+    this.app.use('/metrics', metricsRoutes);
+
     // Health check
     this.setupHealthCheck();
 
@@ -210,9 +243,21 @@ export class App {
         
         const dbStatus = DatabaseManager.getConnectionStatus();
         dbType = dbStatus.type;
+
+        // ✅ NOVO: Registrar métrica de health check do database
+        metricsManager.healthCheckDuration.observe(
+          { component: 'database' },
+          dbResponseTime / 1000
+        );
+        metricsManager.healthCheckStatus.set(
+          { component: 'database' },
+          dbConnected ? 1 : 0
+        );
       } catch (error) {
         log.error('Health check database error', { error });
         dbConnected = false;
+        // ✅ NOVO: Registrar falha
+        metricsManager.healthCheckStatus.set({ component: 'database' }, 0);
       }
 
       // Verificar cache
@@ -233,6 +278,12 @@ export class App {
       const isHealthy = dbConnected && (!cacheEnabled || cacheReady);
       const statusCode = isHealthy ? 200 : 503;
 
+      // ✅ NOVO: Registrar status geral da API
+      metricsManager.healthCheckStatus.set(
+        { component: 'api' },
+        isHealthy ? 1 : 0
+      );
+
       res.status(statusCode).json({
         status: isHealthy ? 'healthy' : 'unhealthy',
         timestamp: new Date().toISOString(),
@@ -246,11 +297,19 @@ export class App {
           enabled: cacheEnabled,
           strategy: cacheStrategy,
           ready: cacheReady
+        },
+        // ✅ NOVO: Informação sobre métricas
+        metrics: {
+          enabled: metricsManager.isReady(),
+          endpoint: '/metrics'
         }
       });
 
     } catch (error) {
       log.error('Health check fatal error', { error });
+      
+      // ✅ NOVO: Registrar falha total
+      metricsManager.healthCheckStatus.set({ component: 'api' }, 0);
       
       res.status(503).json({
         status: 'unhealthy',
@@ -538,6 +597,7 @@ export class App {
         version: '1.0.0',
         documentation: '/api-docs',
         health: '/health',
+        metrics: '/metrics', // ✅ NOVO
         endpoints: {
           informacoesGerais: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
         },
@@ -563,6 +623,7 @@ export class App {
         availableRoutes: {
           documentation: '/api-docs',
           health: '/health',
+          metrics: '/metrics', // ✅ NOVO
           api: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo'
         }
       });

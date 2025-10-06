@@ -6,6 +6,7 @@ import { MemoryCacheAdapter } from './cache/MemoryCacheAdapter';
 import { RedisCacheAdapter } from './cache/RedisCacheAdapter';
 import { LayeredCacheAdapter } from './cache/LayeredCacheAdapter';
 import { log } from './logger';
+import { appConfig } from '@config/app.config';
 
 /**
  * Gerenciador de cache com suporte a múltiplos backends
@@ -48,10 +49,10 @@ export class CacheManager {
           break;
       }
 
-      log.info('✅ Cache inicializado', { 
-        strategy: this.strategy, 
+      log.info('✅ Cache inicializado', {
+        strategy: this.strategy,
         enabled: this.enabled,
-        ttl 
+        ttl
       });
     } catch (error) {
       log.error('❌ Erro ao inicializar cache', { strategy: this.strategy, error });
@@ -66,17 +67,17 @@ export class CacheManager {
   }
 
   private static initializeRedis(ttl: number): void {
-    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://lor0138.lorenzetti.ibe:6379';
     this.adapter = new RedisCacheAdapter(redisUrl, 'Cache-Redis');
     this.strategy = 'redis';
   }
 
   private static initializeLayered(ttl: number): void {
-    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://localhost:6379';
-    
+    const redisUrl = process.env.CACHE_REDIS_URL || 'redis://lor0138.lorenzetti.ibe:6379';
+
     const l1 = new MemoryCacheAdapter(ttl, 'L1-Memory');
     const l2 = new RedisCacheAdapter(redisUrl, 'L2-Redis');
-    
+
     this.adapter = new LayeredCacheAdapter(l1, l2, 'Cache-Layered');
     this.strategy = 'layered';
   }
@@ -181,7 +182,7 @@ export class CacheManager {
 
     try {
       const keys = await this.adapter.keys(pattern);
-      
+
       if (keys.length === 0) {
         log.debug('Nenhuma chave encontrada para invalidar', { pattern });
         return 0;

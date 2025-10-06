@@ -4,9 +4,10 @@ import { ConnectionType, ConnectionStatus, IConnection, QueryParameter } from '.
 import { SqlServerConnection } from './connections/SqlServerConnection';
 import { OdbcConnection } from './connections/OdbcConnection';
 import { MockConnection } from './connections/MockConnection';
-// ✅ CORRIGIDO: Import do arquivo correto
 import { getSqlServerConfigEmp, getSqlServerConfigMult } from './config/sqlServerConfig';
 import { getOdbcConnectionString } from './config/odbcConfig';
+// ✅ NOVO: Import do helper de métricas
+import { DatabaseMetricsHelper } from '@infrastructure/metrics/helpers/databaseMetrics';
 
 export class DatabaseManager {
   private static instance: DatabaseManager | null = null;
@@ -81,11 +82,21 @@ export class DatabaseManager {
 
       this.useMockData = false;
       this.isInitialized = true;
+
+      // ✅ NOVO: Registrar métricas de conexão bem-sucedida
+      DatabaseMetricsHelper.setActiveConnections('EMP', 1);
+      DatabaseMetricsHelper.setActiveConnections('MULT', 1);
+
       console.log('✅ CONECTADO AO DATASUL');
     } catch (error) {
       this.connectionError = (error as Error).message;
       this.useMockData = true;
       this.isInitialized = true;
+
+      // ✅ NOVO: Registrar erro de conexão nas métricas
+      DatabaseMetricsHelper.recordConnectionError('EMP', error);
+      DatabaseMetricsHelper.recordConnectionError('MULT', error);
+
       console.warn('⚠️ USANDO DADOS MOCK');
       console.error('Erro conexão:', this.connectionError);
     }
@@ -123,6 +134,7 @@ export class DatabaseManager {
 
   /**
    * Query simples EMP (DEPRECATED - Use queryEmpWithParams quando possível)
+   * ✅ COM MÉTRICAS
    */
   static async queryEmp(sql: string): Promise<any> {
     if (this.useMockData) {
@@ -133,11 +145,15 @@ export class DatabaseManager {
       throw new Error('Conexão EMP não inicializada');
     }
 
-    return this.connectionEmp.query(sql);
+    // ✅ NOVO: Instrumentar com métricas
+    return DatabaseMetricsHelper.instrumentQuery('EMP', sql, () =>
+      this.connectionEmp!.query(sql)
+    );
   }
 
   /**
    * Query simples MULT (DEPRECATED - Use queryMultWithParams quando possível)
+   * ✅ COM MÉTRICAS
    */
   static async queryMult(sql: string): Promise<any> {
     if (this.useMockData) {
@@ -148,11 +164,15 @@ export class DatabaseManager {
       throw new Error('Conexão MULT não inicializada');
     }
 
-    return this.connectionMult.query(sql);
+    // ✅ NOVO: Instrumentar com métricas
+    return DatabaseMetricsHelper.instrumentQuery('MULT', sql, () =>
+      this.connectionMult!.query(sql)
+    );
   }
 
   /**
    * Query parametrizada EMP (✅ PROTEGIDO contra SQL Injection)
+   * ✅ COM MÉTRICAS
    */
   static async queryEmpWithParams(sql: string, params: QueryParameter[]): Promise<any> {
     if (this.useMockData) {
@@ -163,11 +183,15 @@ export class DatabaseManager {
       throw new Error('Conexão EMP não inicializada');
     }
 
-    return this.connectionEmp.queryWithParams(sql, params);
+    // ✅ NOVO: Instrumentar com métricas
+    return DatabaseMetricsHelper.instrumentQuery('EMP', sql, () =>
+      this.connectionEmp!.queryWithParams(sql, params)
+    );
   }
 
   /**
    * Query parametrizada MULT (✅ PROTEGIDO contra SQL Injection)
+   * ✅ COM MÉTRICAS
    */
   static async queryMultWithParams(sql: string, params: QueryParameter[]): Promise<any> {
     if (this.useMockData) {
@@ -178,7 +202,10 @@ export class DatabaseManager {
       throw new Error('Conexão MULT não inicializada');
     }
 
-    return this.connectionMult.queryWithParams(sql, params);
+    // ✅ NOVO: Instrumentar com métricas
+    return DatabaseMetricsHelper.instrumentQuery('MULT', sql, () =>
+      this.connectionMult!.queryWithParams(sql, params)
+    );
   }
 
   private static getMockConnection(): IConnection {
@@ -208,6 +235,10 @@ export class DatabaseManager {
     }
 
     await Promise.all(promises);
+
+    // ✅ NOVO: Atualizar métricas de conexão
+    DatabaseMetricsHelper.setActiveConnections('EMP', 0);
+    DatabaseMetricsHelper.setActiveConnections('MULT', 0);
 
     this.connectionEmp = null;
     this.connectionMult = null;

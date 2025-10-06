@@ -8,13 +8,14 @@ import { App } from './app';
 import { CacheManager } from '@shared/utils/cacheManager';
 import { configValidator } from '@config/configValidator';
 import { ApiKeyService } from '@shared/services/ApiKeyService';
+import { appConfig } from '@config/app.config';
 
 // Carregar variáveis de ambiente
 dotenv.config();
 
 /**
  * Inicializa a aplicação
- * 
+ *
  * Ordem de execução:
  * 1. Validação de configurações (Fail Fast)
  * 2. Inicialização do cache (L1/L2)
@@ -38,7 +39,7 @@ async function startServer(): Promise<void> {
     // 2. Inicializar sistema de cache (L1/L2)
     // ============================================
     log.info('💾 Inicializando sistema de cache...');
-    
+
     const cacheStrategy = process.env.CACHE_STRATEGY || 'memory';
     const cacheEnabled = process.env.CACHE_ENABLED !== 'false';
 
@@ -48,7 +49,7 @@ async function startServer(): Promise<void> {
       // Verificar se Redis está pronto (para estratégias redis/layered)
       if (['layered', 'redis'].includes(cacheStrategy)) {
         const isReady = await CacheManager.isReady();
-        
+
         if (isReady) {
           log.info('✅ Cache inicializado', {
             strategy: cacheStrategy,
@@ -74,7 +75,7 @@ async function startServer(): Promise<void> {
     // ============================================
     log.info('🗄️  Inicializando banco de dados...');
     await DatabaseManager.initialize();
-    
+
     const dbStatus = DatabaseManager.getConnectionStatus();
     if (dbStatus.mode === 'MOCK_DATA') {
       log.warn('⚠️  Sistema em modo MOCK_DATA', {
@@ -100,16 +101,16 @@ async function startServer(): Promise<void> {
     // 5. Inicializar aplicação Express
     // ============================================
     log.info('🌐 Inicializando servidor HTTP...');
-    
+
     const app = new App();
     const PORT = parseInt(process.env.PORT || '3000', 10);
     const HOST = process.env.HOST || '0.0.0.0';
 
-    const server = app.getExpressApp().listen(PORT, HOST, () => {
+    const server = app.getExpressApp().listen(appConfig.port, appConfig.host, () => {
       log.info('✅ Servidor HTTP iniciado', {
         port: PORT,
         host: HOST,
-        url: `http://${HOST}:${PORT}`,
+        url: appConfig.baseUrl,
         env: process.env.NODE_ENV || 'development',
         pid: process.pid,
       });
@@ -145,7 +146,7 @@ async function startServer(): Promise<void> {
 
     setupGracefulShutdown(server, {
       timeout: shutdownTimeout,
-      
+
       onShutdownStart: async () => {
         log.info('🛑 Shutdown iniciado', {
           pid: process.pid,

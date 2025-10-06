@@ -1,0 +1,387 @@
+651e66339a705f2ec8824f9d8ab30c69
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.swaggerUiOptions = exports.swaggerSpec = void 0;
+// src/config/swagger.config.ts
+const swagger_jsdoc_1 = __importDefault(require("swagger-jsdoc"));
+const options = {
+    definition: {
+        openapi: '3.0.0',
+        info: {
+            title: 'Datasul API - Documentação',
+            version: '1.0.0',
+            description: `
+        API para centralização de consultas de dados do ERP Totvs Datasul.
+        
+        ## Características
+        - Consulta de dados cadastrais de itens
+        - Suporte a múltiplas bases de dados (SQL Server, ODBC)
+        - Rate limiting e proteção contra ataques
+        - Logs estruturados e rastreamento de requisições
+        
+        ## Autenticação
+        Atualmente a API não requer autenticação. (Implementar em produção!)
+      `,
+            contact: {
+                name: 'Equipe de Desenvolvimento',
+                email: 'dev@empresa.com'
+            },
+            license: {
+                name: 'MIT',
+                url: 'https://opensource.org/licenses/MIT'
+            }
+        },
+        servers: [
+            {
+                url: 'http://localhost:3000',
+                description: 'Servidor de Desenvolvimento'
+            },
+            {
+                url: 'https://api.empresa.com',
+                description: 'Servidor de Produção'
+            }
+        ],
+        tags: [
+            {
+                name: 'Health',
+                description: 'Endpoints de saúde e monitoramento'
+            },
+            {
+                name: 'Itens - Dados Cadastrais',
+                description: 'Informações cadastrais de itens'
+            },
+            {
+                name: 'Itens - Classificações',
+                description: 'Classificações e hierarquias de itens'
+            }
+        ],
+        components: {
+            schemas: {
+                Error: {
+                    type: 'object',
+                    properties: {
+                        error: {
+                            type: 'string',
+                            example: 'Erro ao processar requisição'
+                        },
+                        message: {
+                            type: 'string',
+                            example: 'Detalhes do erro'
+                        },
+                        timestamp: {
+                            type: 'string',
+                            format: 'date-time',
+                            example: '2025-10-04T12:00:00.000Z'
+                        },
+                        path: {
+                            type: 'string',
+                            example: '/api/lor0138/item/123/dados-cadastrais/informacoes-gerais'
+                        },
+                        requestId: {
+                            type: 'string',
+                            format: 'uuid',
+                            example: '550e8400-e29b-41d4-a716-446655440000'
+                        }
+                    }
+                },
+                HealthCheck: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'string',
+                            enum: ['healthy', 'degraded', 'unhealthy'],
+                            example: 'healthy'
+                        },
+                        timestamp: {
+                            type: 'string',
+                            format: 'date-time'
+                        },
+                        uptime: {
+                            type: 'number',
+                            description: 'Tempo de atividade em segundos',
+                            example: 3600
+                        },
+                        database: {
+                            type: 'object',
+                            properties: {
+                                connected: {
+                                    type: 'boolean',
+                                    example: true
+                                },
+                                responseTime: {
+                                    type: 'number',
+                                    description: 'Tempo de resposta em ms',
+                                    example: 15
+                                },
+                                type: {
+                                    type: 'string',
+                                    example: 'SQL Server'
+                                }
+                            }
+                        },
+                        memory: {
+                            type: 'object',
+                            properties: {
+                                used: {
+                                    type: 'number',
+                                    description: 'Memória usada em MB',
+                                    example: 120.5
+                                },
+                                total: {
+                                    type: 'number',
+                                    description: 'Memória total em MB',
+                                    example: 512
+                                },
+                                percentage: {
+                                    type: 'number',
+                                    description: 'Percentual de uso',
+                                    example: 23.5
+                                }
+                            }
+                        }
+                    }
+                },
+                ItemIdentificacao: {
+                    type: 'object',
+                    properties: {
+                        codigo: {
+                            type: 'string',
+                            description: 'Código do item',
+                            example: 'ITEM001',
+                            maxLength: 16
+                        },
+                        descricao: {
+                            type: 'string',
+                            description: 'Descrição completa do item',
+                            example: 'Parafuso M6 x 20mm',
+                            maxLength: 120
+                        },
+                        descricaoReduzida: {
+                            type: 'string',
+                            description: 'Descrição resumida',
+                            example: 'Parafuso M6',
+                            maxLength: 40
+                        },
+                        nomeTecnico: {
+                            type: 'string',
+                            description: 'Nome técnico do produto',
+                            example: 'Parafuso sextavado M6x20',
+                            maxLength: 80
+                        },
+                        dataCadastro: {
+                            type: 'string',
+                            format: 'date',
+                            description: 'Data de cadastro do item',
+                            example: '2025-01-15'
+                        },
+                        situacao: {
+                            type: 'string',
+                            enum: ['Ativo', 'Inativo', 'Bloqueado', 'Obsoleto'],
+                            description: 'Situação atual do item',
+                            example: 'Ativo'
+                        }
+                    },
+                    required: ['codigo', 'descricao']
+                },
+                ItemUnidades: {
+                    type: 'object',
+                    properties: {
+                        unidadeMedidaPrincipal: {
+                            type: 'string',
+                            description: 'Unidade de medida principal',
+                            example: 'PC',
+                            maxLength: 2
+                        },
+                        unidadeMedidaCompra: {
+                            type: 'string',
+                            description: 'Unidade de medida para compras',
+                            example: 'CX',
+                            maxLength: 2
+                        },
+                        unidadeMedidaVenda: {
+                            type: 'string',
+                            description: 'Unidade de medida para vendas',
+                            example: 'UN',
+                            maxLength: 2
+                        },
+                        fatorConversaoCompra: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Fator de conversão UM compra para UM principal',
+                            example: 100
+                        },
+                        fatorConversaoVenda: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Fator de conversão UM venda para UM principal',
+                            example: 1
+                        }
+                    }
+                },
+                ItemCaracteristicasFisicas: {
+                    type: 'object',
+                    properties: {
+                        pesoLiquido: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Peso líquido em kg',
+                            example: 0.025
+                        },
+                        pesoBruto: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Peso bruto em kg',
+                            example: 0.030
+                        },
+                        volume: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Volume em m³',
+                            example: 0.00001
+                        },
+                        altura: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Altura em cm',
+                            example: 2.0
+                        },
+                        largura: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Largura em cm',
+                            example: 0.6
+                        },
+                        comprimento: {
+                            type: 'number',
+                            format: 'float',
+                            description: 'Comprimento em cm',
+                            example: 0.6
+                        }
+                    }
+                },
+                InformacoesGerais: {
+                    type: 'object',
+                    properties: {
+                        identificacao: {
+                            $ref: '#/components/schemas/ItemIdentificacao'
+                        },
+                        unidades: {
+                            $ref: '#/components/schemas/ItemUnidades'
+                        },
+                        caracteristicasFisicas: {
+                            $ref: '#/components/schemas/ItemCaracteristicasFisicas'
+                        }
+                    }
+                }
+            },
+            responses: {
+                BadRequest: {
+                    description: 'Requisição inválida',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            },
+                            example: {
+                                error: 'Validação falhou',
+                                message: 'Código do item é obrigatório',
+                                timestamp: '2025-10-04T12:00:00.000Z',
+                                path: '/api/lor0138/item//dados-cadastrais/informacoes-gerais',
+                                requestId: '550e8400-e29b-41d4-a716-446655440000'
+                            }
+                        }
+                    }
+                },
+                NotFound: {
+                    description: 'Recurso não encontrado',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            },
+                            example: {
+                                error: 'Item não encontrado',
+                                message: 'O item ITEM999 não existe no sistema',
+                                timestamp: '2025-10-04T12:00:00.000Z',
+                                path: '/api/lor0138/item/ITEM999/dados-cadastrais/informacoes-gerais',
+                                requestId: '550e8400-e29b-41d4-a716-446655440000'
+                            }
+                        }
+                    }
+                },
+                InternalError: {
+                    description: 'Erro interno do servidor',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            },
+                            example: {
+                                error: 'Erro interno',
+                                message: 'Erro ao conectar com o banco de dados',
+                                timestamp: '2025-10-04T12:00:00.000Z',
+                                path: '/api/lor0138/item/ITEM001/dados-cadastrais/informacoes-gerais',
+                                requestId: '550e8400-e29b-41d4-a716-446655440000'
+                            }
+                        }
+                    }
+                },
+                TooManyRequests: {
+                    description: 'Limite de requisições excedido',
+                    content: {
+                        'application/json': {
+                            schema: {
+                                $ref: '#/components/schemas/Error'
+                            },
+                            example: {
+                                error: 'Rate limit excedido',
+                                message: 'Muitas requisições. Tente novamente em alguns segundos.',
+                                timestamp: '2025-10-04T12:00:00.000Z',
+                                path: '/api/lor0138/item/ITEM001/dados-cadastrais/informacoes-gerais',
+                                requestId: '550e8400-e29b-41d4-a716-446655440000'
+                            }
+                        }
+                    }
+                }
+            },
+            parameters: {
+                ItemCodigo: {
+                    name: 'itemCodigo',
+                    in: 'path',
+                    required: true,
+                    description: 'Código único do item no sistema',
+                    schema: {
+                        type: 'string',
+                        maxLength: 16,
+                        pattern: '^[A-Z0-9-]+$'
+                    },
+                    example: 'ITEM001'
+                },
+                RequestId: {
+                    name: 'X-Request-ID',
+                    in: 'header',
+                    description: 'ID único para rastreamento da requisição',
+                    schema: {
+                        type: 'string',
+                        format: 'uuid'
+                    }
+                }
+            }
+        }
+    },
+    apis: [
+        './src/api/**/*.routes.ts',
+        './src/api/**/*.controller.ts',
+        './src/server.ts'
+    ]
+};
+exports.swaggerSpec = (0, swagger_jsdoc_1.default)(options);
+exports.swaggerUiOptions = {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'Datasul API - Documentação',
+    customfavIcon: '/favicon.ico'
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2hvbWUvbWFuby9wcm9qZXRvcy9kYXRhc3VsL2xvcjAxMzgvc3JjL2NvbmZpZy9zd2FnZ2VyLmNvbmZpZy50cyIsIm1hcHBpbmdzIjoiOzs7Ozs7QUFBQSwrQkFBK0I7QUFDL0Isa0VBQXlDO0FBR3pDLE1BQU0sT0FBTyxHQUF5QjtJQUNwQyxVQUFVLEVBQUU7UUFDVixPQUFPLEVBQUUsT0FBTztRQUNoQixJQUFJLEVBQUU7WUFDSixLQUFLLEVBQUUsNEJBQTRCO1lBQ25DLE9BQU8sRUFBRSxPQUFPO1lBQ2hCLFdBQVcsRUFBRTs7Ozs7Ozs7Ozs7T0FXWjtZQUNELE9BQU8sRUFBRTtnQkFDUCxJQUFJLEVBQUUsMkJBQTJCO2dCQUNqQyxLQUFLLEVBQUUsaUJBQWlCO2FBQ3pCO1lBQ0QsT0FBTyxFQUFFO2dCQUNQLElBQUksRUFBRSxLQUFLO2dCQUNYLEdBQUcsRUFBRSxxQ0FBcUM7YUFDM0M7U0FDRjtRQUNELE9BQU8sRUFBRTtZQUNQO2dCQUNFLEdBQUcsRUFBRSx1QkFBdUI7Z0JBQzVCLFdBQVcsRUFBRSw2QkFBNkI7YUFDM0M7WUFDRDtnQkFDRSxHQUFHLEVBQUUseUJBQXlCO2dCQUM5QixXQUFXLEVBQUUsc0JBQXNCO2FBQ3BDO1NBQ0Y7UUFDRCxJQUFJLEVBQUU7WUFDSjtnQkFDRSxJQUFJLEVBQUUsUUFBUTtnQkFDZCxXQUFXLEVBQUUsb0NBQW9DO2FBQ2xEO1lBQ0Q7Z0JBQ0UsSUFBSSxFQUFFLDBCQUEwQjtnQkFDaEMsV0FBVyxFQUFFLGlDQUFpQzthQUMvQztZQUNEO2dCQUNFLElBQUksRUFBRSx3QkFBd0I7Z0JBQzlCLFdBQVcsRUFBRSx1Q0FBdUM7YUFDckQ7U0FDRjtRQUNELFVBQVUsRUFBRTtZQUNWLE9BQU8sRUFBRTtnQkFDUCxLQUFLLEVBQUU7b0JBQ0wsSUFBSSxFQUFFLFFBQVE7b0JBQ2QsVUFBVSxFQUFFO3dCQUNWLEtBQUssRUFBRTs0QkFDTCxJQUFJLEVBQUUsUUFBUTs0QkFDZCxPQUFPLEVBQUUsOEJBQThCO3lCQUN4Qzt3QkFDRCxPQUFPLEVBQUU7NEJB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LCJzb3VyY2VzIjpbIi9ob21lL21hbm8vcHJvamV0b3MvZGF0YXN1bC9sb3IwMTM4L3NyYy9jb25maWcvc3dhZ2dlci5jb25maWcudHMiXSwic291cmNlc0NvbnRlbnQiOlsiLy8gc3JjL2NvbmZpZy9zd2FnZ2VyLmNvbmZpZy50c1xuaW1wb3J0IHN3YWdnZXJKc2RvYyBmcm9tICdzd2FnZ2VyLWpzZG9jJztcbmltcG9ydCB7IFN3YWdnZXJPcHRpb25zIH0gZnJvbSAnc3dhZ2dlci11aS1leHByZXNzJztcblxuY29uc3Qgb3B0aW9uczogc3dhZ2dlckpzZG9jLk9wdGlvbnMgPSB7XG4gIGRlZmluaXRpb246IHtcbiAgICBvcGVuYXBpOiAnMy4wLjAnLFxuICAgIGluZm86IHtcbiAgICAgIHRpdGxlOiAnRGF0YXN1bCBBUEkgLSBEb2N1bWVudGHDp8OjbycsXG4gICAgICB2ZXJzaW9uOiAnMS4wLjAnLFxuICAgICAgZGVzY3JpcHRpb246IGBcbiAgICAgICAgQVBJIHBhcmEgY2VudHJhbGl6YcOnw6NvIGRlIGNvbnN1bHRhcyBkZSBkYWRvcyBkbyBFUlAgVG90dnMgRGF0YXN1bC5cbiAgICAgICAgXG4gICAgICAgICMjIENhcmFjdGVyw61zdGljYXNcbiAgICAgICAgLSBDb25zdWx0YSBkZSBkYWRvcyBjYWRhc3RyYWlzIGRlIGl0ZW5zXG4gICAgICAgIC0gU3Vwb3J0ZSBhIG3Dumx0aXBsYXMgYmFzZXMgZGUgZGFkb3MgKFNRTCBTZXJ2ZXIsIE9EQkMpXG4gICAgICAgIC0gUmF0ZSBsaW1pdGluZyBlIHByb3Rlw6fDo28gY29udHJhIGF0YXF1ZXNcbiAgICAgICAgLSBMb2dzIGVzdHJ1dHVyYWRvcyBlIHJhc3RyZWFtZW50byBkZSByZXF1aXNpw6fDtWVzXG4gICAgICAgIFxuICAgICAgICAjIyBBdXRlbnRpY2HDp8Ojb1xuICAgICAgICBBdHVhbG1lbnRlIGEgQVBJIG7Do28gcmVxdWVyIGF1dGVudGljYcOnw6NvLiAoSW1wbGVtZW50YXIgZW0gcHJvZHXDp8OjbyEpXG4gICAgICBgLFxuICAgICAgY29udGFjdDoge1xuICAgICAgICBuYW1lOiAnRXF1aXBlIGRlIERlc2Vudm9sdmltZW50bycsXG4gICAgICAgIGVtYWlsOiAnZGV2QGVtcHJlc2EuY29tJ1xuICAgICAgfSxcbiAgICAgIGxpY2Vuc2U6IHtcbiAgICAgICAgbmFtZTogJ01JVCcsXG4gICAgICAgIHVybDogJ2h0dHBzOi8vb3BlbnNvdXJjZS5vcmcvbGljZW5zZXMvTUlUJ1xuICAgICAgfVxuICAgIH0sXG4gICAgc2VydmVyczogW1xuICAgICAge1xuICAgICAgICB1cmw6ICdodHRwOi8vbG9jYWxob3N0OjMwMDAnLFxuICAgICAgICBkZXNjcmlwdGlvbjogJ1NlcnZpZG9yIGRlIERlc2Vudm9sdmltZW50bydcbiAgICAgIH0sXG4gICAgICB7XG4gICAgICAgIHVybDogJ2h0dHBzOi8vYXBpLmVtcHJlc2EuY29tJyxcbiAgICAgICAgZGVzY3JpcHRpb246ICdTZXJ2aWRvciBkZSBQcm9kdcOnw6NvJ1xuICAgICAgfVxuICAgIF0sXG4gICAgdGFnczogW1xuICAgICAge1xuICAgICAgICBuYW1lOiAnSGVhbHRoJyxcbiAgICAgICAgZGVzY3JpcHRpb246ICdFbmRwb2ludHMgZGUgc2HDumRlIGUgbW9uaXRvcmFtZW50bydcbiAgICAgIH0sXG4gICAgICB7XG4gICAgICAgIG5hbWU6ICdJdGVucyAtIERhZG9zIENhZGFzdHJhaXMnLFxuICAgICAgICBkZXNjcmlwdGlvbjogJ0luZm9ybWHDp8O1ZXMgY2FkYXN0cmFpcyBkZSBpdGVucydcbiAgICAgIH0sXG4gICAgICB7XG4gICAgICAgIG5hbWU6ICdJdGVucyAtIENsYXNzaWZpY2HDp8O1ZXMnLFxuICAgICAgICBkZXNjcmlwdGlvbjogJ0NsYXNzaWZpY2HDp8O1ZXMgZSBoaWVyYXJxdWlhcyBkZSBpdGVucydcbiAgICAgIH1cbiAgICBdLFxuICAgIGNvbXBvbmVudHM6IHtcbiAgICAgIHNjaGVtYXM6IHtcbiAgICAgICAgRXJyb3I6IHtcbiAgICAgICAgICB0eXBlOiAnb2JqZWN0JyxcbiAgICAgICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgICAgICBlcnJvcjoge1xuICAgICAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ0Vycm8gYW8gcHJvY2Vzc2FyIHJlcXVpc2nDp8OjbydcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBtZXNzYWdlOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAnRGV0YWxoZXMgZG8gZXJybydcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICB0aW1lc3RhbXA6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGZvcm1hdDogJ2RhdGUtdGltZScsXG4gICAgICAgICAgICAgIGV4YW1wbGU6ICcyMDI1LTEwLTA0VDEyOjAwOjAwLjAwMFonXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgcGF0aDoge1xuICAgICAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJy9hcGkvbG9yMDEzOC9pdGVtLzEyMy9kYWRvcy1jYWRhc3RyYWlzL2luZm9ybWFjb2VzLWdlcmFpcydcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICByZXF1ZXN0SWQ6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGZvcm1hdDogJ3V1aWQnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAnNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwJ1xuICAgICAgICAgICAgfVxuICAgICAgICAgIH1cbiAgICAgICAgfSxcbiAgICAgICAgSGVhbHRoQ2hlY2s6IHtcbiAgICAgICAgICB0eXBlOiAnb2JqZWN0JyxcbiAgICAgICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgICAgICBzdGF0dXM6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGVudW06IFsnaGVhbHRoeScsICdkZWdyYWRlZCcsICd1bmhlYWx0aHknXSxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ2hlYWx0aHknXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgdGltZXN0YW1wOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdkYXRlLXRpbWUnXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgdXB0aW1lOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ1RlbXBvIGRlIGF0aXZpZGFkZSBlbSBzZWd1bmRvcycsXG4gICAgICAgICAgICAgIGV4YW1wbGU6IDM2MDBcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBkYXRhYmFzZToge1xuICAgICAgICAgICAgICB0eXBlOiAnb2JqZWN0JyxcbiAgICAgICAgICAgICAgcHJvcGVydGllczoge1xuICAgICAgICAgICAgICAgIGNvbm5lY3RlZDoge1xuICAgICAgICAgICAgICAgICAgdHlwZTogJ2Jvb2xlYW4nLFxuICAgICAgICAgICAgICAgICAgZXhhbXBsZTogdHJ1ZVxuICAgICAgICAgICAgICAgIH0sXG4gICAgICAgICAgICAgICAgcmVzcG9uc2VUaW1lOiB7XG4gICAgICAgICAgICAgICAgICB0eXBlOiAnbnVtYmVyJyxcbiAgICAgICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnVGVtcG8gZGUgcmVzcG9zdGEgZW0gbXMnLFxuICAgICAgICAgICAgICAgICAgZXhhbXBsZTogMTVcbiAgICAgICAgICAgICAgICB9LFxuICAgICAgICAgICAgICAgIHR5cGU6IHtcbiAgICAgICAgICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgICAgICAgICAgZXhhbXBsZTogJ1NRTCBTZXJ2ZXInXG4gICAgICAgICAgICAgICAgfVxuICAgICAgICAgICAgICB9XG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgbWVtb3J5OiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdvYmplY3QnLFxuICAgICAgICAgICAgICBwcm9wZXJ0aWVzOiB7XG4gICAgICAgICAgICAgICAgdXNlZDoge1xuICAgICAgICAgICAgICAgICAgdHlwZTogJ251bWJlcicsXG4gICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ01lbcOzcmlhIHVzYWRhIGVtIE1CJyxcbiAgICAgICAgICAgICAgICAgIGV4YW1wbGU6IDEyMC41XG4gICAgICAgICAgICAgICAgfSxcbiAgICAgICAgICAgICAgICB0b3RhbDoge1xuICAgICAgICAgICAgICAgICAgdHlwZTogJ251bWJlcicsXG4gICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ01lbcOzcmlhIHRvdGFsIGVtIE1CJyxcbiAgICAgICAgICAgICAgICAgIGV4YW1wbGU6IDUxMlxuICAgICAgICAgICAgICAgIH0sXG4gICAgICAgICAgICAgICAgcGVyY2VudGFnZToge1xuICAgICAgICAgICAgICAgICAgdHlwZTogJ251bWJlcicsXG4gICAgICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ1BlcmNlbnR1YWwgZGUgdXNvJyxcbiAgICAgICAgICAgICAgICAgIGV4YW1wbGU6IDIzLjVcbiAgICAgICAgICAgICAgICB9XG4gICAgICAgICAgICAgIH1cbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIEl0ZW1JZGVudGlmaWNhY2FvOiB7XG4gICAgICAgICAgdHlwZTogJ29iamVjdCcsXG4gICAgICAgICAgcHJvcGVydGllczoge1xuICAgICAgICAgICAgY29kaWdvOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ0PDs2RpZ28gZG8gaXRlbScsXG4gICAgICAgICAgICAgIGV4YW1wbGU6ICdJVEVNMDAxJyxcbiAgICAgICAgICAgICAgbWF4TGVuZ3RoOiAxNlxuICAgICAgICAgICAgfSxcbiAgICAgICAgICAgIGRlc2NyaWNhbzoge1xuICAgICAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICAgICAgZGVzY3JpcHRpb246ICdEZXNjcmnDp8OjbyBjb21wbGV0YSBkbyBpdGVtJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ1BhcmFmdXNvIE02IHggMjBtbScsXG4gICAgICAgICAgICAgIG1heExlbmd0aDogMTIwXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgZGVzY3JpY2FvUmVkdXppZGE6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnRGVzY3Jpw6fDo28gcmVzdW1pZGEnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAnUGFyYWZ1c28gTTYnLFxuICAgICAgICAgICAgICBtYXhMZW5ndGg6IDQwXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgbm9tZVRlY25pY286IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnTm9tZSB0w6ljbmljbyBkbyBwcm9kdXRvJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ1BhcmFmdXNvIHNleHRhdmFkbyBNNngyMCcsXG4gICAgICAgICAgICAgIG1heExlbmd0aDogODBcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBkYXRhQ2FkYXN0cm86IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGZvcm1hdDogJ2RhdGUnLFxuICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ0RhdGEgZGUgY2FkYXN0cm8gZG8gaXRlbScsXG4gICAgICAgICAgICAgIGV4YW1wbGU6ICcyMDI1LTAxLTE1J1xuICAgICAgICAgICAgfSxcbiAgICAgICAgICAgIHNpdHVhY2FvOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdzdHJpbmcnLFxuICAgICAgICAgICAgICBlbnVtOiBbJ0F0aXZvJywgJ0luYXRpdm8nLCAnQmxvcXVlYWRvJywgJ09ic29sZXRvJ10sXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnU2l0dWHDp8OjbyBhdHVhbCBkbyBpdGVtJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ0F0aXZvJ1xuICAgICAgICAgICAgfVxuICAgICAgICAgIH0sXG4gICAgICAgICAgcmVxdWlyZWQ6IFsnY29kaWdvJywgJ2Rlc2NyaWNhbyddXG4gICAgICAgIH0sXG4gICAgICAgIEl0ZW1VbmlkYWRlczoge1xuICAgICAgICAgIHR5cGU6ICdvYmplY3QnLFxuICAgICAgICAgIHByb3BlcnRpZXM6IHtcbiAgICAgICAgICAgIHVuaWRhZGVNZWRpZGFQcmluY2lwYWw6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnVW5pZGFkZSBkZSBtZWRpZGEgcHJpbmNpcGFsJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogJ1BDJyxcbiAgICAgICAgICAgICAgbWF4TGVuZ3RoOiAyXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgdW5pZGFkZU1lZGlkYUNvbXByYToge1xuICAgICAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICAgICAgZGVzY3JpcHRpb246ICdVbmlkYWRlIGRlIG1lZGlkYSBwYXJhIGNvbXByYXMnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAnQ1gnLFxuICAgICAgICAgICAgICBtYXhMZW5ndGg6IDJcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICB1bmlkYWRlTWVkaWRhVmVuZGE6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnVW5pZGFkZSBkZSBtZWRpZGEgcGFyYSB2ZW5kYXMnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAnVU4nLFxuICAgICAgICAgICAgICBtYXhMZW5ndGg6IDJcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBmYXRvckNvbnZlcnNhb0NvbXByYToge1xuICAgICAgICAgICAgICB0eXBlOiAnbnVtYmVyJyxcbiAgICAgICAgICAgICAgZm9ybWF0OiAnZmxvYXQnLFxuICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ0ZhdG9yIGRlIGNvbnZlcnPDo28gVU0gY29tcHJhIHBhcmEgVU0gcHJpbmNpcGFsJyxcbiAgICAgICAgICAgICAgZXhhbXBsZTogMTAwXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgZmF0b3JDb252ZXJzYW9WZW5kYToge1xuICAgICAgICAgICAgICB0eXBlOiAnbnVtYmVyJyxcbiAgICAgICAgICAgICAgZm9ybWF0OiAnZmxvYXQnLFxuICAgICAgICAgICAgICBkZXNjcmlwdGlvbjogJ0ZhdG9yIGRlIGNvbnZlcnPDo28gVU0gdmVuZGEgcGFyYSBVTSBwcmluY2lwYWwnLFxuICAgICAgICAgICAgICBleGFtcGxlOiAxXG4gICAgICAgICAgICB9XG4gICAgICAgICAgfVxuICAgICAgICB9LFxuICAgICAgICBJdGVtQ2FyYWN0ZXJpc3RpY2FzRmlzaWNhczoge1xuICAgICAgICAgIHR5cGU6ICdvYmplY3QnLFxuICAgICAgICAgIHByb3BlcnRpZXM6IHtcbiAgICAgICAgICAgIHBlc29MaXF1aWRvOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdmbG9hdCcsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnUGVzbyBsw61xdWlkbyBlbSBrZycsXG4gICAgICAgICAgICAgIGV4YW1wbGU6IDAuMDI1XG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgcGVzb0JydXRvOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdmbG9hdCcsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnUGVzbyBicnV0byBlbSBrZycsXG4gICAgICAgICAgICAgIGV4YW1wbGU6IDAuMDMwXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgdm9sdW1lOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdmbG9hdCcsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnVm9sdW1lIGVtIG3CsycsXG4gICAgICAgICAgICAgIGV4YW1wbGU6IDAuMDAwMDFcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBhbHR1cmE6IHtcbiAgICAgICAgICAgICAgdHlwZTogJ251bWJlcicsXG4gICAgICAgICAgICAgIGZvcm1hdDogJ2Zsb2F0JyxcbiAgICAgICAgICAgICAgZGVzY3JpcHRpb246ICdBbHR1cmEgZW0gY20nLFxuICAgICAgICAgICAgICBleGFtcGxlOiAyLjBcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBsYXJndXJhOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdmbG9hdCcsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnTGFyZ3VyYSBlbSBjbScsXG4gICAgICAgICAgICAgIGV4YW1wbGU6IDAuNlxuICAgICAgICAgICAgfSxcbiAgICAgICAgICAgIGNvbXByaW1lbnRvOiB7XG4gICAgICAgICAgICAgIHR5cGU6ICdudW1iZXInLFxuICAgICAgICAgICAgICBmb3JtYXQ6ICdmbG9hdCcsXG4gICAgICAgICAgICAgIGRlc2NyaXB0aW9uOiAnQ29tcHJpbWVudG8gZW0gY20nLFxuICAgICAgICAgICAgICBleGFtcGxlOiAwLjZcbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIEluZm9ybWFjb2VzR2VyYWlzOiB7XG4gICAgICAgICAgdHlwZTogJ29iamVjdCcsXG4gICAgICAgICAgcHJvcGVydGllczoge1xuICAgICAgICAgICAgaWRlbnRpZmljYWNhbzoge1xuICAgICAgICAgICAgICAkcmVmOiAnIy9jb21wb25lbnRzL3NjaGVtYXMvSXRlbUlkZW50aWZpY2FjYW8nXG4gICAgICAgICAgICB9LFxuICAgICAgICAgICAgdW5pZGFkZXM6IHtcbiAgICAgICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9zY2hlbWFzL0l0ZW1VbmlkYWRlcydcbiAgICAgICAgICAgIH0sXG4gICAgICAgICAgICBjYXJhY3RlcmlzdGljYXNGaXNpY2FzOiB7XG4gICAgICAgICAgICAgICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9JdGVtQ2FyYWN0ZXJpc3RpY2FzRmlzaWNhcydcbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH1cbiAgICAgIH0sXG4gICAgICByZXNwb25zZXM6IHtcbiAgICAgICAgQmFkUmVxdWVzdDoge1xuICAgICAgICAgIGRlc2NyaXB0aW9uOiAnUmVxdWlzacOnw6NvIGludsOhbGlkYScsXG4gICAgICAgICAgY29udGVudDoge1xuICAgICAgICAgICAgJ2FwcGxpY2F0aW9uL2pzb24nOiB7XG4gICAgICAgICAgICAgIHNjaGVtYToge1xuICAgICAgICAgICAgICAgICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9FcnJvcidcbiAgICAgICAgICAgICAgfSxcbiAgICAgICAgICAgICAgZXhhbXBsZToge1xuICAgICAgICAgICAgICAgIGVycm9yOiAnVmFsaWRhw6fDo28gZmFsaG91JyxcbiAgICAgICAgICAgICAgICBtZXNzYWdlOiAnQ8OzZGlnbyBkbyBpdGVtIMOpIG9icmlnYXTDs3JpbycsXG4gICAgICAgICAgICAgICAgdGltZXN0YW1wOiAnMjAyNS0xMC0wNFQxMjowMDowMC4wMDBaJyxcbiAgICAgICAgICAgICAgICBwYXRoOiAnL2FwaS9sb3IwMTM4L2l0ZW0vL2RhZG9zLWNhZGFzdHJhaXMvaW5mb3JtYWNvZXMtZ2VyYWlzJyxcbiAgICAgICAgICAgICAgICByZXF1ZXN0SWQ6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnXG4gICAgICAgICAgICAgIH1cbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIE5vdEZvdW5kOiB7XG4gICAgICAgICAgZGVzY3JpcHRpb246ICdSZWN1cnNvIG7Do28gZW5jb250cmFkbycsXG4gICAgICAgICAgY29udGVudDoge1xuICAgICAgICAgICAgJ2FwcGxpY2F0aW9uL2pzb24nOiB7XG4gICAgICAgICAgICAgIHNjaGVtYToge1xuICAgICAgICAgICAgICAgICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9FcnJvcidcbiAgICAgICAgICAgICAgfSxcbiAgICAgICAgICAgICAgZXhhbXBsZToge1xuICAgICAgICAgICAgICAgIGVycm9yOiAnSXRlbSBuw6NvIGVuY29udHJhZG8nLFxuICAgICAgICAgICAgICAgIG1lc3NhZ2U6ICdPIGl0ZW0gSVRFTTk5OSBuw6NvIGV4aXN0ZSBubyBzaXN0ZW1hJyxcbiAgICAgICAgICAgICAgICB0aW1lc3RhbXA6ICcyMDI1LTEwLTA0VDEyOjAwOjAwLjAwMFonLFxuICAgICAgICAgICAgICAgIHBhdGg6ICcvYXBpL2xvcjAxMzgvaXRlbS9JVEVNOTk5L2RhZG9zLWNhZGFzdHJhaXMvaW5mb3JtYWNvZXMtZ2VyYWlzJyxcbiAgICAgICAgICAgICAgICByZXF1ZXN0SWQ6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnXG4gICAgICAgICAgICAgIH1cbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH0sXG4gICAgICAgIEludGVybmFsRXJyb3I6IHtcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ0Vycm8gaW50ZXJubyBkbyBzZXJ2aWRvcicsXG4gICAgICAgICAgY29udGVudDoge1xuICAgICAgICAgICAgJ2FwcGxpY2F0aW9uL2pzb24nOiB7XG4gICAgICAgICAgICAgIHNjaGVtYToge1xuICAgICAgICAgICAgICAgICRyZWY6ICcjL2NvbXBvbmVudHMvc2NoZW1hcy9FcnJvcidcbiAgICAgICAgICAgICAgfSxcbiAgICAgICAgICAgICAgZXhhbXBsZToge1xuICAgICAgICAgICAgICAgIGVycm9yOiAnRXJybyBpbnRlcm5vJyxcbiAgICAgICAgICAgICAgICBtZXNzYWdlOiAnRXJybyBhbyBjb25lY3RhciBjb20gbyBiYW5jbyBkZSBkYWRvcycsXG4gICAgICAgICAgICAgICAgdGltZXN0YW1wOiAnMjAyNS0xMC0wNFQxMjowMDowMC4wMDBaJyxcbiAgICAgICAgICAgICAgICBwYXRoOiAnL2FwaS9sb3IwMTM4L2l0ZW0vSVRFTTAwMS9kYWRvcy1jYWRhc3RyYWlzL2luZm9ybWFjb2VzLWdlcmFpcycsXG4gICAgICAgICAgICAgICAgcmVxdWVzdElkOiAnNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwJ1xuICAgICAgICAgICAgICB9XG4gICAgICAgICAgICB9XG4gICAgICAgICAgfVxuICAgICAgICB9LFxuICAgICAgICBUb29NYW55UmVxdWVzdHM6IHtcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ0xpbWl0ZSBkZSByZXF1aXNpw6fDtWVzIGV4Y2VkaWRvJyxcbiAgICAgICAgICBjb250ZW50OiB7XG4gICAgICAgICAgICAnYXBwbGljYXRpb24vanNvbic6IHtcbiAgICAgICAgICAgICAgc2NoZW1hOiB7XG4gICAgICAgICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9zY2hlbWFzL0Vycm9yJ1xuICAgICAgICAgICAgICB9LFxuICAgICAgICAgICAgICBleGFtcGxlOiB7XG4gICAgICAgICAgICAgICAgZXJyb3I6ICdSYXRlIGxpbWl0IGV4Y2VkaWRvJyxcbiAgICAgICAgICAgICAgICBtZXNzYWdlOiAnTXVpdGFzIHJlcXVpc2nDp8O1ZXMuIFRlbnRlIG5vdmFtZW50ZSBlbSBhbGd1bnMgc2VndW5kb3MuJyxcbiAgICAgICAgICAgICAgICB0aW1lc3RhbXA6ICcyMDI1LTEwLTA0VDEyOjAwOjAwLjAwMFonLFxuICAgICAgICAgICAgICAgIHBhdGg6ICcvYXBpL2xvcjAxMzgvaXRlbS9JVEVNMDAxL2RhZG9zLWNhZGFzdHJhaXMvaW5mb3JtYWNvZXMtZ2VyYWlzJyxcbiAgICAgICAgICAgICAgICByZXF1ZXN0SWQ6ICc1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAnXG4gICAgICAgICAgICAgIH1cbiAgICAgICAgICAgIH1cbiAgICAgICAgICB9XG4gICAgICAgIH1cbiAgICAgIH0sXG4gICAgICBwYXJhbWV0ZXJzOiB7XG4gICAgICAgIEl0ZW1Db2RpZ286IHtcbiAgICAgICAgICBuYW1lOiAnaXRlbUNvZGlnbycsXG4gICAgICAgICAgaW46ICdwYXRoJyxcbiAgICAgICAgICByZXF1aXJlZDogdHJ1ZSxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ0PDs2RpZ28gw7puaWNvIGRvIGl0ZW0gbm8gc2lzdGVtYScsXG4gICAgICAgICAgc2NoZW1hOiB7XG4gICAgICAgICAgICB0eXBlOiAnc3RyaW5nJyxcbiAgICAgICAgICAgIG1heExlbmd0aDogMTYsXG4gICAgICAgICAgICBwYXR0ZXJuOiAnXltBLVowLTktXSskJ1xuICAgICAgICAgIH0sXG4gICAgICAgICAgZXhhbXBsZTogJ0lURU0wMDEnXG4gICAgICAgIH0sXG4gICAgICAgIFJlcXVlc3RJZDoge1xuICAgICAgICAgIG5hbWU6ICdYLVJlcXVlc3QtSUQnLFxuICAgICAgICAgIGluOiAnaGVhZGVyJyxcbiAgICAgICAgICBkZXNjcmlwdGlvbjogJ0lEIMO6bmljbyBwYXJhIHJhc3RyZWFtZW50byBkYSByZXF1aXNpw6fDo28nLFxuICAgICAgICAgIHNjaGVtYToge1xuICAgICAgICAgICAgdHlwZTogJ3N0cmluZycsXG4gICAgICAgICAgICBmb3JtYXQ6ICd1dWlkJ1xuICAgICAgICAgIH1cbiAgICAgICAgfVxuICAgICAgfVxuICAgIH1cbiAgfSxcbiAgYXBpczogW1xuICAgICcuL3NyYy9hcGkvKiovKi5yb3V0ZXMudHMnLFxuICAgICcuL3NyYy9hcGkvKiovKi5jb250cm9sbGVyLnRzJyxcbiAgICAnLi9zcmMvc2VydmVyLnRzJ1xuICBdXG59O1xuXG5leHBvcnQgY29uc3Qgc3dhZ2dlclNwZWMgPSBzd2FnZ2VySnNkb2Mob3B0aW9ucyk7XG5cbmV4cG9ydCBjb25zdCBzd2FnZ2VyVWlPcHRpb25zOiBTd2FnZ2VyT3B0aW9ucyA9IHtcbiAgY3VzdG9tQ3NzOiAnLnN3YWdnZXItdWkgLnRvcGJhciB7IGRpc3BsYXk6IG5vbmUgfScsXG4gIGN1c3RvbVNpdGVUaXRsZTogJ0RhdGFzdWwgQVBJIC0gRG9jdW1lbnRhw6fDo28nLFxuICBjdXN0b21mYXZJY29uOiAnL2Zhdmljb24uaWNvJ1xufTsiXSwidmVyc2lvbiI6M30=

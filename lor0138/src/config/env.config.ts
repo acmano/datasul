@@ -1,16 +1,17 @@
 // src/config/env.config.ts
 
 import dotenv from 'dotenv';
+import { appConfig } from './app.config';
 
 dotenv.config();
 
 /**
  * Parse de string de timeout para milissegundos
  * Aceita formatos: "30s", "5000ms", "5m", "5000"
- * 
+ *
  * IMPORTANTE: Esta função é usada em TODO o projeto.
  * Garante que timeouts sempre sejam números válidos em ms.
- * 
+ *
  * Formatos suportados:
  * - "30000" → 30000ms (número puro)
  * - "30s" → 30000ms (segundos)
@@ -25,7 +26,7 @@ export function parseTimeout(value: string | undefined, defaultValue: number): n
     return parseInt(value, 10);
   }
 
-  // ✅ IMPORTANTE: Verificar 'ms' ANTES de 's' 
+  // ✅ IMPORTANTE: Verificar 'ms' ANTES de 's'
   // (porque 'ms' também termina com 's')
   if (value.endsWith('ms')) {
     return parseInt(value.slice(0, -2), 10);
@@ -64,19 +65,19 @@ export const config = {
 
     // SQL Server (usado pelo DatabaseManager)
     sqlServer: {
-      server: process.env.DB_SERVER || 'localhost',
+      server: process.env.DB_SERVER || appConfig.host,
       port: parseInt(process.env.DB_PORT || '1433', 10),
       user: process.env.DB_USER || '',
       password: process.env.DB_PASSWORD || '',
-      
+
       // ✅ CORRETO: Usa DB_DATABASE_* (não DB_NAME_*)
       databaseEmp: process.env.DB_DATABASE_EMP || '',
       databaseMult: process.env.DB_DATABASE_MULT || '',
-      
+
       // ✅ CORRETO: Usa parseTimeout para TODOS os timeouts
       connectionTimeout: parseTimeout(process.env.DB_CONNECTION_TIMEOUT, 15000),
       requestTimeout: parseTimeout(process.env.DB_REQUEST_TIMEOUT, 30000),
-      
+
       encrypt: process.env.DB_ENCRYPT === 'true',
       trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',
     },
@@ -101,7 +102,7 @@ export const config = {
   cors: {
     allowedOrigins: process.env.CORS_ALLOWED_ORIGINS
       ? process.env.CORS_ALLOWED_ORIGINS.split(',')
-      : ['http://localhost:3000'],
+      : [appConfig.baseUrl],
   },
 
   // ==================== TIMEOUTS HTTP ====================
@@ -116,7 +117,7 @@ export const config = {
     enabled: process.env.CACHE_ENABLED === 'true',
     strategy: (process.env.CACHE_STRATEGY || 'memory') as 'memory' | 'redis' | 'layered',
     redis: {
-      url: process.env.CACHE_REDIS_URL || 'redis://localhost:6379',
+      url: process.env.CACHE_REDIS_URL || 'redis://lor0138.lorenzetti.ibe:6379',
     },
     defaultTTL: parseTimeout(process.env.CACHE_DEFAULT_TTL, 300000), // 5min padrão
   },

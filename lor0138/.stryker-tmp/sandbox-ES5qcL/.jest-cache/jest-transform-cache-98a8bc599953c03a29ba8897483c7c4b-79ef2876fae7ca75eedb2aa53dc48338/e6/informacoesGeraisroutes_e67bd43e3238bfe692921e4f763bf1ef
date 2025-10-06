@@ -1,0 +1,159 @@
+8439e4f065e294b01afdc9163a0003c8
+"use strict";
+// src/api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes.ts
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const apiKeyAuth_middleware_1 = require("@shared/middlewares/apiKeyAuth.middleware");
+const userRateLimit_middleware_1 = require("@shared/middlewares/userRateLimit.middleware");
+const cachePresets_1 = require("@shared/middlewares/cachePresets");
+const router = (0, express_1.Router)();
+/**
+ * @openapi
+ * /api/lor0138/item/dadosCadastrais/informacoesGerais/{itemCodigo}:
+ *   get:
+ *     summary: Obter informações gerais de um item
+ *     description: |
+ *       Retorna dados cadastrais completos de um item do Datasul, incluindo:
+ *       - Dados gerais (código, descrição, pesos)
+ *       - Unidades de medida com fatores de conversão
+ *       - Estabelecimentos onde o item está cadastrado
+ *
+ *       **Importante**: Os dados são consultados via Linked Server (OPENQUERY)
+ *       do SQL Server para o Progress OpenEdge.
+ *
+ *       **Rate Limit**: 10 requisições por minuto para o mesmo item
+ *     tags:
+ *       - Item - Informações Gerais
+ *     parameters:
+ *       - in: path
+ *         name: itemCodigo
+ *         required: true
+ *         schema:
+ *           type: string
+ *           pattern: '^[A-Za-z0-9]+$'
+ *           minLength: 1
+ *           maxLength: 16
+ *         description: Código do item (alfanumérico, máx 16 caracteres)
+ *         example: '7530110'
+ *     responses:
+ *       200:
+ *         description: Informações do item retornadas com sucesso
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/InformacoesGerais'
+ *             examples:
+ *               sucesso:
+ *                 summary: Item encontrado com múltiplos estabelecimentos
+ *                 value:
+ *                   dadosGerais:
+ *                     codigo: '7530110'
+ *                     descricao: 'VALVULA DE ESFERA 1/2" BRONZE'
+ *                     unidadeMedida: 'UN'
+ *                     pesoLiquido: 0.150
+ *                     pesoBruto: 0.200
+ *                   unidadesMedida:
+ *                     - unidade: 'UN'
+ *                       fatorConversao: 1.0
+ *                       descricao: 'Unidade'
+ *                     - unidade: 'CX'
+ *                       fatorConversao: 12.0
+ *                       descricao: 'Caixa com 12 unidades'
+ *                   estabelecimentos:
+ *                     - codigo: '01.01'
+ *                       nome: 'CD São Paulo'
+ *                       ativo: true
+ *                       estoqueAtual: 1500.0
+ *                       estoqueMinimo: 100.0
+ *                       localEstoque: 'A-12-03'
+ *                     - codigo: '02.01'
+ *                       nome: 'Fábrica Joinville'
+ *                       ativo: true
+ *                       estoqueAtual: 3200.0
+ *                       estoqueMinimo: 500.0
+ *                       localEstoque: 'B-05-12'
+ *               itemSemEstabelecimentos:
+ *                 summary: Item sem estabelecimentos cadastrados
+ *                 value:
+ *                   dadosGerais:
+ *                     codigo: '7530110'
+ *                     descricao: 'VALVULA DE ESFERA 1/2" BRONZE'
+ *                     unidadeMedida: 'UN'
+ *                     pesoLiquido: 0.150
+ *                     pesoBruto: 0.200
+ *                   unidadesMedida:
+ *                     - unidade: 'UN'
+ *                       fatorConversao: 1.0
+ *                       descricao: 'Unidade'
+ *                   estabelecimentos: []
+ *       400:
+ *         $ref: '#/components/responses/BadRequest'
+ *       404:
+ *         $ref: '#/components/responses/NotFound'
+ *       429:
+ *         $ref: '#/components/responses/TooManyRequests'
+ *       500:
+ *         $ref: '#/components/responses/InternalError'
+ *       504:
+ *         description: Gateway Timeout - Requisição excedeu o tempo limite
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               error: 'Timeout da requisição'
+ *               details: 'A consulta ao banco de dados demorou mais de 30 segundos'
+ */
+router.get('/:itemCodigo', apiKeyAuth_middleware_1.optionalApiKeyAuth, // Autentica se tiver API Key
+userRateLimit_middleware_1.userRateLimit, // Rate limit por usuário/tier
+cachePresets_1.itemCache, // Cache HTTP
+async (req, res, next) => {
+    try {
+        // ✅ CORRIGIDO: Nome correto do controller
+        const { InformacoesGeraisController } = await Promise.resolve().then(() => __importStar(require('../controller/informacoesGerais.controller')));
+        // ✅ CORRIGIDO: Passa req, res, next (3 parâmetros)
+        await InformacoesGeraisController.getInformacoesGerais(req, res, next);
+    }
+    catch (error) {
+        console.error('Erro ao carregar controller:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Erro interno ao processar requisição',
+        });
+    }
+});
+exports.default = router;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiL2hvbWUvbWFuby9wcm9qZXRvcy9kYXRhc3VsL2xvcjAxMzgvc3JjL2FwaS9sb3IwMTM4L2l0ZW0vZGFkb3NDYWRhc3RyYWlzL2luZm9ybWFjb2VzR2VyYWlzL3JvdXRlcy9pbmZvcm1hY29lc0dlcmFpcy5yb3V0ZXMudHMiLCJtYXBwaW5ncyI6IjtBQUFBLDRGQUE0Rjs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7QUFFNUYscUNBQWtFO0FBQ2xFLHFGQUErRTtBQUMvRSwyRkFBNkU7QUFDN0UsbUVBQTZEO0FBRTdELE1BQU0sTUFBTSxHQUFHLElBQUEsZ0JBQU0sR0FBRSxDQUFDO0FBRXhCOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7R0FnR0c7QUFDSCxNQUFNLENBQUMsR0FBRyxDQUFDLGNBQWMsRUFDdkIsMENBQWtCLEVBQUcsNkJBQTZCO0FBQ2xELHdDQUFhLEVBQVEsOEJBQThCO0FBQ25ELHdCQUFTLEVBQVksYUFBYTtBQUNsQyxLQUFLLEVBQUUsR0FBWSxFQUFFLEdBQWEsRUFBRSxJQUFrQixFQUFFLEVBQUU7SUFDMUQsSUFBSSxDQUFDO1FBQ0gsMENBQTBDO1FBQzFDLE1BQU0sRUFBRSwyQkFBMkIsRUFBRSxHQUFHLHdEQUFhLDRDQUE0QyxHQUFDLENBQUM7UUFFbkcsbURBQW1EO1FBQ25ELE1BQU0sMkJBQTJCLENBQUMsb0JBQW9CLENBQUMsR0FBRyxFQUFFLEdBQUcsRUFBRSxJQUFJLENBQUMsQ0FBQztJQUN6RSxDQUFDO0lBQUMsT0FBTyxLQUFLLEVBQUUsQ0FBQztRQUNmLE9BQU8sQ0FBQyxLQUFLLENBQUMsOEJBQThCLEVBQUUsS0FBSyxDQUFDLENBQUM7UUFDckQsR0FBRyxDQUFDLE1BQU0sQ0FBQyxHQUFHLENBQUMsQ0FBQyxJQUFJLENBQUM7WUFDbkIsT0FBTyxFQUFFLEtBQUs7WUFDZCxLQUFLLEVBQUUsc0NBQXNDO1NBQzlDLENBQUMsQ0FBQztJQUNMLENBQUM7QUFDSCxDQUFDLENBQUMsQ0FBQztBQUVILGtCQUFlLE1BQU0sQ0FBQyIsIm5hbWVzIjpbXSwic291cmNlcyI6WyIvaG9tZS9tYW5vL3Byb2pldG9zL2RhdGFzdWwvbG9yMDEzOC9zcmMvYXBpL2xvcjAxMzgvaXRlbS9kYWRvc0NhZGFzdHJhaXMvaW5mb3JtYWNvZXNHZXJhaXMvcm91dGVzL2luZm9ybWFjb2VzR2VyYWlzLnJvdXRlcy50cyJdLCJzb3VyY2VzQ29udGVudCI6WyIvLyBzcmMvYXBpL2xvcjAxMzgvaXRlbS9kYWRvc0NhZGFzdHJhaXMvaW5mb3JtYWNvZXNHZXJhaXMvcm91dGVzL2luZm9ybWFjb2VzR2VyYWlzLnJvdXRlcy50c1xyXG5cclxuaW1wb3J0IHsgUm91dGVyLCBSZXF1ZXN0LCBSZXNwb25zZSwgTmV4dEZ1bmN0aW9uIH0gZnJvbSAnZXhwcmVzcyc7XHJcbmltcG9ydCB7IG9wdGlvbmFsQXBpS2V5QXV0aCB9IGZyb20gJ0BzaGFyZWQvbWlkZGxld2FyZXMvYXBpS2V5QXV0aC5taWRkbGV3YXJlJztcclxuaW1wb3J0IHsgdXNlclJhdGVMaW1pdCB9IGZyb20gJ0BzaGFyZWQvbWlkZGxld2FyZXMvdXNlclJhdGVMaW1pdC5taWRkbGV3YXJlJztcclxuaW1wb3J0IHsgaXRlbUNhY2hlIH0gZnJvbSAnQHNoYXJlZC9taWRkbGV3YXJlcy9jYWNoZVByZXNldHMnO1xyXG5cclxuY29uc3Qgcm91dGVyID0gUm91dGVyKCk7XHJcblxyXG4vKipcclxuICogQG9wZW5hcGlcclxuICogL2FwaS9sb3IwMTM4L2l0ZW0vZGFkb3NDYWRhc3RyYWlzL2luZm9ybWFjb2VzR2VyYWlzL3tpdGVtQ29kaWdvfTpcclxuICogICBnZXQ6XHJcbiAqICAgICBzdW1tYXJ5OiBPYnRlciBpbmZvcm1hw6fDtWVzIGdlcmFpcyBkZSB1bSBpdGVtXHJcbiAqICAgICBkZXNjcmlwdGlvbjogfFxyXG4gKiAgICAgICBSZXRvcm5hIGRhZG9zIGNhZGFzdHJhaXMgY29tcGxldG9zIGRlIHVtIGl0ZW0gZG8gRGF0YXN1bCwgaW5jbHVpbmRvOlxyXG4gKiAgICAgICAtIERhZG9zIGdlcmFpcyAoY8OzZGlnbywgZGVzY3Jpw6fDo28sIHBlc29zKVxyXG4gKiAgICAgICAtIFVuaWRhZGVzIGRlIG1lZGlkYSBjb20gZmF0b3JlcyBkZSBjb252ZXJzw6NvXHJcbiAqICAgICAgIC0gRXN0YWJlbGVjaW1lbnRvcyBvbmRlIG8gaXRlbSBlc3TDoSBjYWRhc3RyYWRvXHJcbiAqICAgICAgIFxyXG4gKiAgICAgICAqKkltcG9ydGFudGUqKjogT3MgZGFkb3Mgc8OjbyBjb25zdWx0YWRvcyB2aWEgTGlua2VkIFNlcnZlciAoT1BFTlFVRVJZKSBcclxuICogICAgICAgZG8gU1FMIFNlcnZlciBwYXJhIG8gUHJvZ3Jlc3MgT3BlbkVkZ2UuXHJcbiAqICAgICAgIFxyXG4gKiAgICAgICAqKlJhdGUgTGltaXQqKjogMTAgcmVxdWlzacOnw7VlcyBwb3IgbWludXRvIHBhcmEgbyBtZXNtbyBpdGVtXHJcbiAqICAgICB0YWdzOlxyXG4gKiAgICAgICAtIEl0ZW0gLSBJbmZvcm1hw6fDtWVzIEdlcmFpc1xyXG4gKiAgICAgcGFyYW1ldGVyczpcclxuICogICAgICAgLSBpbjogcGF0aFxyXG4gKiAgICAgICAgIG5hbWU6IGl0ZW1Db2RpZ29cclxuICogICAgICAgICByZXF1aXJlZDogdHJ1ZVxyXG4gKiAgICAgICAgIHNjaGVtYTpcclxuICogICAgICAgICAgIHR5cGU6IHN0cmluZ1xyXG4gKiAgICAgICAgICAgcGF0dGVybjogJ15bQS1aYS16MC05XSskJ1xyXG4gKiAgICAgICAgICAgbWluTGVuZ3RoOiAxXHJcbiAqICAgICAgICAgICBtYXhMZW5ndGg6IDE2XHJcbiAqICAgICAgICAgZGVzY3JpcHRpb246IEPDs2RpZ28gZG8gaXRlbSAoYWxmYW51bcOpcmljbywgbcOheCAxNiBjYXJhY3RlcmVzKVxyXG4gKiAgICAgICAgIGV4YW1wbGU6ICc3NTMwMTEwJ1xyXG4gKiAgICAgcmVzcG9uc2VzOlxyXG4gKiAgICAgICAyMDA6XHJcbiAqICAgICAgICAgZGVzY3JpcHRpb246IEluZm9ybWHDp8O1ZXMgZG8gaXRlbSByZXRvcm5hZGFzIGNvbSBzdWNlc3NvXHJcbiAqICAgICAgICAgY29udGVudDpcclxuICogICAgICAgICAgIGFwcGxpY2F0aW9uL2pzb246XHJcbiAqICAgICAgICAgICAgIHNjaGVtYTpcclxuICogICAgICAgICAgICAgICAkcmVmOiAnIy9jb21wb25lbnRzL3NjaGVtYXMvSW5mb3JtYWNvZXNHZXJhaXMnXHJcbiAqICAgICAgICAgICAgIGV4YW1wbGVzOlxyXG4gKiAgICAgICAgICAgICAgIHN1Y2Vzc286XHJcbiAqICAgICAgICAgICAgICAgICBzdW1tYXJ5OiBJdGVtIGVuY29udHJhZG8gY29tIG3Dumx0aXBsb3MgZXN0YWJlbGVjaW1lbnRvc1xyXG4gKiAgICAgICAgICAgICAgICAgdmFsdWU6XHJcbiAqICAgICAgICAgICAgICAgICAgIGRhZG9zR2VyYWlzOlxyXG4gKiAgICAgICAgICAgICAgICAgICAgIGNvZGlnbzogJzc1MzAxMTAnXHJcbiAqICAgICAgICAgICAgICAgICAgICAgZGVzY3JpY2FvOiAnVkFMVlVMQSBERSBFU0ZFUkEgMS8yXCIgQlJPTlpFJ1xyXG4gKiAgICAgICAgICAgICAgICAgICAgIHVuaWRhZGVNZWRpZGE6ICdVTidcclxuICogICAgICAgICAgICAgICAgICAgICBwZXNvTGlxdWlkbzogMC4xNTBcclxuICogICAgICAgICAgICAgICAgICAgICBwZXNvQnJ1dG86IDAuMjAwXHJcbiAqICAgICAgICAgICAgICAgICAgIHVuaWRhZGVzTWVkaWRhOlxyXG4gKiAgICAgICAgICAgICAgICAgICAgIC0gdW5pZGFkZTogJ1VOJ1xyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgZmF0b3JDb252ZXJzYW86IDEuMFxyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgZGVzY3JpY2FvOiAnVW5pZGFkZSdcclxuICogICAgICAgICAgICAgICAgICAgICAtIHVuaWRhZGU6ICdDWCdcclxuICogICAgICAgICAgICAgICAgICAgICAgIGZhdG9yQ29udmVyc2FvOiAxMi4wXHJcbiAqICAgICAgICAgICAgICAgICAgICAgICBkZXNjcmljYW86ICdDYWl4YSBjb20gMTIgdW5pZGFkZXMnXHJcbiAqICAgICAgICAgICAgICAgICAgIGVzdGFiZWxlY2ltZW50b3M6XHJcbiAqICAgICAgICAgICAgICAgICAgICAgLSBjb2RpZ286ICcwMS4wMSdcclxuICogICAgICAgICAgICAgICAgICAgICAgIG5vbWU6ICdDRCBTw6NvIFBhdWxvJ1xyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgYXRpdm86IHRydWVcclxuICogICAgICAgICAgICAgICAgICAgICAgIGVzdG9xdWVBdHVhbDogMTUwMC4wXHJcbiAqICAgICAgICAgICAgICAgICAgICAgICBlc3RvcXVlTWluaW1vOiAxMDAuMFxyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgbG9jYWxFc3RvcXVlOiAnQS0xMi0wMydcclxuICogICAgICAgICAgICAgICAgICAgICAtIGNvZGlnbzogJzAyLjAxJ1xyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgbm9tZTogJ0bDoWJyaWNhIEpvaW52aWxsZSdcclxuICogICAgICAgICAgICAgICAgICAgICAgIGF0aXZvOiB0cnVlXHJcbiAqICAgICAgICAgICAgICAgICAgICAgICBlc3RvcXVlQXR1YWw6IDMyMDAuMFxyXG4gKiAgICAgICAgICAgICAgICAgICAgICAgZXN0b3F1ZU1pbmltbzogNTAwLjBcclxuICogICAgICAgICAgICAgICAgICAgICAgIGxvY2FsRXN0b3F1ZTogJ0ItMDUtMTInXHJcbiAqICAgICAgICAgICAgICAgaXRlbVNlbUVzdGFiZWxlY2ltZW50b3M6XHJcbiAqICAgICAgICAgICAgICAgICBzdW1tYXJ5OiBJdGVtIHNlbSBlc3RhYmVsZWNpbWVudG9zIGNhZGFzdHJhZG9zXHJcbiAqICAgICAgICAgICAgICAgICB2YWx1ZTpcclxuICogICAgICAgICAgICAgICAgICAgZGFkb3NHZXJhaXM6XHJcbiAqICAgICAgICAgICAgICAgICAgICAgY29kaWdvOiAnNzUzMDExMCdcclxuICogICAgICAgICAgICAgICAgICAgICBkZXNjcmljYW86ICdWQUxWVUxBIERFIEVTRkVSQSAxLzJcIiBCUk9OWkUnXHJcbiAqICAgICAgICAgICAgICAgICAgICAgdW5pZGFkZU1lZGlkYTogJ1VOJ1xyXG4gKiAgICAgICAgICAgICAgICAgICAgIHBlc29MaXF1aWRvOiAwLjE1MFxyXG4gKiAgICAgICAgICAgICAgICAgICAgIHBlc29CcnV0bzogMC4yMDBcclxuICogICAgICAgICAgICAgICAgICAgdW5pZGFkZXNNZWRpZGE6XHJcbiAqICAgICAgICAgICAgICAgICAgICAgLSB1bmlkYWRlOiAnVU4nXHJcbiAqICAgICAgICAgICAgICAgICAgICAgICBmYXRvckNvbnZlcnNhbzogMS4wXHJcbiAqICAgICAgICAgICAgICAgICAgICAgICBkZXNjcmljYW86ICdVbmlkYWRlJ1xyXG4gKiAgICAgICAgICAgICAgICAgICBlc3RhYmVsZWNpbWVudG9zOiBbXVxyXG4gKiAgICAgICA0MDA6XHJcbiAqICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9yZXNwb25zZXMvQmFkUmVxdWVzdCdcclxuICogICAgICAgNDA0OlxyXG4gKiAgICAgICAgICRyZWY6ICcjL2NvbXBvbmVudHMvcmVzcG9uc2VzL05vdEZvdW5kJ1xyXG4gKiAgICAgICA0Mjk6XHJcbiAqICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9yZXNwb25zZXMvVG9vTWFueVJlcXVlc3RzJ1xyXG4gKiAgICAgICA1MDA6XHJcbiAqICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9yZXNwb25zZXMvSW50ZXJuYWxFcnJvcidcclxuICogICAgICAgNTA0OlxyXG4gKiAgICAgICAgIGRlc2NyaXB0aW9uOiBHYXRld2F5IFRpbWVvdXQgLSBSZXF1aXNpw6fDo28gZXhjZWRldSBvIHRlbXBvIGxpbWl0ZVxyXG4gKiAgICAgICAgIGNvbnRlbnQ6XHJcbiAqICAgICAgICAgICBhcHBsaWNhdGlvbi9qc29uOlxyXG4gKiAgICAgICAgICAgICBzY2hlbWE6XHJcbiAqICAgICAgICAgICAgICAgJHJlZjogJyMvY29tcG9uZW50cy9zY2hlbWFzL0Vycm9yJ1xyXG4gKiAgICAgICAgICAgICBleGFtcGxlOlxyXG4gKiAgICAgICAgICAgICAgIGVycm9yOiAnVGltZW91dCBkYSByZXF1aXNpw6fDo28nXHJcbiAqICAgICAgICAgICAgICAgZGV0YWlsczogJ0EgY29uc3VsdGEgYW8gYmFuY28gZGUgZGFkb3MgZGVtb3JvdSBtYWlzIGRlIDMwIHNlZ3VuZG9zJ1xyXG4gKi9cclxucm91dGVyLmdldCgnLzppdGVtQ29kaWdvJywgXHJcbiAgb3B0aW9uYWxBcGlLZXlBdXRoLCAgLy8gQXV0ZW50aWNhIHNlIHRpdmVyIEFQSSBLZXlcclxuICB1c2VyUmF0ZUxpbWl0LCAgICAgICAvLyBSYXRlIGxpbWl0IHBvciB1c3XDoXJpby90aWVyXHJcbiAgaXRlbUNhY2hlLCAgICAgICAgICAgLy8gQ2FjaGUgSFRUUFxyXG4gIGFzeW5jIChyZXE6IFJlcXVlc3QsIHJlczogUmVzcG9uc2UsIG5leHQ6IE5leHRGdW5jdGlvbikgPT4ge1xyXG4gIHRyeSB7XHJcbiAgICAvLyDinIUgQ09SUklHSURPOiBOb21lIGNvcnJldG8gZG8gY29udHJvbGxlclxyXG4gICAgY29uc3QgeyBJbmZvcm1hY29lc0dlcmFpc0NvbnRyb2xsZXIgfSA9IGF3YWl0IGltcG9ydCgnLi4vY29udHJvbGxlci9pbmZvcm1hY29lc0dlcmFpcy5jb250cm9sbGVyJyk7XHJcbiAgICBcclxuICAgIC8vIOKchSBDT1JSSUdJRE86IFBhc3NhIHJlcSwgcmVzLCBuZXh0ICgzIHBhcsOibWV0cm9zKVxyXG4gICAgYXdhaXQgSW5mb3JtYWNvZXNHZXJhaXNDb250cm9sbGVyLmdldEluZm9ybWFjb2VzR2VyYWlzKHJlcSwgcmVzLCBuZXh0KTtcclxuICB9IGNhdGNoIChlcnJvcikge1xyXG4gICAgY29uc29sZS5lcnJvcignRXJybyBhbyBjYXJyZWdhciBjb250cm9sbGVyOicsIGVycm9yKTtcclxuICAgIHJlcy5zdGF0dXMoNTAwKS5qc29uKHtcclxuICAgICAgc3VjY2VzczogZmFsc2UsXHJcbiAgICAgIGVycm9yOiAnRXJybyBpbnRlcm5vIGFvIHByb2Nlc3NhciByZXF1aXNpw6fDo28nLFxyXG4gICAgfSk7XHJcbiAgfVxyXG59KTtcclxuXHJcbmV4cG9ydCBkZWZhdWx0IHJvdXRlcjsiXSwidmVyc2lvbiI6M30=

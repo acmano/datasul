@@ -1,6 +1,7 @@
 // src/config/swagger.config.ts
 import swaggerJsdoc from 'swagger-jsdoc';
 import { SwaggerOptions } from 'swagger-ui-express';
+import { appConfig } from './app.config';
 
 const options: swaggerJsdoc.Options = {
   definition: {
@@ -10,13 +11,13 @@ const options: swaggerJsdoc.Options = {
       version: '1.0.0',
       description: `
         API para centralização de consultas de dados do ERP Totvs Datasul.
-        
+
         ## Características
         - Consulta de dados cadastrais de itens
         - Suporte a múltiplas bases de dados (SQL Server, ODBC)
         - Rate limiting e proteção contra ataques
         - Logs estruturados e rastreamento de requisições
-        
+
         ## Autenticação
         Atualmente a API não requer autenticação. (Implementar em produção!)
       `,
@@ -31,7 +32,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: appConfig.baseUrl,
         description: 'Servidor de Desenvolvimento'
       },
       {
