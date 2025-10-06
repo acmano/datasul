@@ -28,10 +28,22 @@ jobs:
           cp -a lor0138/. "$RELEASE_DIR/"
           cp /opt/lor0138/backend/shared/.env "$RELEASE_DIR/.env"
 
+      - name: Debug - List files
+        run: |
+          echo "Arquivos copiados:"
+          ls -la "$RELEASE_DIR" | head -20
+          echo "Package files:"
+          ls -la "$RELEASE_DIR" | grep package
+
       - name: Build
         run: |
           cd "$RELEASE_DIR"
-          npm ci --production
+          if [ -f package-lock.json ]; then
+            npm ci --production
+          else
+            echo "package-lock.json não encontrado, usando npm install"
+            npm install --production
+          fi
           npm run build
 
       - name: Deploy
