@@ -25,7 +25,7 @@ jobs:
 
       - name: Copy code
         run: |
-          rsync -av --exclude='.git' --exclude='node_modules' lor0138/ "$RELEASE_DIR/"
+          cp -a lor0138/. "$RELEASE_DIR/"
           cp /opt/lor0138/backend/shared/.env "$RELEASE_DIR/.env"
 
       - name: Build
