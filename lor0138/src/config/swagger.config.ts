@@ -1,11 +1,69 @@
 // src/config/swagger.config.ts
+
 import swaggerJsdoc from 'swagger-jsdoc';
 import { SwaggerOptions } from 'swagger-ui-express';
 import { appConfig } from './app.config';
 
+/**
+ * @fileoverview Configuração do Swagger/OpenAPI
+ *
+ * Define a documentação interativa da API usando Swagger UI e OpenAPI 3.0.
+ * A documentação é gerada automaticamente a partir de:
+ * - Anotações JSDoc nos arquivos (routes, controllers)
+ * - Schemas definidos neste arquivo
+ * - Configurações globais de servers e security
+ *
+ * **Acesso à Documentação:**
+ * - Swagger UI: http://localhost:3000/api-docs
+ * - OpenAPI JSON: http://localhost:3000/api-docs.json
+ *
+ * **Características:**
+ * - OpenAPI 3.0.0 compliant
+ * - Schemas reutilizáveis para Request/Response
+ * - Exemplos práticos para cada endpoint
+ * - Componentes compartilhados (Error, HealthCheck, etc)
+ * - Tags para organização de endpoints
+ *
+ * **Estrutura:**
+ * ```
+ * Swagger Config
+ * ├── Info (título, versão, descrição)
+ * ├── Servers (dev, prod)
+ * ├── Tags (agrupamento de endpoints)
+ * ├── Components
+ * │   ├── Schemas (modelos de dados)
+ * │   ├── Responses (respostas reutilizáveis)
+ * │   └── Parameters (parâmetros reutilizáveis)
+ * └── APIs (arquivos a serem escaneados)
+ * ```
+ *
+ * @module SwaggerConfig
+ * @category Config
+ */
+
+// ============================================================================
+// CONFIGURAÇÃO PRINCIPAL
+// ============================================================================
+
+/**
+ * Opções de configuração do Swagger/OpenAPI
+ *
+ * Define toda a estrutura da documentação da API, incluindo
+ * metadados, schemas, componentes reutilizáveis e caminhos
+ * dos arquivos a serem escaneados para anotações.
+ *
+ * @constant
+ */
 const options: swaggerJsdoc.Options = {
+  // ==========================================================================
+  // DEFINIÇÃO DA API
+  // ==========================================================================
   definition: {
     openapi: '3.0.0',
+
+    // ========================================================================
+    // INFORMAÇÕES GERAIS
+    // ========================================================================
     info: {
       title: 'Datasul API - Documentação',
       version: '1.0.0',
@@ -17,206 +75,280 @@ const options: swaggerJsdoc.Options = {
         - Suporte a múltiplas bases de dados (SQL Server, ODBC)
         - Rate limiting e proteção contra ataques
         - Logs estruturados e rastreamento de requisições
+        - Cache inteligente para otimização de performance
 
         ## Autenticação
-        Atualmente a API não requer autenticação. (Implementar em produção!)
+        A API suporta autenticação opcional por API Key.
+        - Com API Key: Rate limiting baseado no tier do usuário
+        - Sem API Key: Rate limiting padrão por IP
+
+        ## Rate Limiting
+        | Tier | Por Minuto | Por Hora | Por Dia |
+        |------|------------|----------|---------|
+        | Free | 10 | 100 | 1,000 |
+        | Premium | 60 | 1,000 | 10,000 |
+        | Enterprise | 300 | 10,000 | 100,000 |
+        | Admin | 1,000 | 50,000 | 1,000,000 |
+
+        ## Correlation ID
+        Todas as requisições suportam header X-Correlation-ID para rastreamento.
+        Se não fornecido, o servidor gera automaticamente.
+
+        ## Cache
+        Respostas são cacheadas por 10 minutos (TTL configurável).
+        Header X-Cache indica HIT ou MISS.
       `,
       contact: {
         name: 'Equipe de Desenvolvimento',
-        email: 'dev@empresa.com'
+        email: 'dev@empresa.com',
       },
       license: {
         name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
+        url: 'https://opensource.org/licenses/MIT',
+      },
     },
+
+    // ========================================================================
+    // SERVIDORES
+    // ========================================================================
     servers: [
       {
         url: appConfig.baseUrl,
-        description: 'Servidor de Desenvolvimento'
+        description: 'Servidor de Desenvolvimento',
       },
       {
         url: 'https://api.empresa.com',
-        description: 'Servidor de Produção'
-      }
+        description: 'Servidor de Produção',
+      },
     ],
+
+    // ========================================================================
+    // TAGS (AGRUPAMENTO DE ENDPOINTS)
+    // ========================================================================
     tags: [
       {
         name: 'Health',
-        description: 'Endpoints de saúde e monitoramento'
+        description: 'Endpoints de saúde e monitoramento do sistema',
       },
       {
         name: 'Itens - Dados Cadastrais',
-        description: 'Informações cadastrais de itens'
+        description: 'Informações cadastrais completas de itens do ERP',
       },
       {
         name: 'Itens - Classificações',
-        description: 'Classificações e hierarquias de itens'
-      }
+        description: 'Classificações fiscais e hierarquias de itens',
+      },
+      {
+        name: 'Cache',
+        description: 'Gerenciamento e estatísticas de cache',
+      },
+      {
+        name: 'Admin',
+        description: 'Endpoints administrativos (requer permissão)',
+      },
     ],
+
+    // ========================================================================
+    // COMPONENTES REUTILIZÁVEIS
+    // ========================================================================
     components: {
+      // ======================================================================
+      // SCHEMAS (MODELOS DE DADOS)
+      // ======================================================================
       schemas: {
+        /**
+         * Schema de erro padrão da API
+         * Usado em todas as respostas de erro (4xx, 5xx)
+         */
         Error: {
           type: 'object',
           properties: {
             error: {
               type: 'string',
-              example: 'Erro ao processar requisição'
+              description: 'Nome do erro ou categoria',
+              example: 'ValidationError',
             },
             message: {
               type: 'string',
-              example: 'Detalhes do erro'
+              description: 'Mensagem descritiva do erro',
+              example: 'Código do item é obrigatório',
             },
             timestamp: {
               type: 'string',
               format: 'date-time',
-              example: '2025-10-04T12:00:00.000Z'
+              description: 'Timestamp ISO do erro',
+              example: '2025-10-04T12:00:00.000Z',
             },
             path: {
               type: 'string',
-              example: '/api/lor0138/item/123/dados-cadastrais/informacoes-gerais'
+              description: 'Caminho da requisição que gerou o erro',
+              example: '/api/lor0138/item/123/dados-cadastrais/informacoes-gerais',
             },
-            requestId: {
+            correlationId: {
               type: 'string',
               format: 'uuid',
-              example: '550e8400-e29b-41d4-a716-446655440000'
-            }
-          }
+              description: 'ID de correlação para rastreamento',
+              example: '550e8400-e29b-41d4-a716-446655440000',
+            },
+          },
+          required: ['error', 'message', 'timestamp', 'path'],
         },
+
+        /**
+         * Schema de health check do sistema
+         * Retorna status de banco, memória e disco
+         */
         HealthCheck: {
           type: 'object',
           properties: {
             status: {
               type: 'string',
               enum: ['healthy', 'degraded', 'unhealthy'],
-              example: 'healthy'
+              description: 'Status geral do sistema',
+              example: 'healthy',
             },
             timestamp: {
               type: 'string',
-              format: 'date-time'
+              format: 'date-time',
+              description: 'Timestamp da verificação',
             },
             uptime: {
               type: 'number',
-              description: 'Tempo de atividade em segundos',
-              example: 3600
+              description: 'Tempo de atividade do processo em segundos',
+              example: 3600,
             },
-            database: {
+            checks: {
               type: 'object',
               properties: {
-                connected: {
-                  type: 'boolean',
-                  example: true
+                database: {
+                  type: 'object',
+                  properties: {
+                    status: {
+                      type: 'string',
+                      enum: ['ok', 'degraded', 'error'],
+                      example: 'ok',
+                    },
+                    responseTime: {
+                      type: 'number',
+                      description: 'Tempo de resposta em ms',
+                      example: 45,
+                    },
+                    connectionType: {
+                      type: 'string',
+                      description: 'Tipo de conexão (sqlserver, odbc, mock)',
+                      example: 'sqlserver',
+                    },
+                    mode: {
+                      type: 'string',
+                      description: 'Modo de operação',
+                      example: 'REAL_DATABASE',
+                    },
+                  },
                 },
-                responseTime: {
-                  type: 'number',
-                  description: 'Tempo de resposta em ms',
-                  example: 15
+                memory: {
+                  type: 'object',
+                  properties: {
+                    status: {
+                      type: 'string',
+                      enum: ['ok', 'warning', 'critical'],
+                      example: 'ok',
+                    },
+                    used: {
+                      type: 'number',
+                      description: 'Memória usada em MB',
+                      example: 512,
+                    },
+                    total: {
+                      type: 'number',
+                      description: 'Memória total em MB',
+                      example: 2048,
+                    },
+                    percentage: {
+                      type: 'number',
+                      description: 'Percentual de uso',
+                      example: 25,
+                    },
+                    free: {
+                      type: 'number',
+                      description: 'Memória livre em MB',
+                      example: 1536,
+                    },
+                  },
                 },
-                type: {
-                  type: 'string',
-                  example: 'SQL Server'
-                }
-              }
+                disk: {
+                  type: 'object',
+                  properties: {
+                    status: {
+                      type: 'string',
+                      enum: ['ok', 'warning', 'critical'],
+                      example: 'ok',
+                    },
+                  },
+                },
+              },
             },
-            memory: {
-              type: 'object',
-              properties: {
-                used: {
-                  type: 'number',
-                  description: 'Memória usada em MB',
-                  example: 120.5
-                },
-                total: {
-                  type: 'number',
-                  description: 'Memória total em MB',
-                  example: 512
-                },
-                percentage: {
-                  type: 'number',
-                  description: 'Percentual de uso',
-                  example: 23.5
-                }
-              }
-            }
-          }
+          },
         },
+
+        /**
+         * Schema de identificação de item
+         * Dados básicos mestres do item
+         */
         ItemIdentificacao: {
           type: 'object',
           properties: {
             codigo: {
               type: 'string',
-              description: 'Código do item',
-              example: 'ITEM001',
-              maxLength: 16
+              description: 'Código único do item no ERP',
+              example: '7530110',
+              maxLength: 16,
             },
             descricao: {
               type: 'string',
               description: 'Descrição completa do item',
-              example: 'Parafuso M6 x 20mm',
-              maxLength: 120
+              example: 'VALVULA DE ESFERA 1/2" BRONZE',
+              maxLength: 120,
             },
-            descricaoReduzida: {
+            unidade: {
               type: 'string',
-              description: 'Descrição resumida',
-              example: 'Parafuso M6',
-              maxLength: 40
-            },
-            nomeTecnico: {
-              type: 'string',
-              description: 'Nome técnico do produto',
-              example: 'Parafuso sextavado M6x20',
-              maxLength: 80
-            },
-            dataCadastro: {
-              type: 'string',
-              format: 'date',
-              description: 'Data de cadastro do item',
-              example: '2025-01-15'
-            },
-            situacao: {
-              type: 'string',
-              enum: ['Ativo', 'Inativo', 'Bloqueado', 'Obsoleto'],
-              description: 'Situação atual do item',
-              example: 'Ativo'
-            }
-          },
-          required: ['codigo', 'descricao']
-        },
-        ItemUnidades: {
-          type: 'object',
-          properties: {
-            unidadeMedidaPrincipal: {
-              type: 'string',
-              description: 'Unidade de medida principal',
-              example: 'PC',
-              maxLength: 2
-            },
-            unidadeMedidaCompra: {
-              type: 'string',
-              description: 'Unidade de medida para compras',
-              example: 'CX',
-              maxLength: 2
-            },
-            unidadeMedidaVenda: {
-              type: 'string',
-              description: 'Unidade de medida para vendas',
+              description: 'Unidade de medida padrão',
               example: 'UN',
-              maxLength: 2
+              maxLength: 2,
             },
-            fatorConversaoCompra: {
-              type: 'number',
-              format: 'float',
-              description: 'Fator de conversão UM compra para UM principal',
-              example: 100
-            },
-            fatorConversaoVenda: {
-              type: 'number',
-              format: 'float',
-              description: 'Fator de conversão UM venda para UM principal',
-              example: 1
-            }
-          }
+          },
         },
+
+        /**
+         * Schema de unidades de medida alternativas
+         */
+        ItemUnidades: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              unidade: {
+                type: 'string',
+                description: 'Código da unidade de medida',
+                example: 'CX',
+              },
+              fatorConversao: {
+                type: 'number',
+                format: 'float',
+                description: 'Fator de conversão para unidade padrão',
+                example: 12.0,
+              },
+              descricao: {
+                type: 'string',
+                description: 'Descrição da unidade',
+                example: 'Caixa com 12 unidades',
+              },
+            },
+          },
+        },
+
+        /**
+         * Schema de características físicas do item
+         */
         ItemCaracteristicasFisicas: {
           type: 'object',
           properties: {
@@ -224,161 +356,269 @@ const options: swaggerJsdoc.Options = {
               type: 'number',
               format: 'float',
               description: 'Peso líquido em kg',
-              example: 0.025
+              example: 0.150,
             },
             pesoBruto: {
               type: 'number',
               format: 'float',
               description: 'Peso bruto em kg',
-              example: 0.030
+              example: 0.200,
             },
             volume: {
               type: 'number',
               format: 'float',
               description: 'Volume em m³',
-              example: 0.00001
+              example: 0.00001,
             },
             altura: {
               type: 'number',
               format: 'float',
               description: 'Altura em cm',
-              example: 2.0
+              example: 2.0,
             },
             largura: {
               type: 'number',
               format: 'float',
               description: 'Largura em cm',
-              example: 0.6
+              example: 0.6,
             },
             comprimento: {
               type: 'number',
               format: 'float',
               description: 'Comprimento em cm',
-              example: 0.6
-            }
-          }
+              example: 0.6,
+            },
+          },
         },
+
+        /**
+         * Schema completo de informações gerais de um item
+         * Agrega identificação, unidades e características físicas
+         */
         InformacoesGerais: {
           type: 'object',
           properties: {
             identificacao: {
-              $ref: '#/components/schemas/ItemIdentificacao'
+              $ref: '#/components/schemas/ItemIdentificacao',
             },
             unidades: {
-              $ref: '#/components/schemas/ItemUnidades'
+              $ref: '#/components/schemas/ItemUnidades',
             },
             caracteristicasFisicas: {
-              $ref: '#/components/schemas/ItemCaracteristicasFisicas'
-            }
-          }
-        }
+              $ref: '#/components/schemas/ItemCaracteristicasFisicas',
+            },
+          },
+        },
       },
+
+      // ======================================================================
+      // RESPONSES (RESPOSTAS REUTILIZÁVEIS)
+      // ======================================================================
       responses: {
+        /**
+         * 400 Bad Request - Requisição inválida
+         * Geralmente erro de validação de parâmetros
+         */
         BadRequest: {
-          description: 'Requisição inválida',
+          description: 'Requisição inválida - Erro de validação',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Error',
               },
               example: {
-                error: 'Validação falhou',
+                error: 'ValidationError',
                 message: 'Código do item é obrigatório',
                 timestamp: '2025-10-04T12:00:00.000Z',
                 path: '/api/lor0138/item//dados-cadastrais/informacoes-gerais',
-                requestId: '550e8400-e29b-41d4-a716-446655440000'
-              }
-            }
-          }
+                correlationId: '550e8400-e29b-41d4-a716-446655440000',
+              },
+            },
+          },
         },
+
+        /**
+         * 404 Not Found - Recurso não encontrado
+         */
         NotFound: {
           description: 'Recurso não encontrado',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Error',
               },
               example: {
-                error: 'Item não encontrado',
-                message: 'O item ITEM999 não existe no sistema',
+                error: 'ItemNotFoundError',
+                message: 'Item ITEM999 não encontrado no sistema',
                 timestamp: '2025-10-04T12:00:00.000Z',
                 path: '/api/lor0138/item/ITEM999/dados-cadastrais/informacoes-gerais',
-                requestId: '550e8400-e29b-41d4-a716-446655440000'
-              }
-            }
-          }
+                correlationId: '550e8400-e29b-41d4-a716-446655440000',
+              },
+            },
+          },
         },
+
+        /**
+         * 429 Too Many Requests - Rate limit excedido
+         */
+        TooManyRequests: {
+          description: 'Rate limit excedido',
+          content: {
+            'application/json': {
+              schema: {
+                $ref: '#/components/schemas/Error',
+              },
+              example: {
+                error: 'RateLimitError',
+                message:
+                  'Muitas requisições. Tente novamente em alguns segundos.',
+                timestamp: '2025-10-04T12:00:00.000Z',
+                path: '/api/lor0138/item/ITEM001/dados-cadastrais/informacoes-gerais',
+                correlationId: '550e8400-e29b-41d4-a716-446655440000',
+              },
+            },
+          },
+        },
+
+        /**
+         * 500 Internal Server Error - Erro interno do servidor
+         */
         InternalError: {
           description: 'Erro interno do servidor',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/Error',
               },
               example: {
-                error: 'Erro interno',
+                error: 'DatabaseError',
                 message: 'Erro ao conectar com o banco de dados',
                 timestamp: '2025-10-04T12:00:00.000Z',
                 path: '/api/lor0138/item/ITEM001/dados-cadastrais/informacoes-gerais',
-                requestId: '550e8400-e29b-41d4-a716-446655440000'
-              }
-            }
-          }
-        },
-        TooManyRequests: {
-          description: 'Limite de requisições excedido',
-          content: {
-            'application/json': {
-              schema: {
-                $ref: '#/components/schemas/Error'
+                correlationId: '550e8400-e29b-41d4-a716-446655440000',
               },
-              example: {
-                error: 'Rate limit excedido',
-                message: 'Muitas requisições. Tente novamente em alguns segundos.',
-                timestamp: '2025-10-04T12:00:00.000Z',
-                path: '/api/lor0138/item/ITEM001/dados-cadastrais/informacoes-gerais',
-                requestId: '550e8400-e29b-41d4-a716-446655440000'
-              }
-            }
-          }
-        }
+            },
+          },
+        },
       },
+
+      // ======================================================================
+      // PARAMETERS (PARÂMETROS REUTILIZÁVEIS)
+      // ======================================================================
       parameters: {
+        /**
+         * Parâmetro de path: código do item
+         * Usado em múltiplos endpoints de consulta de item
+         */
         ItemCodigo: {
           name: 'itemCodigo',
           in: 'path',
           required: true,
-          description: 'Código único do item no sistema',
+          description: 'Código único do item no sistema ERP (1-16 caracteres alfanuméricos)',
           schema: {
             type: 'string',
+            minLength: 1,
             maxLength: 16,
-            pattern: '^[A-Z0-9-]+$'
+            pattern: '^[A-Za-z0-9]+$',
           },
-          example: 'ITEM001'
+          example: '7530110',
         },
-        RequestId: {
-          name: 'X-Request-ID',
+
+        /**
+         * Header: Correlation ID (X-Correlation-ID)
+         * Para rastreamento de requisições
+         */
+        CorrelationId: {
+          name: 'X-Correlation-ID',
           in: 'header',
-          description: 'ID único para rastreamento da requisição',
+          required: false,
+          description:
+            'ID de correlação para rastreamento da requisição (gerado automaticamente se omitido)',
           schema: {
             type: 'string',
-            format: 'uuid'
-          }
-        }
-      }
-    }
+            format: 'uuid',
+          },
+          example: '550e8400-e29b-41d4-a716-446655440000',
+        },
+
+        /**
+         * Header: API Key (X-API-Key)
+         * Para autenticação e rate limiting personalizado
+         */
+        ApiKey: {
+          name: 'X-API-Key',
+          in: 'header',
+          required: false,
+          description: 'API Key para autenticação e rate limiting personalizado',
+          schema: {
+            type: 'string',
+          },
+          example: 'api_key_premium_abc123xyz789',
+        },
+      },
+    },
   },
+
+  // ==========================================================================
+  // ARQUIVOS A SEREM ESCANEADOS
+  // ==========================================================================
+
+  /**
+   * Caminhos dos arquivos a serem escaneados para anotações JSDoc/OpenAPI
+   *
+   * O swagger-jsdoc procura por comentários @openapi nesses arquivos
+   * e os adiciona à documentação gerada.
+   *
+   * @note
+   * Usar glob patterns para incluir múltiplos arquivos
+   */
   apis: [
-    './src/api/**/*.routes.ts',
-    './src/api/**/*.controller.ts',
-    './src/server.ts'
-  ]
+    './src/api/**/*.routes.ts', // Rotas da API
+    './src/api/**/*.controller.ts', // Controllers (caso tenham anotações)
+    './src/server.ts', // Endpoint raiz e configurações globais
+  ],
 };
 
+// ============================================================================
+// EXPORTS
+// ============================================================================
+
+/**
+ * Especificação OpenAPI gerada
+ *
+ * Objeto final contendo toda a documentação da API no formato OpenAPI 3.0.
+ * Usado pelo Swagger UI para renderizar a interface interativa.
+ *
+ * @constant
+ * @example
+ * ```typescript
+ * // Servir JSON da especificação
+ * app.get('/api-docs.json', (req, res) => {
+ *   res.json(swaggerSpec);
+ * });
+ * ```
+ */
 export const swaggerSpec = swaggerJsdoc(options);
 
+/**
+ * Opções de customização do Swagger UI
+ *
+ * Personalização visual e comportamental da interface do Swagger.
+ *
+ * @constant
+ * @example
+ * ```typescript
+ * // Servir Swagger UI
+ * app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
+ * ```
+ */
 export const swaggerUiOptions: SwaggerOptions = {
+  /** CSS customizado para ocultar topbar padrão */
   customCss: '.swagger-ui .topbar { display: none }',
+
+  /** Título da aba do navegador */
   customSiteTitle: 'Datasul API - Documentação',
-  customfavIcon: '/favicon.ico'
+
+  /** Ícone do site (favicon) */
+  customfavIcon: '/favicon.ico',
 };

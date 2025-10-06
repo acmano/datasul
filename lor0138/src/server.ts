@@ -14,6 +14,14 @@ import { appConfig } from '@config/app.config';
 dotenv.config();
 
 /**
+ * Type guard para validar estratégia de cache
+ * Garante que apenas valores válidos sejam aceitos
+ */
+function isValidCacheStrategy(value: string): value is 'memory' | 'redis' | 'layered' {
+  return ['memory', 'redis', 'layered'].includes(value);
+}
+
+/**
  * Inicializa a aplicação
  *
  * Ordem de execução:
@@ -40,8 +48,22 @@ async function startServer(): Promise<void> {
     // ============================================
     log.info('💾 Inicializando sistema de cache...');
 
-    const cacheStrategy = process.env.CACHE_STRATEGY || 'memory';
+    const cacheStrategyEnv = process.env.CACHE_STRATEGY || 'memory';
     const cacheEnabled = process.env.CACHE_ENABLED !== 'false';
+
+    // Validar e converter para tipo correto
+    const cacheStrategy = isValidCacheStrategy(cacheStrategyEnv)
+      ? cacheStrategyEnv
+      : 'memory';
+
+    // Log warning se estratégia inválida foi fornecida
+    if (cacheStrategyEnv !== cacheStrategy) {
+      log.warn('⚠️  Estratégia de cache inválida, usando fallback', {
+        provided: cacheStrategyEnv,
+        fallback: cacheStrategy,
+        validOptions: ['memory', 'redis', 'layered']
+      });
+    }
 
     if (cacheEnabled) {
       CacheManager.initialize(cacheStrategy);
