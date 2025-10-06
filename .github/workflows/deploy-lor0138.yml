@@ -38,12 +38,7 @@ jobs:
       - name: Build
         run: |
           cd "$RELEASE_DIR"
-          if [ -f package-lock.json ]; then
-            npm ci --production
-          else
-            echo "package-lock.json não encontrado, usando npm install"
-            npm install --production
-          fi
+          npm install
           npm run build
 
       - name: Deploy
