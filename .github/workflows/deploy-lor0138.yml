@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'lor0138/**'
   workflow_dispatch:
 
 jobs:
