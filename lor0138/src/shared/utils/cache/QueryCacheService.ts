@@ -67,6 +67,8 @@ const DEFAULT_PREFIX = 'query';
 const ENTITY_TTL = {
   /** TTL para queries de itens (10 minutos) */
   ITEM: 600,
+  /** TTL para queries de famílias (1 hora) */
+  FAMILIA: 3600,
   /** TTL para queries de estabelecimentos (15 minutos) */
   ESTABELECIMENTO: 900,
   /** TTL para health checks (30 segundos) */
@@ -424,6 +426,43 @@ export class QueryCacheService {
     return this.withCache(sql, params, queryFn, {
       ttl: ttl || ENTITY_TTL.ITEM,
       prefix: 'item',
+    });
+  }
+
+  /**
+   * Wrapper para queries de familias
+   *
+   * Usa TTL otimizado para familias (10 minutos) e prefixo 'familia'.
+   * Recomendado para queries de dados mestres de familias.
+   *
+   * @template T - Tipo do resultado
+   * @param {string} sql - Query SQL
+   * @param {any[]} params - Parâmetros da query
+   * @param {Function} queryFn - Função que executa a query
+   * @param {number} [ttl] - TTL customizado (padrão: 600s)
+   * @returns {Promise<T>} Resultado da query
+   *
+   * @example
+   * ```typescript
+   * const familias = await QueryCacheService.withFamiliaCache(
+   *   'SELECT * FROM familia WHERE codigo = @p1',
+   *   [{ name: 'p1', value: '450000' }],
+   *   async () => await FamiliaRepository.query(sql, params)
+   * );
+   * ```
+   *
+   * @note
+   * TTL padrão (10 min) é adequado para dados cadastrais que mudam pouco
+   */
+  static async withFamiliaCache<T>(
+    sql: string,
+    params: any[],
+    queryFn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    return this.withCache(sql, params, queryFn, {
+      ttl: ttl || ENTITY_TTL.FAMILIA,
+      prefix: 'familia',
     });
   }
 

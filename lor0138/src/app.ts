@@ -61,7 +61,8 @@ import { rateLimit } from 'express-rate-limit';
 import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
 import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
-import informacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import itemInformacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import familiaInformacoesGeraisRoutes from './api/lor0138/familia/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { CacheManager } from '@shared/utils/cacheManager';
 import adminRoutes from './api/admin/routes/admin.routes';
@@ -959,9 +960,14 @@ export class App {
     // Rotas administrativas
     this.setupAdminRoutes()
 
-    // API principal do negócio
+    // API consulta item
     this.app.use('/api/lor0138/item/dadosCadastrais/informacoesGerais',
-      informacoesGeraisRoutes
+      itemInformacoesGeraisRoutes
+    );
+
+    // API consulta família
+    this.app.use('/api/lor0138/familia/dadosCadastrais/informacoesGerais',
+      familiaInformacoesGeraisRoutes
     );
 
     // Rota raiz (informações da API)

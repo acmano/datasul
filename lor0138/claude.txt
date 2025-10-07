@@ -79,17 +79,13 @@ src/infrastructure/database/config/sqlServerConfig.ts
 ✅ 18. Testes com banco real (integração completa)
 ✅ 19. Testes de carga (performance com k6/Artillery)
 ✅ 20. Mutation testing (Stryker para validar qualidade)
+✅ 21. Criar Pipeline CI/CD
+22. SSL/HTTPS com Let's Encrypt
+23. Monitoramento (Prometheus/Grafana)
+24. Testes automatizados no pipeline
+25. Branch protection no GitHub
 
-
-18. Criar Pipeline CI/CD, mas lembrando que tanto o projeto, quanto o desenvolvimento acontecem on premises.
-Configurar GitHub Actions para:
-Rodar testes automaticamente
-Validar tipos TypeScript
-Deploy automático em staging/produção
-
-
-19. Documentar Mais Endpoints
-O projeto só tem 1 endpoint funcionando. Expandir para:
+26. Documentar Mais Endpoints
 
 
 

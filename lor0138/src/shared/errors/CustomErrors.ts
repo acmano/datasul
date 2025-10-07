@@ -120,6 +120,65 @@ export class ItemNotFoundError extends AppError {
 
 /**
  * ---------------------------------------------------------------------------
+ * ERRO: FamiliaNotFoundError
+ * ---------------------------------------------------------------------------
+ *
+ * Lançado quando uma familia não é encontrada no sistema.
+ *
+ * @class FamiliaNotFoundError
+ * @extends {AppError}
+ *
+ * @description
+ * Erro específico para situações onde uma familia solicitada não existe
+ * na base de dados. Sempre retorna statusCode 404.
+ *
+ * QUANDO USAR:
+ * - Busca de familia por código retorna vazio
+ * - Familia foi deletada ou nunca existiu
+ * - Usuário tenta acessar familia inexistente
+ *
+ * PROPRIEDADES HERDADAS:
+ * - statusCode: 404 (Not Found)
+ * - isOperational: true (erro esperado)
+ * - message: "Familia {codigo} não encontrada"
+ * - context: { familiaCodigo: string }
+ *
+ * @param {string} familiaCodigo - Código da familia não encontrada
+ *
+ * @example
+ * // No Service
+ * const familia = await repository.findByCode('450000');
+ * if (!familia) {
+ *   throw new FamiliaNotFoundError('450000');
+ * }
+ *
+ * @example
+ * // Resposta HTTP (404)
+ * {
+ *   "error": "FamiliaNotFoundError",
+ *   "message": "Familia 450000 não encontrada",
+ *   "statusCode": 404,
+ *   "context": { "familiaCodigo": "450000" }
+ * }
+ *
+ * @example
+ * // Tratamento específico
+ * try {
+ *   return await getItem('INVALID');
+ * } catch (error) {
+ *   if (error instanceof FamiliaNotFoundError) {
+ *     console.log('Familia não existe:', error.context.FamiliaCodigo);
+ *   }
+ * }
+ */
+export class FamiliaNotFoundError extends AppError {
+  constructor(familiaCodigo: string) {
+    super(404, `Familia ${familiaCodigo} não encontrada`, true, { familiaCodigo });
+  }
+}
+
+/**
+ * ---------------------------------------------------------------------------
  * ERRO: EstabelecimentoNotFoundError
  * ---------------------------------------------------------------------------
  *
