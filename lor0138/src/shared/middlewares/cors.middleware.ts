@@ -1,15 +1,37 @@
 // src/shared/middlewares/cors.middleware.ts
 
+/**
+ * Middleware de CORS para rede interna
+ *
+ * @module shared/middlewares/cors
+ * @see cors.middleware.md para documentação completa
+ *
+ * Origens permitidas:
+ * - Domínios internos: *.lorenzetti.ibe, baseUrl do app
+ * - IPs privados: 10.x.x.x (classe A)
+ * - Localhost: 127.0.0.1, ::1
+ * - Desenvolvimento: Configurável via CORS_ALLOW_ALL
+ *
+ * Exports:
+ * - corsMiddleware: Middleware CORS configurado
+ * - corsOriginValidator: Validador adicional (bloqueia não autorizados)
+ */
+
 import cors, { CorsOptions } from 'cors';
 import { Request, Response, NextFunction } from 'express';
 import { appConfig } from '@config/app.config';
 
+// ============================================================================
+// VALIDAÇÃO DE ORIGEM
+// ============================================================================
+
 /**
- * Valida se a origem é da rede interna permitida
+ * Valida se a origem é permitida
+ * Permite: domínios internos, IPs privados (10.x), localhost
  */
 function isAllowedOrigin(origin: string | undefined): boolean {
   if (!origin) {
-    // Permite requisições sem origin (ex: Postman, curl, apps mobile)
+    // Permite requisições sem origin (Postman, curl, mobile apps)
     return true;
   }
 
@@ -17,45 +39,42 @@ function isAllowedOrigin(origin: string | undefined): boolean {
     const url = new URL(origin);
     const hostname = url.hostname;
 
-    // Lista de domínios internos permitidos
+    // Domínios internos permitidos
     const allowedDomains = [
       'lorenzetti.ibe',
-      appConfig.baseUrl, // Desenvolvimento
+      appConfig.baseUrl,
     ];
 
-    // Verifica se termina com algum domínio permitido
+    // Verifica domínios
     const isDomainAllowed = allowedDomains.some(domain =>
       hostname === domain || hostname.endsWith(`.${domain}`)
     );
 
-    if (isDomainAllowed) {
+    if (isDomainAllowed) return true;
+
+    // IPs privados classe A (10.x.x.x)
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) {
       return true;
     }
 
-    // Verifica range de IPs da rede privada classe A (10.x.x.x)
-    const ipPattern = /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-    if (ipPattern.test(hostname)) {
-      return true;
-    }
-
-    // Verifica localhost IPs
+    // Localhost
     if (hostname === '127.0.0.1' || hostname === '::1') {
       return true;
     }
 
     return false;
-  } catch (error) {
-    // Origin inválida
+  } catch {
     return false;
   }
 }
 
-/**
- * Configuração de CORS para rede interna
- */
+// ============================================================================
+// CONFIGURAÇÃO CORS
+// ============================================================================
+
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Em desenvolvimento, permite qualquer origem se configurado
+    // Desenvolvimento: permite tudo se configurado
     if (process.env.NODE_ENV === 'development' &&
       process.env.CORS_ALLOW_ALL === 'true') {
       callback(null, true);
@@ -66,7 +85,6 @@ const corsOptions: CorsOptions = {
     if (isAllowedOrigin(origin)) {
       callback(null, true);
     } else {
-      // Não retorna o header CORS para origens não autorizadas
       callback(null, false);
     }
   },
@@ -83,22 +101,36 @@ const corsOptions: CorsOptions = {
     'RateLimit-Remaining',
     'RateLimit-Reset',
   ],
-  maxAge: 86400,
+  maxAge: 86400, // 24 horas
 };
 
+// ============================================================================
+// MIDDLEWARES
+// ============================================================================
+
 /**
- * Middleware que bloqueia requisições de origens não autorizadas
+ * Middleware CORS principal
  */
-export function corsOriginValidator(req: Request, res: Response, next: NextFunction) {
+export const corsMiddleware = cors(corsOptions);
+
+/**
+ * Validador adicional que bloqueia origens não autorizadas
+ * Use após corsMiddleware para segurança extra
+ */
+export function corsOriginValidator(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   const origin = req.headers.origin;
 
-  // Em desenvolvimento com CORS_ALLOW_ALL, pula validação
+  // Desenvolvimento: pula validação se configurado
   if (process.env.NODE_ENV === 'development' &&
     process.env.CORS_ALLOW_ALL === 'true') {
     return next();
   }
 
-  // Se tem origin e não é permitida, bloqueia
+  // Bloqueia origem não permitida
   if (origin && !isAllowedOrigin(origin)) {
     console.warn(`Requisição bloqueada - Origem não autorizada: ${origin}`);
     return res.status(403).json({
@@ -109,6 +141,3 @@ export function corsOriginValidator(req: Request, res: Response, next: NextFunct
 
   next();
 }
-
-// Exporta o middleware CORS padrão
-export const corsMiddleware = cors(corsOptions);

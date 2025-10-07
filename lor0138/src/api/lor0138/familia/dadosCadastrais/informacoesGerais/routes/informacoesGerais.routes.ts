@@ -4,71 +4,21 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { cacheMiddleware } from '@shared/middlewares/cache.middleware';
 import { optionalApiKeyAuth } from '@shared/middlewares/apiKeyAuth.middleware';
 import { userRateLimit } from '@shared/middlewares/userRateLimit.middleware';
+import { validate } from '@shared/middlewares/validation.middleware';
+import { familiaParamsSchema } from '../validators/informacoesGerais.validators';
 
 /**
- * @fileoverview Rotas de Informações Gerais de Famílias
- *
- * Define os endpoints para consulta de informações cadastrais de famílias
- * do ERP Totvs Datasul/Progress através do SQL Server com Linked Server.
- *
- * **Arquitetura da Rota:**
- * ```
- * Camada de Proteção e Otimização:
- * 1. optionalApiKeyAuth    → Autentica se tiver API Key (opcional)
- * 2. userRateLimit         → Rate limit por usuário/tier ou IP
- * 3. itemCache             → Cache HTTP de resposta
- * 4. Controller            → Lógica de negócio
- * ```
- *
- * **Endpoints Disponíveis:**
- * - GET /:familiaCodigo - Busca informações gerais de uma família
- *
- * **Middlewares Aplicados:**
- * - **optionalApiKeyAuth**: Autenticação opcional por API Key
- *   - Se presente: autentica e aplica rate limit por tier
- *   - Se ausente: permite acesso com rate limit por IP
- *
- * - **userRateLimit**: Rate limiting inteligente
- *   - Com API Key: limit baseado no tier do usuário
- *   - Sem API Key: limit padrão por IP
- *
- * - **itemCache**: Cache HTTP de respostas
- *   - TTL: 10 minutos (600s)
- *   - Chave: GET:/api/.../:familiaCodigo
- *   - Invalida automaticamente após TTL
- *
- * **Integração com Swagger:**
- * Documentação OpenAPI completa com:
- * - Parâmetros (itemCodigo)
- * - Headers (X-Correlation-ID, X-API-Key)
- * - Respostas (200, 400, 404, 429, 500, 504)
- * - Exemplos de request/response
- *
+ * Rotas de Informações Gerais de Famílias
  * @module InformacoesGeraisRoutes
  * @category Routes
  */
 
-// ============================================================================
-// CONFIGURAÇÃO DO ROUTER
-// ============================================================================
-
 const router = Router();
 
 // ============================================================================
-// MIDDLEWARES ESPECÍFICOS
+// MIDDLEWARES
 // ============================================================================
 
-/**
- * Middleware de cache para rotas de item
- *
- * Configuração:
- * - TTL: 600 segundos (10 minutos)
- * - Chave: GET:/api/.../familiaCodigo
- * - Condição: Apenas status 200
- *
- * @constant
- * @private
- */
 const familiaCache = cacheMiddleware({
   ttl: 600, // 10 minutos
   keyGenerator: (req) => `familia:${req.params.familiaCodigo}`,
@@ -80,55 +30,6 @@ const familiaCache = cacheMiddleware({
 // ============================================================================
 
 /**
- * GET /:familiaCodigo - Busca informações gerais de uma família
- *
- * Endpoint principal que retorna todas as informações cadastrais de uma família:
- * - Dados gerais (código, descrição)
- *
- * **Fluxo de Requisição:**
- * ```
- * Cliente → optionalApiKeyAuth → userRateLimit → familiaCache → Controller
- *                                                     ↓
- *                                                  Service
- *                                                     ↓
- *                                                Repository
- *                                                     ↓
- *                                              DatabaseManager
- *                                                     ↓
- *                                          SQL Server (Linked Server)
- *                                                     ↓
- *                                              Progress/Datasul
- * ```
- *
- * **Validações Aplicadas:**
- * 1. familiaCodigo é obrigatório
- * 2. familiaCodigo é string
- * 3. familiaCodigo ≤ 16 caracteres
- * 4. familiaCodigo contém apenas A-Z, a-z, 0-9
- * 5. Sanitização contra SQL injection
- * 6. Sanitização contra XSS
- *
- * **Rate Limiting:**
- * - Com API Key Free: 10 req/min
- * - Com API Key Premium: 60 req/min
- * - Com API Key Enterprise: 300 req/min
- * - Sem API Key: 10 req/min por IP
- *
- * **Cache:**
- * - Cache HIT: < 1ms (resposta instantânea)
- * - Cache MISS: ~50-500ms (depende do banco)
- * - Invalidação: Automática após 10 minutos
- *
- * @route GET /:familiaCodigo
- * @group Famílias - Dados Cadastrais
- * @param {string} familiaCodigo.path.required - Código da família (1-16 caracteres)
- * @returns {object} 200 - Informações gerais da família
- * @returns {Error} 400 - Código inválido
- * @returns {Error} 404 - Família não encontrada
- * @returns {Error} 429 - Rate limit excedido
- * @returns {Error} 500 - Erro interno
- * @returns {Error} 504 - Timeout
- *
  * @openapi
  * /:familiaCodigo:
  *   get:
@@ -141,6 +42,7 @@ const familiaCache = cacheMiddleware({
  *       - Rate limiting por usuário/IP
  *       - Autenticação opcional por API Key
  *       - Timeout de 30 segundos
+ *       - Validação e sanitização automática de parâmetros
  *
  *       **Performance:**
  *       - Cache HIT: < 1ms
@@ -151,11 +53,11 @@ const familiaCache = cacheMiddleware({
  *       - name: familiaCodigo
  *         in: path
  *         required: true
- *         description: Código da família no ERP (1-16 caracteres alfanuméricos)
+ *         description: Código da família no ERP (1-8 caracteres alfanuméricos)
  *         schema:
  *           type: string
  *           minLength: 1
- *           maxLength: 16
+ *           maxLength: 8
  *           pattern: '^[A-Za-z0-9]+$'
  *           example: '450000'
  *       - name: X-Correlation-ID
@@ -228,27 +130,23 @@ const familiaCache = cacheMiddleware({
  *               error: 'Timeout da requisição'
  *               message: 'A consulta ao banco de dados demorou mais de 30 segundos'
  *               timestamp: '2025-10-04T17:00:00.000Z'
- *               path: '/api/lor0138/item/dadosCadastrais/informacoesGerais/7530110'
+ *               path: '/api/lor0138/familia/dadosCadastrais/informacoesGerais/450000'
  *               correlationId: '550e8400-e29b-41d4-a716-446655440000'
  */
 router.get(
   '/:familiaCodigo',
-  optionalApiKeyAuth, // Autenticação opcional por API Key
-  userRateLimit, // Rate limit por usuário/tier ou IP
-  familiaCache, // Cache HTTP de resposta
+  validate(familiaParamsSchema, 'params'),
+  optionalApiKeyAuth,
+  userRateLimit,
+  familiaCache,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      // Importação dinâmica do controller
-      // Evita problemas de dependências circulares
       const { InformacoesGeraisController } = await import(
         '../controller/informacoesGerais.controller'
       );
 
-      // Delega para o controller
-      // Controller usa asyncHandler que captura erros automaticamente
       await InformacoesGeraisController.getInformacoesGerais(req, res, next);
     } catch (error) {
-      // Erro inesperado no carregamento do controller
       console.error('Erro ao carregar controller:', error);
       res.status(500).json({
         success: false,
@@ -261,9 +159,5 @@ router.get(
     }
   }
 );
-
-// ============================================================================
-// EXPORT
-// ============================================================================
 
 export default router;
