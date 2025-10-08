@@ -1,13 +1,13 @@
 // tests/unit/services/informacoesGerais.service.test.ts
 
-import { InformacoesGeraisService } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service';
-import { ItemInformacoesGeraisRepository } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository';
-import { ItemNotFoundError, DatabaseError } from '@shared/errors/CustomErrors';
+import { InformacoesGeraisService } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service';
+import { ItemInformacoesGeraisRepository } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository';
+import { ItemNotFoundError, DatabaseError } from '../../../../../../../../src/shared/errors/CustomErrors';
 import { 
   createItemMasterQueryResult, 
   createItemEstabQueryResult,
   createInformacoesGerais
-} from '../../factories/item.factory';
+} from '../../../../../../../factories/item.factory';
 
 // Mock do Repository
 jest.mock('@api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository');

@@ -48,10 +48,12 @@ const DEFAULT_PREFIX = 'query';
 
 /** TTLs específicos por tipo de entidade */
 const ENTITY_TTL = {
-  ITEM: 600,              // 10 minutos
-  FAMILIA: 3600,          // 1 hora
-  ESTABELECIMENTO: 900,   // 15 minutos
-  HEALTH: 30,             // 30 segundos
+  ITEM: 600,               // 10 minutos
+  FAMILIA: 3600,           // 1 hora
+  FAMILIA_COMERCIAL: 3600, // 1 hora
+  GRUPODEESTOQUE: 3600,    // 1 hora
+  ESTABELECIMENTO: 3600,   // 1 hora
+  HEALTH: 30,              // 30 segundos
 } as const;
 
 /**
@@ -238,6 +240,42 @@ export class QueryCacheService {
     return this.withCache(sql, params, queryFn, {
       ttl: ttl || ENTITY_TTL.FAMILIA,
       prefix: 'familia',
+    });
+  }
+
+  /**
+   * Wrapper para queries de familias comerciais
+   *
+   * TTL padrão: 1 hora
+   * Prefixo: 'familiaComercial'
+   */
+  static async withFamiliaComercialCache<T>(
+    sql: string,
+    params: any[],
+    queryFn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    return this.withCache(sql, params, queryFn, {
+      ttl: ttl || ENTITY_TTL.FAMILIA_COMERCIAL,
+      prefix: 'familiaComercial',
+    });
+  }
+
+  /**
+   * Wrapper para queries de grupos de estoque
+   *
+   * TTL padrão: 1 hora
+   * Prefixo: 'grupoDeEstoque'
+   */
+  static async withGrupoDeEstoqueCache<T>(
+    sql: string,
+    params: any[],
+    queryFn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    return this.withCache(sql, params, queryFn, {
+      ttl: ttl || ENTITY_TTL.GRUPODEESTOQUE,
+      prefix: 'grupoDeEstoque',
     });
   }
 

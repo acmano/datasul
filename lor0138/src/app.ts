@@ -17,7 +17,10 @@ import { log } from '@shared/utils/logger';
 import { swaggerSpec, swaggerUiOptions } from '@config/swagger.config';
 import { correlationIdMiddleware } from '@shared/middlewares/correlationId.middleware';
 import itemInformacoesGeraisRoutes from './api/lor0138/item/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import estabelecimentoRoutes from './api/lor0138/estabelecimento/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
 import familiaInformacoesGeraisRoutes from './api/lor0138/familia/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import familiaComercialInformacoesGeraisRoutes from './api/lor0138/familiaComercial/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
+import grupoDeEstoqueInformacoesGeraisRoutes from './api/lor0138/grupoDeEstoque/dadosCadastrais/informacoesGerais/routes/informacoesGerais.routes';
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { CacheManager } from '@shared/utils/cacheManager';
 import adminRoutes from './api/admin/routes/admin.routes';
@@ -153,12 +156,24 @@ export class App {
     this.setupSwaggerDocs();
     this.setupAdminRoutes();
 
+    this.app.use('/api/lor0138/estabelecimento/dadosCadastrais/informacoesGerais',
+      estabelecimentoRoutes
+    );
+
     this.app.use('/api/lor0138/item/dadosCadastrais/informacoesGerais',
       itemInformacoesGeraisRoutes
     );
 
     this.app.use('/api/lor0138/familia/dadosCadastrais/informacoesGerais',
       familiaInformacoesGeraisRoutes
+    );
+
+    this.app.use('/api/lor0138/familiaComercial/dadosCadastrais/informacoesGerais',
+      familiaComercialInformacoesGeraisRoutes
+    );
+
+    this.app.use('/api/lor0138/grupoDeEstoque/dadosCadastrais/informacoesGerais',
+      grupoDeEstoqueInformacoesGeraisRoutes
     );
 
     this.setupRootRoute();

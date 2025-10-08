@@ -4,7 +4,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { cacheMiddleware } from '@shared/middlewares/cache.middleware';
 import { optionalApiKeyAuth } from '@shared/middlewares/apiKeyAuth.middleware';
 import { userRateLimit } from '@shared/middlewares/userRateLimit.middleware';
-import { validate } from '@shared/middlewares/validation.middleware';
+import { validate } from '@shared/middlewares/validate.middleware';
 import { familiaParamsSchema } from '../validators/informacoesGerais.validators';
 
 /**

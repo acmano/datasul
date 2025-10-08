@@ -18,17 +18,35 @@ export class ItemNotFoundError extends AppError {
   }
 }
 
+export class EstabelecimentoNotFoundError extends AppError {
+  constructor(estabelecimentoCodigo: string) {
+    super(404,
+      `Estabelecimento ${estabelecimentoCodigo} não encontrado`,
+      true,
+      { estabelecimentoCodigo }
+    );
+    this.name = 'EstabelecimentoNotFoundError';
+  }
+}
+
 export class FamiliaNotFoundError extends AppError {
   constructor(familiaCodigo: string) {
     super(404, `Familia ${familiaCodigo} não encontrada`, true, { familiaCodigo });
   }
 }
 
-export class EstabelecimentoNotFoundError extends AppError {
-  constructor(estabCodigo: string) {
-    super(404, `Estabelecimento ${estabCodigo} não encontrado`, true, { estabCodigo });
+export class FamiliaComercialNotFoundError extends AppError {
+  constructor(familiaComercialCodigo: string) {
+    super(404, `Familia Comercial ${familiaComercialCodigo} não encontrada`, true, { familiaComercialCodigo });
   }
 }
+
+export class GrupoDeEstoqueNotFoundError extends AppError {
+  constructor(grupoDeEstoqueCodigo: string) {
+    super(404, `Grupo de Estoque ${grupoDeEstoqueCodigo} não encontrado`, true, { grupoDeEstoqueCodigo });
+  }
+}
+
 
 // ============================================================================
 // VALIDATION (400)

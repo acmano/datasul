@@ -2,9 +2,9 @@
 
 /// <reference types="jest" />
 import request from 'supertest';
-import app from '../../../src/app'; // Express app
-import { DatabaseManager } from '../../../src/infrastructure/database/DatabaseManager';
-import { createInformacoesGerais } from '../../factories/item.factory';
+import app from '../../../../../../../src/app'; // Express app
+import { DatabaseManager } from '../../../../../../../src/infrastructure/database/DatabaseManager';
+import { createInformacoesGerais } from '../../../../../../factories/item.factory';
 
 // Mock do DatabaseManager para E2E
 jest.mock('@infrastructure/database/DatabaseManager');

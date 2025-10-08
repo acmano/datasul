@@ -1,10 +1,5 @@
 // src/shared/middlewares/validate.middleware.ts
 
-/**
- * Middleware de validação usando Joi
- * @module shared/middlewares/validate
- */
-
 import { Request, Response, NextFunction } from 'express';
 import { ValidationError } from '@shared/errors/CustomErrors';
 import { ObjectSchema } from 'joi';

@@ -1,12 +1,12 @@
 // tests/unit/repositories/informacoesGerais.repository.test.ts
 
-import { ItemInformacoesGeraisRepository } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository';
-import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
-import { QueryCacheService } from '@shared/utils/cache/QueryCacheService';
+import { ItemInformacoesGeraisRepository } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/repository/informacoesGerais.repository';
+import { DatabaseManager } from '../../../../../../../../src/infrastructure/database/DatabaseManager';
+import { QueryCacheService } from '../../../../../../../../src/shared/utils/cache/QueryCacheService';
 import { 
   createItemMasterQueryResult, 
   createItemEstabQueryResult 
-} from '../../factories/item.factory';
+} from '../../../../../../../factories/item.factory';
 
 // Mock do DatabaseManager
 jest.mock('@infrastructure/database/DatabaseManager');

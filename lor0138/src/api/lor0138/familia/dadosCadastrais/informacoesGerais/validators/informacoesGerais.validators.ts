@@ -1,25 +1,16 @@
 // src/api/lor0138/familia/dadosCadastrais/informacoesGerais/validators/informacoesGerais.validators.ts
 
-import { ExtendedJoi } from '@shared/validators/joi';
+import Joi from 'joi';
+import { secureAlphanumericSchema } from '@shared/validators/secureCode.validator';
 
-/**
- * Validators para Informações Gerais de Famílias
- * Usa Joi com extensão secureCode para validação e sanitização
- * @module InformacoesGeraisValidators
- * @category Validators
- */
-
-export const familiaParamsSchema = ExtendedJoi.object({
-  familiaCodigo: ExtendedJoi.secureCode()
-    .alphanumeric()
-    .min(1)
-    .max(8)
+export const familiaParamsSchema = Joi.object({
+  familiaCodigo: secureAlphanumericSchema(1, 8)
     .required()
     .messages({
       'any.required': 'Código da familia é obrigatório',
       'string.empty': 'Código da familia não pode estar vazio',
       'string.min': 'Código da familia não pode estar vazio',
       'string.max': 'Código da familia não pode ter mais de 8 caracteres',
-      'secureCode.invalidChars': 'Código da familia deve conter apenas letras e números',
+      'string.alphanum': 'Código da familia deve conter apenas letras e números',
     }),
 });

@@ -1,8 +1,8 @@
 // tests/integration/api/informacoesGerais.integration.test.ts
 
 import request from 'supertest';
-import { DatabaseTestHelper } from '../../helpers/database.helper';
-import app from '../../../src/app';
+import { DatabaseTestHelper } from '../../../../../../helpers/database.helper';
+import app from '../../../../../../../src/app';
 
 /**
  * TESTES DE INTEGRAÇÃO COM BANCO REAL
@@ -88,7 +88,7 @@ describe('INTEGRAÇÃO - API InformacoesGerais (Banco Real)', () => {
         expect(response.body.data).toHaveProperty('identificacaoItemUnidade');
         
         // Validar performance (banco real deve responder rápido)
-        expect(duration).toRespondWithin(5000); // max 5s
+        expect(duration).toBeLessThanOrEqual(5000); // max 5s
       }
     });
 

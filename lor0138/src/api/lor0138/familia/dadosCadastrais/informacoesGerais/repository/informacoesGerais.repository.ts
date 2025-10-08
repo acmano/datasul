@@ -59,7 +59,6 @@ export class FamiliaInformacoesGeraisRepository {
   static async invalidateCache(familiaCodigo: string): Promise<void> {
     await QueryCacheService.invalidateMultiple([
       'familia:*',
-      'estabelecimento:*'
     ]);
 
     console.log('Cache invalidado para familia:', familiaCodigo);

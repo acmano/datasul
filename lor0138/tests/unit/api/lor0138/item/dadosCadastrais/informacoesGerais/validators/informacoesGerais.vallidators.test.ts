@@ -1,7 +1,7 @@
-// tests/unit/validators/informacoesGerais.validators.test.ts
+// ./tests/unit/api/lor0138/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.vallidators.test.ts
 
-import { validateItemInformacoesGeraisRequest } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.validators';
-import { testItemCodigos, expectedErrors } from '../../factories/item.factory';
+import { validateItemInformacoesGeraisRequest } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.validators';
+import { testItemCodigos, expectedErrors } from '../../../../../../../factories/item.factory';
 
 describe('Validators - InformacoesGerais', () => {
 

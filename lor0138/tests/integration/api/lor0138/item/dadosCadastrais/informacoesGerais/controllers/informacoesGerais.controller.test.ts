@@ -1,10 +1,10 @@
 // tests/unit/controllers/informacoesGerais.controller.test.ts
 
 import { Request, Response, NextFunction } from 'express';
-import { InformacoesGeraisController } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/controller/informacoesGerais.controller';
-import { InformacoesGeraisService } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service';
-import { ItemNotFoundError, ValidationError } from '@shared/errors/CustomErrors';
-import { createInformacoesGerais } from '../../factories/item.factory';
+import { InformacoesGeraisController } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/controller/informacoesGerais.controller';
+import { InformacoesGeraisService } from '../../../../../../../../src/api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service';
+import { ItemNotFoundError, ValidationError } from '../../../../../../../../src/shared/errors/CustomErrors';
+import { createInformacoesGerais } from '../../../../../../../factories/item.factory';
 
 // Mock do Service
 jest.mock('@api/lor0138/item/dadosCadastrais/informacoesGerais/service/informacoesGerais.service');
