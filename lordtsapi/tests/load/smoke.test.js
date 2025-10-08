@@ -44,7 +44,7 @@ export default function () {
 
   // Teste 2: Buscar Item
   const itemRes = http.get(
-    `${BASE_URL}/api/lor0138/item/dadosCadastrais/informacoesGerais/${ITEM_CODE}`,
+    `${BASE_URL}/api/item/dadosCadastrais/informacoesGerais/${ITEM_CODE}`,
     { headers }
   );
   
@@ -61,7 +61,7 @@ export default function () {
 
   // Teste 3: Item inexistente (deve retornar 404)
   const notFoundRes = http.get(
-    `${BASE_URL}/api/lor0138/item/dadosCadastrais/informacoesGerais/INVALID999`,
+    `${BASE_URL}/api/item/dadosCadastrais/informacoesGerais/INVALID999`,
     {
       headers,
       tags: { expected_status: '404' }, // Tag para identificar que 404 é esperado

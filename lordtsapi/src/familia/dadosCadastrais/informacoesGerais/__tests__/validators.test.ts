@@ -26,8 +26,8 @@ describe('Validators - InformacoesGerais (Familia)', () => {
         expect(result.data?.familiaCodigo).toBe('FAM123');
       });
 
-      test('deve validar código com 16 caracteres (máximo)', () => {
-        const codigo = '1234567890123456';
+      test('deve validar código com 8 caracteres (máximo)', () => {
+        const codigo = '12345678';
         const result = validateFamiliaInformacoesGeraisRequest({ familiaCodigo: codigo });
 
         expect(result.valid).toBe(true);
@@ -75,11 +75,11 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve sanitizar código complexo', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: '  FAM-123"test;  '
+          familiaCodigo: '  FAM-123"te;  '
         });
 
         expect(result.valid).toBe(true);
-        expect(result.data?.familiaCodigo).toBe('FAM123test');
+        expect(result.data?.familiaCodigo).toBe('FAM123te');
       });
 
     });
@@ -110,12 +110,12 @@ describe('Validators - InformacoesGerais (Familia)', () => {
         expect(result.error).toContain('inválido');
       });
 
-      test('deve rejeitar código maior que 16 caracteres', () => {
-        const codigo = '12345678901234567';
+      test('deve rejeitar código maior que 8 caracteres', () => {
+        const codigo = '123456789';
         const result = validateFamiliaInformacoesGeraisRequest({ familiaCodigo: codigo });
 
         expect(result.valid).toBe(false);
-        expect(result.error).toContain('16 caracteres');
+        expect(result.error).toContain('8 caracteres');
       });
 
       test('deve rejeitar código com tipo errado', () => {
@@ -133,7 +133,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear SELECT', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'SELECTabc'
+          familiaCodigo: 'SELECTa'
         });
 
         expect(result.valid).toBe(false);
@@ -150,7 +150,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear DROP', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'DROPtable'
+          familiaCodigo: 'DROPtabl'
         });
 
         expect(result.valid).toBe(false);
@@ -158,7 +158,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear UNION', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'UNIONselect'
+          familiaCodigo: 'UNIONsel'
         });
 
         expect(result.valid).toBe(false);

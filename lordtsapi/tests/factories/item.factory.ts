@@ -5,7 +5,7 @@ import {
   ItemEstabQueryResult,
   ItemInformacoesGerais,
   ItemInformacoesGeraisEstabelecimento,
-} from '@api/lor0138/item/dadosCadastrais/informacoesGerais/types/informacoesGerais.types';
+} from '@api/item/dadosCadastrais/informacoesGerais/types/informacoesGerais.types';
 
 /**
  * Factory para criar dados de teste do Item

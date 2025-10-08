@@ -1,4 +1,4 @@
-// ./tests/unit/api/lor0138/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.vallidators.test.ts
+// ./tests/unit/api/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.vallidators.test.ts
 
 import { validateItemInformacoesGeraisRequest } from '../validators';
 import { testItemCodigos, expectedErrors } from '@tests/factories/item.factory';

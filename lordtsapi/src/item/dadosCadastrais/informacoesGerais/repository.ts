@@ -76,16 +76,23 @@ export class ItemInformacoesGeraisRepository {
         SET @sql = N'
           SELECT  itemUniEstab.itemCodigo
                 , itemUniEstab.estabelecimentoCodigo
+                , estabelec.estabelecimentoNome
           FROM  OPENQUERY (
-            PRD_EMS2EMP
-          ,  ''SELECT  itemUniEstab."it-codigo"    as itemCodigo
+            PRD_EMS2EMP,
+            ''SELECT  itemUniEstab."it-codigo"    as itemCodigo
                     , itemUniEstab."cod-estabel"  as estabelecimentoCodigo
                 FROM  pub."item-uni-estab" itemUniEstab
                 WHERE itemUniEstab."it-codigo" = ''''' + @itemCodigo + '''''
-                ORDER BY  itemUniEstab."cod-estabel"
-          '') as itemUniEstab
+                ORDER BY  itemUniEstab."cod-estabel"''
+          ) as itemUniEstab
+          INNER JOIN OPENQUERY (
+            PRD_EMS2MULT,
+            ''SELECT  estabelec."cod-estabel" as estabelecimentoCodigo
+                    , estabelec.nome          as estabelecimentoNome
+                FROM   pub.estabelec estabelec''
+          ) as estabelec
+            ON  estabelec.estabelecimentoCodigo = itemUniEstab.estabelecimentoCodigo;
         ';
-
         EXEC sp_executesql @sql;
       `;
 

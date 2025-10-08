@@ -4,11 +4,11 @@ import Joi from 'joi';
 import { secureAlphanumericSchema } from '@shared/validators/secureCode.validator';
 
 export const familiaParamsSchema = Joi.object({
-  familiaCodigo: secureAlphanumericSchema(1, 16)
+  familiaCodigo: secureAlphanumericSchema(1, 8)
     .messages({
       'any.required': 'Código da família é obrigatório',
       'string.min': 'Código da família deve ter pelo menos 1 caractere',
-      'string.max': 'Código da família não pode ter mais de 16 caracteres',
+      'string.max': 'Código da família não pode ter mais de 8 caracteres',
     }),
 });
 

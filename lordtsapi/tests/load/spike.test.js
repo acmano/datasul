@@ -31,7 +31,7 @@ export default function () {
   const itemCode = ITEM_CODES[Math.floor(Math.random() * ITEM_CODES.length)];
   
   const res = http.get(
-    `${BASE_URL}/api/lor0138/item/dadosCadastrais/informacoesGerais/${itemCode}`,
+    `${BASE_URL}/api/item/dadosCadastrais/informacoesGerais/${itemCode}`,
     {
       headers: { 
         'X-API-Key': API_KEY,

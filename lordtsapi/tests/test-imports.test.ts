@@ -1,5 +1,5 @@
 // tests/test-imports.test.ts
-import { validateItemInformacoesGeraisRequest } from '@api/lor0138/item/dadosCadastrais/informacoesGerais/validators/informacoesGerais.validators';
+import { validateItemInformacoesGeraisRequest } from '@/item/dadosCadastrais/informacoesGerais/validators';
 
 describe('Test Imports', () => {
   test('should import validator successfully', () => {

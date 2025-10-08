@@ -16,11 +16,11 @@ export class EstabelecimentoInformacoesGeraisRepository {
                 , estabelec.nome
             FROM  OPENQUERY (
               PRD_EMS2MULT
-            ,  ''SELECT  estabelec."cod-estabel" as codigo
-                       , estabelec."nome" as nome
-                   FROM   pub.estabelec estabelec
-                   WHERE  estabelec."cod-estabel" = ''''' + @estabelecimentoCodigo + '''''
-               ''
+            , ''SELECT  estabelec."cod-estabel" as codigo
+                      , estabelec."nome" as nome
+                  FROM  pub.estabelec estabelec
+                  WHERE estabelec."cod-estabel" = ''''' + @estabelecimentoCodigo + '''''
+              ''
             ) as estabelec
         ';
 

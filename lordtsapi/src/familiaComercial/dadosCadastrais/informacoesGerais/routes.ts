@@ -1,4 +1,4 @@
-// src/api/lor0138/familiaComercial/dadosCadastrais/informacoesGerais/routes.ts
+// src/api/familiaComercial/dadosCadastrais/informacoesGerais/routes.ts
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { cacheMiddleware } from '@shared/middlewares/cache.middleware';
@@ -130,7 +130,7 @@ const familiaComercialCache = cacheMiddleware({
  *               error: 'Timeout da requisição'
  *               message: 'A consulta ao banco de dados demorou mais de 30 segundos'
  *               timestamp: '2025-10-04T17:00:00.000Z'
- *               path: '/api/lor0138/familia/dadosCadastrais/informacoesGerais/450000'
+ *               path: '/api/familia/dadosCadastrais/informacoesGerais/450000'
  *               correlationId: '550e8400-e29b-41d4-a716-446655440000'
  */
 router.get(

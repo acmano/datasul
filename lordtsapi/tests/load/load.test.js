@@ -36,7 +36,7 @@ export default function () {
   const startTime = new Date();
   
   const res = http.get(
-    `${BASE_URL}/api/lor0138/item/dadosCadastrais/informacoesGerais/${itemCode}`,
+    `${BASE_URL}/api/item/dadosCadastrais/informacoesGerais/${itemCode}`,
     {
       headers: {
         'X-API-Key': API_KEY,

@@ -1,4 +1,4 @@
-// src/api/lor0138/item/dadosCadastrais/informacoesGerais/routes.ts
+// src/api/item/dadosCadastrais/informacoesGerais/routes.ts
 
 import { Router, Request, Response, NextFunction } from 'express';
 import { cacheMiddleware } from '@shared/middlewares/cache.middleware';

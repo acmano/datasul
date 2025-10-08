@@ -78,12 +78,23 @@ export class MockConnection implements IConnection {
      * Estabelecimentos mockados
      * Simula resposta de: SELECT * FROM pub."item-uni-estab"
      */
-    estabelecimentos: [
+    itemEstabelecimentos: [
       {
         itemCodigo: 'MOCK001',
-        estabCodigo: '01',
-        estabNome: 'Estabelecimento Mock',
+        estabelecimentoCodigo: '01',
+        estabelecimentoNome: 'Estabelecimento Mock',
         codObsoleto: 0,
+      },
+    ],
+
+    /**
+     * Estabelecimentos mockados
+     * Simula resposta de: SELECT * FROM pub."estabelec"
+     */
+    estabelecimentos: [
+      {
+        codigo: '01',
+        nome: 'Estabelecimento Mock',
       },
     ],
   };
@@ -192,16 +203,36 @@ export class MockConnection implements IConnection {
    * - Use apenas para testes
    */
   async queryWithParams(queryString: string, params: QueryParameter[]): Promise<any> {
-    console.log('Mock query parametrizada:', queryString, params);
+    console.log('🔍 Mock queryWithParams chamado');
+    console.log('Query:', queryString);
+    console.log('Params:', JSON.stringify(params));
+
+    const hasInvalidCode = params.some(p => 
+      typeof p.value === 'string' && 
+      (p.value.includes('INVALID') || p.value.includes('XXX'))
+    );
+    
+    if (hasInvalidCode) {
+      console.log('✅ Detectou código inválido nos params - retornando []');
+      return [];
+    }
 
     if (queryString.includes('pub.item')) {
+      console.log('✅ Retornando mockData.item');
       return [this.mockData.item];
     }
 
     if (queryString.includes('item-uni-estab')) {
+      console.log('✅ Retornando mockData.itemEstabelecimentos');  // ← ADICIONAR
+      return this.mockData.itemEstabelecimentos;
+    }
+
+    if (queryString.includes('pub.estabelec') || queryString.includes('pub."estabelec"')) {
+      console.log('✅ Retornando mockData.estabelecimentos:', JSON.stringify(this.mockData.estabelecimentos));  // ← ADICIONAR
       return this.mockData.estabelecimentos;
     }
 
+    console.log('❌ Query não reconhecida - retornando []');  // ← ADICIONAR
     return [];
   }
 

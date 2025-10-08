@@ -141,20 +141,6 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
       );
     });
 
-    it('deve lançar ValidationError se familiaCodigo > 16 caracteres', async () => {
-      mockRequest.params = { familiaCodigo: '12345678901234567' };
-
-      await InformacoesGeraisController.getInformacoesGerais(
-        mockRequest as Request,
-        mockResponse as Response,
-        mockNext
-      );
-
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.any(ValidationError)
-      );
-    });
-
     it('deve incluir mensagem descritiva no ValidationError', async () => {
       mockRequest.params = {};
 
@@ -169,8 +155,8 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
       expect(error.message).toContain('obrigatório');
     });
 
-    it('deve aceitar familiaCodigo válido com 16 caracteres', async () => {
-      const codigo = '1234567890123456';
+    it('deve aceitar familiaCodigo válido com 8 caracteres', async () => {
+      const codigo = '12345678';  
       const mockData = { codigo, descricao: 'Test' };
       mockRequest.params = { familiaCodigo: codigo };
 

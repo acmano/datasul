@@ -105,8 +105,8 @@ function normalizeRoute(path: string): string {
   const patterns = [
     // Item codes específicos
     {
-      regex: /\/api\/lor0138\/item\/dadosCadastrais\/informacoesGerais\/[^\/]+$/,
-      replacement: '/api/lor0138/item/dadosCadastrais/informacoesGerais/:itemCodigo',
+      regex: /\/api\/item\/dadosCadastrais\/informacoesGerais\/[^\/]+$/,
+      replacement: '/api/item/dadosCadastrais/informacoesGerais/:itemCodigo',
     },
 
     // UUIDs
