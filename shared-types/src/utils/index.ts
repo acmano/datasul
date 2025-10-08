@@ -1,0 +1,2 @@
+// Shared pure functions
+export {};

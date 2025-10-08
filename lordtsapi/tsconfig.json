@@ -1,0 +1,68 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": [
+      "ES2022"
+    ],
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@item/*": [
+        "src/item/*"
+      ],
+      "@familia/*": [
+        "src/familia/*"
+      ],
+      "@grupoDeEstoque/*": [
+        "src/grupoDeEstoque/*"
+      ],
+      "@familiaComercial/*": [
+        "src/familiaComercial/*"
+      ],
+      "@estabelecimento/*": [
+        "src/estabelecimento/*"
+      ],
+      "@config/*": [
+        "src/config/*"
+      ],
+      "@infrastructure/*": [
+        "src/infrastructure/*"
+      ],
+      "@shared/*": [
+        "src/shared/*"
+      ],
+      "@datasul/shared-types": [
+        "../shared-types/src"
+      ],
+      "@datasul/shared-types/*": [
+        "../shared-types/src/*"
+      ],
+      "@tests/*": [
+        "../tests/*"
+      ]
+    },
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "tests",
+    "**/__tests__",
+    "**/*.test.ts"
+  ]
+}
