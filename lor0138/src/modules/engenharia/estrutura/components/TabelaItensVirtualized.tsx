@@ -276,17 +276,32 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
                 onClick={() => selectById(r.id, true)}
                 onDoubleClick={(e) => {
                   if (onItemDrillDown) {
+                    console.log('🎯 [TabelaVirtualized] Duplo clique detectado:', {
+                      code: r.code,
+                      name: r.name,
+                      id: r.id,
+                    });
+
+                    // Guardar referência ao elemento ANTES do setTimeout
+                    const target = e.currentTarget;
+
                     // Destaque visual temporário
-                    e.currentTarget.style.outline = '3px solid #1890ff';
-                    e.currentTarget.style.transform = 'scale(1.02)';
-                    e.currentTarget.style.transition = 'all 0.15s ease-in-out';
+                    target.style.outline = '3px solid #1890ff';
+                    target.style.transform = 'scale(1.02)';
+                    target.style.transition = 'all 0.15s ease-in-out';
 
                     setTimeout(() => {
-                      e.currentTarget.style.outline = '';
-                      e.currentTarget.style.transform = '';
+                      // Verificar se o elemento ainda existe antes de acessar
+                      if (target && target.style) {
+                        target.style.outline = '';
+                        target.style.transform = '';
+                      }
                     }, 300);
 
+                    console.log('🚀 [TabelaVirtualized] Chamando onItemDrillDown...');
                     onItemDrillDown(r.code, r.name);
+                  } else {
+                    console.warn('⚠️ [TabelaVirtualized] onItemDrillDown não está definido!');
                   }
                 }}
                 style={{

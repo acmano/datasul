@@ -50,6 +50,7 @@ import { dimensoesService } from '../../../item/dadosCadastrais/dimensoes/servic
 import { planejamentoService } from '../../../item/dadosCadastrais/planejamento/services/planejamento.service';
 import { manufaturaService } from '../../../item/dadosCadastrais/manufatura/services/manufatura.service';
 import { fiscalService } from '../../../item/dadosCadastrais/fiscal/services/fiscal.service';
+import { itemSearchService } from '../../../item/search/services/itemSearch.service';
 
 const { Sider, Content } = Layout;
 
@@ -68,6 +69,10 @@ interface EngenhariaMainProps {
   breadcrumb: BreadcrumbItem[];
   onBreadcrumbChange: (breadcrumb: BreadcrumbItem[]) => void;
   itemHeaderVisible: boolean;
+  navigateToItem?: (codigo: string, tab?: string) => void;
+  familias?: Array<{ value: string; label: string }>;
+  familiasComerciais?: Array<{ value: string; label: string }>;
+  gruposDeEstoque?: Array<{ value: string; label: string }>;
 }
 
 const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
@@ -85,6 +90,10 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
   breadcrumb,
   onBreadcrumbChange,
   itemHeaderVisible,
+  navigateToItem,
+  familias = [],
+  familiasComerciais = [],
+  gruposDeEstoque = [],
 }) => {
   const { theme } = useTheme();
   const {
@@ -329,6 +338,96 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
     void renderStart;
   }, [activeVisualizacao, tree, flat.length, maxLevel]);
 
+  // Função para buscar dados completos do item (para preencher filtros)
+  const fetchItemData = async (itemCodigo: string): Promise<ItemSearchResultItem | null> => {
+    try {
+      console.log('🔍 [Main] Buscando dados completos do item:', itemCodigo);
+
+      // Tentar buscar via API de search (retorna dados mais completos)
+      try {
+        console.log('🔍 [Main] Tentando buscar via itemSearchService.search...');
+        const searchResult = await itemSearchService.search({ itemCodigo });
+
+        console.log('📊 [Main] Resultado da busca:', {
+          total: searchResult.total,
+          items: searchResult.items?.length || 0,
+          primeiroItem: searchResult.items?.[0],
+        });
+
+        if (searchResult.items && searchResult.items.length > 0) {
+          const itemData = searchResult.items[0];
+          console.log('✅ [Main] Dados COMPLETOS encontrados via search:', {
+            codigo: itemData.itemCodigo,
+            descricao: itemData.itemDescricao,
+            familia: itemData.familiaCodigo,
+            familiaDesc: itemData.familiaDescricao,
+            grupoEstoque: itemData.grupoEstoqueCodigo,
+            grupoEstoqueDesc: itemData.grupoEstoqueDescricao,
+            gtin: itemData.gtin,
+            tipo: itemData.tipo,
+          });
+          return itemData;
+        } else {
+          console.warn('⚠️ [Main] Search retornou 0 resultados');
+        }
+      } catch (searchError: any) {
+        console.error('❌ [Main] Busca via search FALHOU:', {
+          erro: searchError.message,
+          stack: searchError.stack,
+        });
+      }
+
+      // Fallback: usar informações gerais (tem menos dados mas funciona para componentes)
+      const infoGerais = await itemInformacoesGeraisService.getByCode(itemCodigo);
+
+      if (infoGerais) {
+        console.log('📋 [Main] Dados brutos da API informações gerais:', infoGerais);
+
+        // Buscar descrições nos combos já carregados
+        const familiaDesc =
+          familias.find((f) => f.value === infoGerais.familiaCodigo)?.label || '';
+        const familiaComercialDesc =
+          familiasComerciais.find((f) => f.value === infoGerais.familiaComercialCodigo)?.label ||
+          '';
+        const grupoEstoqueDesc =
+          gruposDeEstoque.find((g) => g.value === infoGerais.grupoEstoqueCodigo)?.label || '';
+
+        console.log('🔎 [Main] Descrições encontradas nos combos:', {
+          familiaCodigo: infoGerais.familiaCodigo,
+          familiaDesc,
+          familiaComercialCodigo: infoGerais.familiaComercialCodigo,
+          familiaComercialDesc,
+          grupoEstoqueCodigo: infoGerais.grupoEstoqueCodigo,
+          grupoEstoqueDesc,
+        });
+
+        const itemData: ItemSearchResultItem = {
+          itemCodigo: infoGerais.itemCodigo || itemCodigo,
+          itemDescricao: infoGerais.itemDescricao || '',
+          unidadeMedidaCodigo: infoGerais.unidadeMedidaCodigo || '',
+          unidadeMedidaDescricao: infoGerais.unidadeMedidaDescricao || '',
+          familiaCodigo: infoGerais.familiaCodigo || '',
+          familiaDescricao: familiaDesc,
+          familiaComercialCodigo: infoGerais.familiaComercialCodigo || '',
+          familiaComercialDescricao: familiaComercialDesc,
+          grupoEstoqueCodigo: infoGerais.grupoEstoqueCodigo || '',
+          grupoEstoqueDescricao: grupoEstoqueDesc,
+          codObsoleto: 0,
+          gtin: '', // ItemInformacoesGeraisFlat não retorna GTIN
+        };
+
+        console.log('✅ [Main] Dados COMPLETOS montados com combos:', itemData);
+        return itemData;
+      }
+
+      console.warn('⚠️ [Main] Item não encontrado');
+      return null;
+    } catch (error) {
+      console.error('❌ [Main] Erro ao buscar dados do item:', error);
+      return null;
+    }
+  };
+
   // Função para fazer pré-fetch das abas de Dados Mestres
   const prefetchDadosMestres = async (itemCodigo: string) => {
     try {
@@ -361,6 +460,12 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
 
   // Função de drill-down: navegar para um item da estrutura
   const handleItemDrillDown = async (itemCodigo: string, itemDescricao?: string) => {
+    console.log('🎯 [Main] handleItemDrillDown CHAMADO:', {
+      itemCodigo,
+      itemDescricao,
+      breadcrumb: breadcrumb.map((b) => b.codigo),
+    });
+
     // Feedback IMEDIATO ao usuário
     const loadingMsg = message.loading({
       content: `🔍 Navegando para: ${itemCodigo}${itemDescricao ? ` - ${itemDescricao}` : ''}`,
@@ -370,25 +475,43 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
     setIsDrillDownLoading(true);
 
     try {
+      console.log('📌 [Main] Adicionando ao breadcrumb...');
       // 1. Adicionar ao breadcrumb
       onBreadcrumbChange([...breadcrumb, { codigo: itemCodigo, descricao: itemDescricao }]);
 
-      // 2. Simular clique na linha (atualizar selectedRowKey via onRowClick)
-      const fakeRecord: ItemSearchResultItem = {
-        itemCodigo,
-        itemDescricao: itemDescricao || '',
-        unidadeMedidaCodigo: '',
-        unidadeMedidaDescricao: '',
-        familiaCodigo: '',
-        familiaDescricao: '',
-        familiaComercialCodigo: '',
-        familiaComercialDescricao: '',
-        grupoEstoqueCodigo: '',
-        grupoEstoqueDescricao: '',
-        codObsoleto: 0,
-        gtin: '',
-      };
-      onRowClick(fakeRecord);
+      // 2. ✅ ATUALIZAR URL E FILTROS
+      console.log('🌐 [Main] Atualizando URL via navigateToItem...');
+      if (navigateToItem) {
+        navigateToItem(itemCodigo, activeTabKey);
+      }
+
+      // 3. ✅ BUSCAR DADOS COMPLETOS E ATUALIZAR FILTROS
+      console.log('📝 [Main] Buscando dados completos para atualizar filtros...');
+      const itemData = await fetchItemData(itemCodigo);
+
+      if (itemData) {
+        console.log('✅ [Main] Atualizando filtros com dados completos');
+        onRowClick(itemData);
+      } else {
+        // Fallback: usar dados mínimos se a busca falhar
+        console.warn('⚠️ [Main] Usando dados mínimos (fallback)');
+        const minimalRecord: ItemSearchResultItem = {
+          itemCodigo,
+          itemDescricao: itemDescricao || '',
+          unidadeMedidaCodigo: '',
+          unidadeMedidaDescricao: '',
+          familiaCodigo: '',
+          familiaDescricao: '',
+          familiaComercialCodigo: '',
+          familiaComercialDescricao: '',
+          grupoEstoqueCodigo: '',
+          grupoEstoqueDescricao: '',
+          codObsoleto: 0,
+          gtin: '',
+        };
+        onRowClick(minimalRecord);
+      }
+      console.log('✅ [Main] Navegação iniciada');
 
       // 3. Fazer pré-fetch de Dados Mestres em background
       prefetchDadosMestres(itemCodigo);
@@ -417,35 +540,58 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
   };
 
   // Função para navegar via breadcrumb
-  const handleBreadcrumbNavigate = (codigo: string, index: number) => {
+  const handleBreadcrumbNavigate = async (codigo: string, index: number) => {
+    console.log('🍞 [Main] handleBreadcrumbNavigate CHAMADO:', {
+      codigo,
+      index,
+      breadcrumbAtual: breadcrumb.map((b) => b.codigo),
+    });
+
     setIsDrillDownLoading(true);
 
     try {
       // 1. Truncar breadcrumb até o índice clicado
+      console.log('✂️ [Main] Truncando breadcrumb...');
       onBreadcrumbChange(breadcrumb.slice(0, index + 1));
 
-      // 2. Simular clique na linha
-      const breadcrumbItem = breadcrumb[index];
-      const fakeRecord: ItemSearchResultItem = {
-        itemCodigo: codigo,
-        itemDescricao: breadcrumbItem.descricao || '',
-        unidadeMedidaCodigo: '',
-        unidadeMedidaDescricao: '',
-        familiaCodigo: '',
-        familiaDescricao: '',
-        familiaComercialCodigo: '',
-        familiaComercialDescricao: '',
-        grupoEstoqueCodigo: '',
-        grupoEstoqueDescricao: '',
-        codObsoleto: 0,
-        gtin: '',
-      };
-      onRowClick(fakeRecord);
+      // 2. ✅ ATUALIZAR URL
+      console.log('🌐 [Main] Atualizando URL via navigateToItem...');
+      if (navigateToItem) {
+        navigateToItem(codigo, activeTabKey);
+      }
+
+      // 3. ✅ BUSCAR DADOS COMPLETOS E ATUALIZAR FILTROS
+      console.log('📝 [Main] Buscando dados completos para atualizar filtros...');
+      const itemData = await fetchItemData(codigo);
+
+      if (itemData) {
+        console.log('✅ [Main] Atualizando filtros com dados completos');
+        onRowClick(itemData);
+      } else {
+        // Fallback: usar dados mínimos se a busca falhar
+        console.warn('⚠️ [Main] Usando dados mínimos (fallback)');
+        const breadcrumbItem = breadcrumb[index];
+        const minimalRecord: ItemSearchResultItem = {
+          itemCodigo: codigo,
+          itemDescricao: breadcrumbItem.descricao || '',
+          unidadeMedidaCodigo: '',
+          unidadeMedidaDescricao: '',
+          familiaCodigo: '',
+          familiaDescricao: '',
+          familiaComercialCodigo: '',
+          familiaComercialDescricao: '',
+          grupoEstoqueCodigo: '',
+          grupoEstoqueDescricao: '',
+          codObsoleto: 0,
+          gtin: '',
+        };
+        onRowClick(minimalRecord);
+      }
 
       // 3. Fazer pré-fetch de Dados Mestres em background
       prefetchDadosMestres(codigo);
 
-      message.success(`Navegando para item ${codigo}`);
+      message.success(`✅ Navegando para item ${codigo}`);
     } catch (error: any) {
       console.error('❌ [Breadcrumb] Erro ao navegar:', error);
       message.error(`Erro ao navegar: ${error.message}`);
@@ -480,6 +626,8 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
   // ✅ COM CACHE E SINCRONIZAÇÃO: Verifica cache antes de fazer fetch
   useEffect(() => {
     const loadEstrutura = async () => {
+      console.log('🔄 [Main] useEffect loadEstrutura disparado, selectedRowKey:', selectedRowKey);
+
       const MODULE_ID = 'engenharia';
 
       // ✅ REGISTRAR QUE ESTE MÓDULO ESTÁ CARREGANDO
@@ -490,10 +638,13 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
       setSelectedId(null);
 
       if (!selectedRowKey) {
+        console.log('⚠️ [Main] selectedRowKey é null, não vai carregar estrutura');
         // Se não há item selecionado, apenas limpar e retornar
         unregisterLoading(MODULE_ID);
         return;
       }
+
+      console.log('✅ [Main] selectedRowKey válido, vai carregar estrutura:', selectedRowKey);
 
       // 🔍 PERFORMANCE: Iniciar tracking
       const perfStart = performance.now();

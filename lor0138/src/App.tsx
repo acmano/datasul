@@ -571,6 +571,10 @@ function App() {
                           breadcrumb={breadcrumb}
                           onBreadcrumbChange={setBreadcrumb}
                           itemHeaderVisible={itemHeaderVisible}
+                          navigateToItem={navigateToItem}
+                          familias={familias}
+                          familiasComerciais={familiasComerciais}
+                          gruposDeEstoque={gruposDeEstoque}
                         />
                       </Suspense>
                     ) : (

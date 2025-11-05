@@ -44,13 +44,14 @@ const mapApiToFlat = (
     contenedorCodigo: apiData.item.contenedor?.codigo,
     contenedorDescricao: apiData.item.contenedor?.descricao,
 
-    // Classificações (com fallback para string vazia se null)
-    familiaCodigo: apiData.familia?.codigo || '',
-    familiaDescricao: apiData.familia?.descricao || '',
-    familiaComercialCodigo: apiData.familiaComercial?.codigo || '',
-    familiaComercialDescricao: apiData.familiaComercial?.descricao || '',
-    grupoEstoqueCodigo: apiData.grupoDeEstoque?.codigo.toString() || '',
-    grupoEstoqueDescricao: apiData.grupoDeEstoque?.descricao || '',
+    // Classificações (API retorna direto no item, sem objetos aninhados)
+    // IMPORTANTE: API não retorna descrições, apenas códigos
+    familiaCodigo: (apiData.item as any).familiaCodigo || '',
+    familiaDescricao: '', // API não retorna descrição
+    familiaComercialCodigo: (apiData.item as any).familiaComercialCodigo || '',
+    familiaComercialDescricao: '', // API não retorna descrição
+    grupoEstoqueCodigo: (apiData.item as any).grupoDeEstoqueCodigo?.toString() || '',
+    grupoEstoqueDescricao: '', // API não retorna descrição
 
     // Estabelecimentos
     estabelecimentos: apiData.estabelecimentos || [],
