@@ -2,23 +2,29 @@
 
 /**
  * Types específicos do módulo Grupo de Estoque - Informações Gerais
- * Types compartilhados importados de @datasul/shared-types
+ * Types compartilhados importados de @acmano/lordtsapi-shared-types
  */
 
-import {
-  ApiResponse,
-  GrupoDeEstoqueData,
-  GrupoDeEstoqueMasterQueryResult
-} from '@datasul/shared-types';
+import { ApiResponse, GrupoDeEstoqueData } from '@acmano/lordtsapi-shared-types';
+
+// ============================================================================
+// QUERY RESULT TYPES (ODBC lowercase)
+// ============================================================================
+
+/**
+ * Resultado da query getGrupoDeEstoqueMaster
+ * ODBC retorna colunas em lowercase após normalização
+ */
+export interface GrupoDeEstoqueMasterQueryResult {
+  codigo: string;
+  descricao: string;
+}
 
 // ============================================================================
 // RE-EXPORTS (para compatibilidade)
 // ============================================================================
 
-export {
-  GrupoDeEstoqueData,
-  GrupoDeEstoqueMasterQueryResult
-};
+export { GrupoDeEstoqueData };
 
 // ============================================================================
 // TYPES ESPECÍFICOS DESTE MÓDULO
@@ -39,4 +45,5 @@ export interface GrupoDeEstoqueInformacoesGeraisRequestDTO {
 /**
  * DTO de resposta (usando ApiResponse genérico)
  */
-export type GrupoDeEstoqueInformacoesGeraisResponseDTO = ApiResponse<GrupoDeEstoqueInformacoesGerais>;
+export type GrupoDeEstoqueInformacoesGeraisResponseDTO =
+  ApiResponse<GrupoDeEstoqueInformacoesGerais>;

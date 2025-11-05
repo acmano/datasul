@@ -7,6 +7,7 @@
 
 import timeout from 'connect-timeout';
 import { Request, Response, NextFunction } from 'express';
+import { log } from '@shared/utils/logger';
 
 // ============================================================================
 // CONFIGURAÇÃO DE TIMEOUTS
@@ -47,11 +48,7 @@ export const healthCheckTimeout = timeout(TIMEOUTS.HEALTH_CHECK);
 /**
  * Handler para requisições que excederam o timeout
  */
-export const timeoutErrorHandler = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const timeoutErrorHandler = (req: Request, res: Response, next: NextFunction): void => {
   // Se não houve timeout, continua normalmente
   if (!req.timedout) {
     next();
@@ -64,7 +61,7 @@ export const timeoutErrorHandler = (
   }
 
   // Loga o timeout para análise
-  console.error('Request timeout:', {
+  log.error('Request timeout:', {
     requestId: (req as any).id,
     method: req.method,
     url: req.url,
@@ -76,8 +73,7 @@ export const timeoutErrorHandler = (
   res.status(503).json({
     success: false,
     error: 'Request Timeout',
-    message:
-      'A requisição demorou muito para ser processada e foi cancelada pelo servidor.',
+    message: 'A requisição demorou muito para ser processada e foi cancelada pelo servidor.',
     details: {
       timeout: TIMEOUTS.DEFAULT,
       suggestion:
@@ -93,11 +89,7 @@ export const timeoutErrorHandler = (
 /**
  * Middleware que previne execução após timeout
  */
-export const haltOnTimedout = (
-  req: Request,
-  _res: Response,
-  next: NextFunction
-): void => {
+export const haltOnTimedout = (req: Request, _res: Response, next: NextFunction): void => {
   if (!req.timedout) {
     next();
   }

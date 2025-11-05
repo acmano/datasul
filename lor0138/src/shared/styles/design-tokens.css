@@ -1,0 +1,313 @@
+/**
+ * 🎨 DESIGN SYSTEM - DESIGN TOKENS
+ * Sistema de tokens de design para consistência visual em toda aplicação
+ * Baseado em Material Design e práticas modernas de UI
+ */
+
+:root {
+  /* ========================================
+     1. CORES PRINCIPAIS
+     ======================================== */
+
+  /* Cor Primária - Azul Lorenzetti */
+  --color-primary: #1890ff;
+  --color-primary-light: #40a9ff;
+  --color-primary-lighter: #69c0ff;
+  --color-primary-lightest: #e6f7ff;
+  --color-primary-dark: #096dd9;
+  --color-primary-darker: #0050b3;
+
+  /* Cor Secundária - Vermelho Lorenzetti */
+  --color-secondary: #ff4d4f;
+  --color-secondary-light: #ff7875;
+  --color-secondary-lighter: #ffa39e;
+  --color-secondary-lightest: #ffccc7;
+  --color-secondary-dark: #cf1322;
+  --color-secondary-darker: #a8071a;
+
+  /* Cor de Sucesso */
+  --color-success: #52c41a;
+  --color-success-light: #73d13d;
+  --color-success-lighter: #95de64;
+  --color-success-lightest: #f6ffed;
+  --color-success-dark: #389e0d;
+
+  /* Cor de Aviso */
+  --color-warning: #faad14;
+  --color-warning-light: #ffc53d;
+  --color-warning-lighter: #ffd666;
+  --color-warning-lightest: #fffbe6;
+  --color-warning-dark: #d48806;
+
+  /* Cor de Erro */
+  --color-error: #ff4d4f;
+  --color-error-light: #ff7875;
+  --color-error-lighter: #ffa39e;
+  --color-error-lightest: #fff1f0;
+  --color-error-dark: #cf1322;
+
+  /* Cor de Informação */
+  --color-info: #1890ff;
+  --color-info-light: #40a9ff;
+  --color-info-lighter: #69c0ff;
+  --color-info-lightest: #e6f7ff;
+  --color-info-dark: #096dd9;
+
+  /* Cores Neutras/Cinzas */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #f0f0f0;
+  --color-gray-300: #d9d9d9;
+  --color-gray-400: #bfbfbf;
+  --color-gray-500: #8c8c8c;
+  --color-gray-600: #595959;
+  --color-gray-700: #434343;
+  --color-gray-800: #262626;
+  --color-gray-900: #1f1f1f;
+  --color-gray-950: #141414;
+
+  /* Cores de Texto */
+  --color-text-primary: rgba(0, 0, 0, 0.85);
+  --color-text-secondary: rgba(0, 0, 0, 0.65);
+  --color-text-tertiary: rgba(0, 0, 0, 0.45);
+  --color-text-disabled: rgba(0, 0, 0, 0.25);
+  --color-text-inverse: #ffffff;
+
+  /* Cores de Background */
+  --color-bg-base: #ffffff;
+  --color-bg-layout: #f0f2f5;
+  --color-bg-container: #ffffff;
+  --color-bg-elevated: #ffffff;
+  --color-bg-spotlight: #fafafa;
+  --color-bg-mask: rgba(0, 0, 0, 0.45);
+
+  /* Cores de Borda */
+  --color-border-base: #d9d9d9;
+  --color-border-light: #f0f0f0;
+  --color-border-dark: #bfbfbf;
+
+  /* ========================================
+     2. ESPAÇAMENTO (Escala 8px)
+     ======================================== */
+
+  --spacing-0: 0;
+  --spacing-1: 4px; /* 0.25rem */
+  --spacing-2: 8px; /* 0.5rem */
+  --spacing-3: 12px; /* 0.75rem */
+  --spacing-4: 16px; /* 1rem */
+  --spacing-5: 20px; /* 1.25rem */
+  --spacing-6: 24px; /* 1.5rem */
+  --spacing-7: 28px; /* 1.75rem */
+  --spacing-8: 32px; /* 2rem */
+  --spacing-10: 40px; /* 2.5rem */
+  --spacing-12: 48px; /* 3rem */
+  --spacing-16: 64px; /* 4rem */
+  --spacing-20: 80px; /* 5rem */
+  --spacing-24: 96px; /* 6rem */
+
+  /* ========================================
+     3. SOMBRAS (Elevação)
+     ======================================== */
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02);
+
+  --shadow-base: 0 2px 8px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 6px rgba(0, 0, 0, 0.05);
+
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.14), 0 8px 16px rgba(0, 0, 0, 0.08);
+
+  --shadow-2xl: 0 24px 80px rgba(0, 0, 0, 0.16), 0 12px 24px rgba(0, 0, 0, 0.1);
+
+  /* Sombras Coloridas (para destaque) */
+  --shadow-primary: 0 4px 12px rgba(24, 144, 255, 0.2);
+  --shadow-success: 0 4px 12px rgba(82, 196, 26, 0.2);
+  --shadow-warning: 0 4px 12px rgba(250, 173, 20, 0.2);
+  --shadow-error: 0 4px 12px rgba(255, 77, 79, 0.2);
+
+  /* ========================================
+     4. BORDAS E RAIOS
+     ======================================== */
+
+  --border-width-thin: 1px;
+  --border-width-base: 2px;
+  --border-width-thick: 3px;
+
+  --border-radius-sm: 4px;
+  --border-radius-base: 6px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-2xl: 24px;
+  --border-radius-full: 9999px;
+
+  /* ========================================
+     5. TIPOGRAFIA
+     ======================================== */
+
+  /* Família de Fontes */
+  --font-family-base:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --font-family-mono:
+    'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Monaco, 'Courier New', monospace;
+
+  /* Tamanhos de Fonte */
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 38px;
+
+  /* Pesos de Fonte */
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Altura de Linha */
+  --line-height-tight: 1.2;
+  --line-height-base: 1.5;
+  --line-height-relaxed: 1.7;
+
+  /* ========================================
+     6. TRANSIÇÕES E ANIMAÇÕES
+     ======================================== */
+
+  --transition-duration-fast: 150ms;
+  --transition-duration-base: 250ms;
+  --transition-duration-slow: 350ms;
+
+  --transition-timing-linear: linear;
+  --transition-timing-ease: ease;
+  --transition-timing-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --transition-timing-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --transition-timing-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Transições Comuns */
+  --transition-base: all var(--transition-duration-base) var(--transition-timing-ease-in-out);
+  --transition-fast: all var(--transition-duration-fast) var(--transition-timing-ease-in-out);
+  --transition-color: color var(--transition-duration-fast) var(--transition-timing-ease);
+
+  /* ========================================
+     7. BREAKPOINTS (Mobile-First)
+     ======================================== */
+
+  --breakpoint-xs: 480px; /* Extra Small */
+  --breakpoint-sm: 576px; /* Small */
+  --breakpoint-md: 768px; /* Medium */
+  --breakpoint-lg: 992px; /* Large */
+  --breakpoint-xl: 1200px; /* Extra Large */
+  --breakpoint-2xl: 1600px; /* 2X Large */
+
+  /* ========================================
+     8. Z-INDEX (Camadas)
+     ======================================== */
+
+  --z-index-dropdown: 1000;
+  --z-index-sticky: 1020;
+  --z-index-fixed: 1030;
+  --z-index-modal-backdrop: 1040;
+  --z-index-modal: 1050;
+  --z-index-popover: 1060;
+  --z-index-tooltip: 1070;
+  --z-index-notification: 1080;
+
+  /* ========================================
+     9. OUTROS VALORES ÚTEIS
+     ======================================== */
+
+  /* Tamanhos de Componentes */
+  --height-sm: 24px;
+  --height-base: 32px;
+  --height-md: 40px;
+  --height-lg: 48px;
+  --height-xl: 56px;
+
+  /* Larguras Máximas de Container */
+  --container-xs: 480px;
+  --container-sm: 640px;
+  --container-md: 768px;
+  --container-lg: 1024px;
+  --container-xl: 1280px;
+  --container-2xl: 1536px;
+
+  /* Opacidade */
+  --opacity-disabled: 0.25;
+  --opacity-secondary: 0.45;
+  --opacity-tertiary: 0.65;
+  --opacity-hover: 0.08;
+}
+
+/* ========================================
+   TEMA ESCURO (Dark Mode)
+   ======================================== */
+
+[data-theme='dark'],
+.dark-theme {
+  /* Cores de Texto (Invertidas) */
+  --color-text-primary: rgba(255, 255, 255, 0.85);
+  --color-text-secondary: rgba(255, 255, 255, 0.65);
+  --color-text-tertiary: rgba(255, 255, 255, 0.45);
+  --color-text-disabled: rgba(255, 255, 255, 0.25);
+  --color-text-inverse: rgba(0, 0, 0, 0.85);
+
+  /* Cores de Background (Dark) */
+  --color-bg-base: #141414;
+  --color-bg-layout: #000c17;
+  --color-bg-container: #1f1f1f;
+  --color-bg-elevated: #262626;
+  --color-bg-spotlight: #434343;
+  --color-bg-mask: rgba(0, 0, 0, 0.65);
+
+  /* Cores de Borda (Dark) */
+  --color-border-base: #434343;
+  --color-border-light: #303030;
+  --color-border-dark: #595959;
+
+  /* Sombras mais intensas no dark */
+  --shadow-base: 0 2px 8px rgba(0, 0, 0, 0.45), 0 1px 4px rgba(0, 0, 0, 0.25);
+
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* ========================================
+   UTILITÁRIOS
+   ======================================== */
+
+/* Classes auxiliares para usar os tokens */
+.u-shadow-sm {
+  box-shadow: var(--shadow-sm);
+}
+.u-shadow-base {
+  box-shadow: var(--shadow-base);
+}
+.u-shadow-md {
+  box-shadow: var(--shadow-md);
+}
+.u-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+.u-shadow-xl {
+  box-shadow: var(--shadow-xl);
+}
+
+.u-radius-sm {
+  border-radius: var(--border-radius-sm);
+}
+.u-radius-base {
+  border-radius: var(--border-radius-base);
+}
+.u-radius-md {
+  border-radius: var(--border-radius-md);
+}
+.u-radius-lg {
+  border-radius: var(--border-radius-lg);
+}

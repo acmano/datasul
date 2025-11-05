@@ -1,0 +1,31 @@
+-- ============================================================================
+-- Query Fragment: WHERE para Buscar Família por Código
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula WHERE para buscar uma
+--   família específica pelo seu código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + get-by-codigo.sql
+--
+-- Parâmetros:
+--   ? (varchar) - Código da família a ser buscada (parâmetro ODBC)
+--
+-- Utilizado por:
+--   - familia/dadosCadastrais/informacoesGerais/repository.ts :: getFamiliaMaster()
+--
+-- Performance:
+--   - WHERE executado no Progress/OpenEdge (banco EMP)
+--   - Retorna no máximo 1 registro
+--   - Usa índice primário da tabela familia
+--
+-- Exemplo de valor:
+--   ? = '001'  → Busca família com código '001'
+--   ? = 'ELET' → Busca família com código 'ELET'
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+WHERE familia."fm-codigo" = ?

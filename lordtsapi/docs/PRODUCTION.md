@@ -906,7 +906,7 @@ pm2 restart lor0138
 
 ```bash
 # Testar conexão
-sqlcmd -S "10.105.0.4\LOREN" -U dcloren -P '#dcloren#'
+sqlcmd -S "10.105.0.4\LOREN" -U sysprogress -P 'sysprogress'
 
 # Verificar firewall
 sudo ufw status

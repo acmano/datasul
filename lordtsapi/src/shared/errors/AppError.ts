@@ -1,6 +1,12 @@
 // src/shared/errors/AppError.ts
 
 /**
+ * Tipo para contexto adicional de erros
+ * Permite valores primitivos, arrays e objetos aninhados
+ */
+export type ErrorContext = Record<string, unknown>;
+
+/**
  * Classe base para todos os erros customizados da aplicação
  * @module AppError
  * @category Errors
@@ -19,7 +25,7 @@ export class AppError extends Error {
   /**
    * Objeto com dados adicionais relacionados ao erro
    */
-  public readonly context?: Record<string, any>;
+  public readonly context?: ErrorContext;
 
   /**
    * Cria nova instância de AppError
@@ -33,7 +39,7 @@ export class AppError extends Error {
     statusCode: number,
     message: string,
     isOperational: boolean = true,
-    context?: Record<string, any>
+    context?: ErrorContext
   ) {
     super(message);
 

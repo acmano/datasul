@@ -8,7 +8,6 @@ jest.mock('@infrastructure/database/DatabaseManager');
 jest.mock('@shared/utils/cache/QueryCacheService');
 
 describe('Repository - FamiliaInformacoesGeraisRepository', () => {
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -17,12 +16,13 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
   // getFamiliaMaster
   // ========================================
   describe('getFamiliaMaster', () => {
-
     it('deve retornar dados da família quando encontrada', async () => {
-      const mockResult = [{
-        familiaCodigo: 'F001',
-        familiaDescricao: 'Válvulas e Conexões'
-      }];
+      const mockResult = [
+        {
+          familiaCodigo: 'F001',
+          familiaDescricao: 'Válvulas e Conexões',
+        },
+      ];
 
       (QueryCacheService.withFamiliaCache as jest.Mock).mockImplementation(
         async (query, params, fn) => fn()
@@ -39,8 +39,8 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: 'paramfamiliaCodigo',
-            value: 'F001'
-          })
+            value: 'F001',
+          }),
         ])
       );
     });
@@ -73,17 +73,19 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
         expect.arrayContaining([
           expect.objectContaining({
             name: 'paramfamiliaCodigo',
-            value: maliciousCode
-          })
+            value: maliciousCode,
+          }),
         ])
       );
     });
 
     it('deve usar cache L1/L2', async () => {
-      const mockResult = [{
-        familiaCodigo: 'F001',
-        familiaDescricao: 'Test'
-      }];
+      const mockResult = [
+        {
+          familiaCodigo: 'F001',
+          familiaDescricao: 'Test',
+        },
+      ];
 
       (QueryCacheService.withFamiliaCache as jest.Mock).mockImplementation(
         async (query, params, fn) => fn()
@@ -110,9 +112,9 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
 
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockRejectedValue(dbError);
 
-      await expect(
-        FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')
-      ).rejects.toThrow('Conexão perdida');
+      await expect(FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')).rejects.toThrow(
+        'Conexão perdida'
+      );
     });
 
     it('deve construir query OPENQUERY correta para Progress', async () => {
@@ -133,14 +135,12 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
       expect(query).toContain('descricao');
       expect(query).toContain('EXEC sp_executesql');
     });
-
   });
 
   // ========================================
   // invalidateCache
   // ========================================
   describe('invalidateCache', () => {
-
     it('deve invalidar cache de família', async () => {
       (QueryCacheService.invalidateMultiple as jest.Mock).mockResolvedValue(undefined);
 
@@ -149,14 +149,12 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
       expect(QueryCacheService.invalidateMultiple).toHaveBeenCalledTimes(1);
       expect(QueryCacheService.invalidateMultiple).toHaveBeenCalledWith(['familia:*']);
     });
-
   });
 
   // ========================================
   // CENÁRIOS DE ERRO
   // ========================================
   describe('Tratamento de Erros', () => {
-
     it('deve tratar timeout do banco de dados', async () => {
       const timeoutError = new Error('Timeout: Request failed to complete');
 
@@ -166,9 +164,9 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
 
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockRejectedValue(timeoutError);
 
-      await expect(
-        FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')
-      ).rejects.toThrow('Timeout');
+      await expect(FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')).rejects.toThrow(
+        'Timeout'
+      );
     });
 
     it('deve tratar erro de conexão perdida', async () => {
@@ -180,9 +178,9 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
 
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockRejectedValue(connectionError);
 
-      await expect(
-        FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')
-      ).rejects.toThrow('ECONNREFUSED');
+      await expect(FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')).rejects.toThrow(
+        'ECONNREFUSED'
+      );
     });
 
     it('deve tratar erro de sintaxe SQL', async () => {
@@ -194,23 +192,23 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
 
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockRejectedValue(sqlError);
 
-      await expect(
-        FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')
-      ).rejects.toThrow('Incorrect syntax');
+      await expect(FamiliaInformacoesGeraisRepository.getFamiliaMaster('F001')).rejects.toThrow(
+        'Incorrect syntax'
+      );
     });
-
   });
 
   // ========================================
   // INTEGRAÇÃO COM CACHE
   // ========================================
   describe('Integração com Cache', () => {
-
     it('deve retornar dados do cache em cache hit', async () => {
-      const cachedData = [{
-        familiaCodigo: 'F001',
-        familiaDescricao: 'Test'
-      }];
+      const cachedData = [
+        {
+          familiaCodigo: 'F001',
+          familiaDescricao: 'Test',
+        },
+      ];
 
       (QueryCacheService.withFamiliaCache as jest.Mock).mockResolvedValue(cachedData);
 
@@ -221,10 +219,12 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
     });
 
     it('deve buscar do banco em cache miss', async () => {
-      const dbData = [{
-        familiaCodigo: 'F001',
-        familiaDescricao: 'Test'
-      }];
+      const dbData = [
+        {
+          familiaCodigo: 'F001',
+          familiaDescricao: 'Test',
+        },
+      ];
 
       (QueryCacheService.withFamiliaCache as jest.Mock).mockImplementation(
         async (query, params, fn) => fn()
@@ -237,7 +237,5 @@ describe('Repository - FamiliaInformacoesGeraisRepository', () => {
       expect(result).toEqual(dbData[0]);
       expect(DatabaseManager.queryEmpWithParams).toHaveBeenCalledTimes(1);
     });
-
   });
-
 });

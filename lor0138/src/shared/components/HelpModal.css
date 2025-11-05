@@ -1,0 +1,225 @@
+/**
+ * HelpModal Styles
+ * Estilos para o modal de ajuda arrastável
+ */
+
+/* Container principal do modal */
+.help-modal .ant-modal-content {
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Torna o modal arrastável */
+.help-modal-draggable {
+  cursor: move;
+}
+
+.help-modal-draggable .ant-modal-header {
+  cursor: move;
+  user-select: none;
+}
+
+/* Layout principal com duas colunas */
+.help-modal-content {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ========== SIDEBAR (Menu Lateral) ========== */
+.help-modal-sidebar {
+  width: 280px;
+  min-width: 280px;
+  border-right: 1px solid #f0f0f0;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.help-modal-sidebar-header {
+  padding: 16px 20px;
+  background-color: #fff;
+}
+
+.help-modal-menu-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Customização do menu */
+.help-modal-menu-container .ant-menu {
+  background-color: transparent;
+}
+
+.help-modal-menu-container .ant-menu-item,
+.help-modal-menu-container .ant-menu-submenu-title {
+  margin: 0;
+  border-radius: 0;
+}
+
+.help-modal-menu-container .ant-menu-item-selected {
+  background-color: #e6f7ff;
+  border-right: 3px solid #1890ff;
+}
+
+/* ========== ÁREA DE CONTEÚDO ========== */
+.help-modal-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.help-modal-topic-header {
+  padding: 20px 32px;
+  background-color: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.help-modal-topic-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px 32px;
+}
+
+/* ========== CONTEÚDO DO TÓPICO ========== */
+.help-topic-body {
+  max-width: 800px;
+  line-height: 1.8;
+}
+
+.help-topic-body h1,
+.help-topic-body h2,
+.help-topic-body h3,
+.help-topic-body h4 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+}
+
+.help-topic-body h1:first-child,
+.help-topic-body h2:first-child,
+.help-topic-body h3:first-child,
+.help-topic-body h4:first-child {
+  margin-top: 0;
+}
+
+.help-topic-body p {
+  margin-bottom: 16px;
+}
+
+.help-topic-body ul,
+.help-topic-body ol {
+  margin-bottom: 16px;
+  padding-left: 24px;
+}
+
+.help-topic-body li {
+  margin-bottom: 8px;
+  line-height: 1.8;
+}
+
+.help-topic-body code {
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.help-topic-body kbd {
+  background-color: #fafafa;
+  border: 1px solid #d9d9d9;
+  border-radius: 3px;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  white-space: nowrap;
+}
+
+/* Scrollbar customizada */
+.help-modal-menu-container::-webkit-scrollbar,
+.help-modal-topic-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.help-modal-menu-container::-webkit-scrollbar-track,
+.help-modal-topic-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.help-modal-menu-container::-webkit-scrollbar-thumb,
+.help-modal-topic-content::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.help-modal-menu-container::-webkit-scrollbar-thumb:hover,
+.help-modal-topic-content::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ========== MODO ESCURO ========== */
+body[data-theme='dark'] .help-modal-sidebar {
+  background-color: #1f1f1f;
+  border-right-color: #303030;
+}
+
+body[data-theme='dark'] .help-modal-sidebar-header {
+  background-color: #141414;
+}
+
+body[data-theme='dark'] .help-modal-topic-header {
+  background-color: #1f1f1f;
+  border-bottom-color: #303030;
+}
+
+body[data-theme='dark'] .help-modal-main {
+  background-color: #141414;
+}
+
+body[data-theme='dark'] .help-modal-menu-container .ant-menu-item-selected {
+  background-color: #111b26;
+  border-right-color: #177ddc;
+}
+
+body[data-theme='dark'] .help-topic-body code {
+  background-color: #262626;
+}
+
+body[data-theme='dark'] .help-topic-body kbd {
+  background-color: #1f1f1f;
+  border-color: #434343;
+}
+
+/* ========== RESPONSIVO ========== */
+@media (max-width: 1200px) {
+  .help-modal-sidebar {
+    width: 240px;
+    min-width: 240px;
+  }
+
+  .help-modal-topic-content {
+    padding: 20px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .help-modal-sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+
+  .help-modal-topic-header {
+    padding: 16px 20px;
+  }
+
+  .help-modal-topic-content {
+    padding: 16px 20px;
+  }
+}

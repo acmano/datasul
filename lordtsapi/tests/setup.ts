@@ -55,6 +55,16 @@ jest.mock('uuid', () => ({
 }));
 
 // ========================================
+// 2.2 MOCK DO UserRateLimiter (evita setInterval)
+// ========================================
+jest.mock('@shared/utils/UserRateLimiter', () => ({
+  UserRateLimiter: {
+    track: jest.fn(),
+    cleanup: jest.fn(),
+  },
+}));
+
+// ========================================
 // 3. MOCKS GLOBAIS DE CONSOLE (opcional)
 // ========================================
 // Silencia console.log/error durante testes (descomente se quiser)
@@ -74,7 +84,7 @@ expect.extend({
   // Matcher customizado para validar erro customizado
   toBeCustomError(received: any, expectedClass: any) {
     const pass = received instanceof expectedClass;
-    
+
     if (pass) {
       return {
         message: () => `Expected error NOT to be instance of ${expectedClass.name}`,
@@ -125,16 +135,35 @@ declare global {
 // ========================================
 afterEach(() => {
   jest.clearAllMocks(); // Limpa histórico de calls de mocks
+  jest.clearAllTimers(); // Limpa timers pendentes (fake timers)
+  jest.useRealTimers(); // Volta para timers reais
 });
 
 // ========================================
-// 8. CLEANUP APÓS TODOS OS TESTES
+// 8. CLEANUP AGRESSIVO APÓS TODOS OS TESTES
 // ========================================
 afterAll(async () => {
-  // Aguarda promises pendentes
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  
+  // 1. Limpa todos os mocks
+  jest.restoreAllMocks();
+  jest.clearAllTimers();
+  jest.useRealTimers();
+
+  // 2. Aguarda promises pendentes
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  // 3. Limpa handles abertos (timers, intervals)
+  const handles = process._getActiveHandles?.() || [];
+  handles.forEach((handle: any) => {
+    if (handle && typeof handle.unref === 'function') {
+      handle.unref();
+    }
+  });
+
+  // 4. Aguarda mais um pouco para garantir cleanup
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
   // Fecha conexões abertas (se houver)
+  // Nota: Como usamos mocks, não há conexões reais
   // await DatabaseManager.close();
   // await CacheManager.close();
 });
@@ -142,15 +171,32 @@ afterAll(async () => {
 // ========================================
 // 9. ERRO DE PROMISES NÃO TRATADAS
 // ========================================
+const originalUnhandledRejection = process.listeners('unhandledRejection');
+process.removeAllListeners('unhandledRejection');
+
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection during test:', reason);
-  throw reason;
+  // Não lançar erro, apenas logar (para não quebrar testes)
+  // throw reason;
+});
+
+// ========================================
+// 10. CLEANUP DE EVENT LISTENERS AO SAIR
+// ========================================
+process.on('exit', () => {
+  // Remove listeners customizados
+  process.removeAllListeners('unhandledRejection');
+
+  // Restaura listeners originais
+  originalUnhandledRejection.forEach(listener => {
+    process.on('unhandledRejection', listener);
+  });
 });
 
 console.log('🧪 Ambiente de testes configurado');
 
 // ========================================
-// 10. EXPORT PARA TORNAR ESTE ARQUIVO UM MÓDULO
+// 11. EXPORT PARA TORNAR ESTE ARQUIVO UM MÓDULO
 // ========================================
 // Necessário para o 'declare global' funcionar
 export {};

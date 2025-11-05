@@ -1,11 +1,17 @@
 /**
  * Helpers para construção de queries OPENQUERY padrão
+ *
+ * @module shared/utils/repository/queryHelpers
+ * @since 1.0.0
  */
 
 import { QueryParameter } from '@infrastructure/database/types';
 
 /**
  * Monta query OPENQUERY padrão para buscar entidade por código
+ *
+ * @param options - Opções da query
+ * @returns Query SQL montada
  */
 export function buildOpenQuerySelect(options: {
   linkServer: string;
@@ -15,9 +21,9 @@ export function buildOpenQuerySelect(options: {
   paramName: string;
 }): string {
   const { linkServer, table, columns, whereColumn, paramName } = options;
-  
+
   const columnsStr = columns.join('\n                    , ');
-  
+
   return `
     DECLARE @codigo varchar(16) = @${paramName};
     DECLARE @sql nvarchar(max);
@@ -39,21 +45,18 @@ export function buildOpenQuerySelect(options: {
 
 /**
  * Cria parâmetro padrão para código
+ *
+ * @param paramName - Nome do parâmetro
+ * @param value - Valor do parâmetro
+ * @returns Parâmetro formatado
  */
 export function createCodigoParam(paramName: string, value: string): QueryParameter {
   return {
     name: paramName,
     type: 'varchar',
-    value
+    value,
   };
 }
 
-/**
- * Valida se código é válido
- */
-export function isValidCode(code: any): code is string {
-  return code !== null && 
-         code !== undefined && 
-         typeof code === 'string' && 
-         code.trim() !== '';
-}
+// Re-exporta isValidCode do core
+export { isValidCode } from '@/core/utils/typeGuards';

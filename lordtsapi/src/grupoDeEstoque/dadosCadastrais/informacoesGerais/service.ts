@@ -3,12 +3,18 @@
 import { GrupoDeEstoqueInformacoesGeraisRepository } from './repository';
 import { GrupoDeEstoqueNotFoundError } from '@shared/errors/CustomErrors';
 import { withErrorHandling, validateEntityExists } from '@shared/utils/serviceHelpers';
+import type { GrupoDeEstoqueInformacoesGerais } from './types';
 
 export class InformacoesGeraisService {
-  static async getInformacoesGerais(grupoDeEstoqueCodigo: string): Promise<any | null> {
+  static async getInformacoesGerais(
+    grupoDeEstoqueCodigo: string
+  ): Promise<GrupoDeEstoqueInformacoesGerais | null> {
     return withErrorHandling(
       async () => {
-        const grupoDeEstoqueData = await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster(grupoDeEstoqueCodigo);
+        const grupoDeEstoqueData =
+          await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster(
+            grupoDeEstoqueCodigo
+          );
 
         validateEntityExists(
           grupoDeEstoqueData,
@@ -19,15 +25,15 @@ export class InformacoesGeraisService {
         );
 
         return {
-          codigo: grupoDeEstoqueData.grupoDeEstoqueCodigo,
-          descricao: grupoDeEstoqueData.grupoDeEstoqueDescricao,
+          codigo: grupoDeEstoqueData.codigo,
+          descricao: grupoDeEstoqueData.descricao,
         };
       },
       {
         entityName: 'grupo de estoque',
         codeFieldName: 'grupoDeEstoqueCodigo',
         codeValue: grupoDeEstoqueCodigo,
-        operationName: 'buscar informações gerais'
+        operationName: 'buscar informações gerais',
       },
       GrupoDeEstoqueNotFoundError
     );

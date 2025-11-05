@@ -8,7 +8,7 @@ import { validateItemCodigo } from '@shared/validators/paramValidators';
 
 export class InformacoesGeraisController {
   static getInformacoesGerais = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction) => {
       const itemCodigo = validateItemCodigo(req.params.itemCodigo);
 
       const result = await InformacoesGeraisService.getInformacoesGerais(itemCodigo);

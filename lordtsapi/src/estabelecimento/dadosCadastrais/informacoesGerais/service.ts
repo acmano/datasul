@@ -3,12 +3,18 @@
 import { EstabelecimentoInformacoesGeraisRepository } from './repository';
 import { EstabelecimentoNotFoundError } from '@shared/errors/CustomErrors';
 import { withErrorHandling, validateEntityExists } from '@shared/utils/serviceHelpers';
+import type { EstabelecimentoInformacoesGerais } from './types';
 
 export class InformacoesGeraisService {
-  static async getInformacoesGerais(estabelecimentoCodigo: string): Promise<any | null> {
+  static async getInformacoesGerais(
+    estabelecimentoCodigo: string
+  ): Promise<EstabelecimentoInformacoesGerais | null> {
     return withErrorHandling(
       async () => {
-        const dados = await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster(estabelecimentoCodigo);
+        const dados =
+          await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster(
+            estabelecimentoCodigo
+          );
 
         validateEntityExists(
           dados,
@@ -21,14 +27,14 @@ export class InformacoesGeraisService {
 
         return {
           codigo: dados.codigo.trim(),
-          descricao: dados.nome
+          nome: dados.nome.trim(),
         };
       },
       {
         entityName: 'estabelecimento',
         codeFieldName: 'estabelecimentoCodigo',
         codeValue: estabelecimentoCodigo,
-        operationName: 'buscar informações gerais'
+        operationName: 'buscar informações gerais',
       },
       EstabelecimentoNotFoundError
     );

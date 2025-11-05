@@ -1,0 +1,255 @@
+/* Estilos customizados para o módulo de Items / Dados Mestres */
+
+/* ========================================
+   1. MELHORIAS DE ESPAÇAMENTO E LAYOUT
+   ======================================== */
+
+.item-search-page {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.search-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Card com mais respiro */
+.ant-card {
+  border-radius: 8px !important;
+}
+
+.ant-card-body {
+  padding: 24px !important;
+}
+
+/* ========================================
+   2. FORMULÁRIO DE BUSCA
+   ======================================== */
+
+/* Labels mais destacadas */
+.ant-form-item-label > label {
+  font-weight: 500 !important;
+  color: #262626 !important;
+  font-size: 14px !important;
+}
+
+/* Inputs com melhor aparência */
+.ant-input,
+.ant-select-selector {
+  border-radius: 6px !important;
+  border-color: #d9d9d9 !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-input:hover,
+.ant-select-selector:hover {
+  border-color: #40a9ff !important;
+}
+
+.ant-input:focus,
+.ant-select-focused .ant-select-selector {
+  border-color: #1890ff !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1) !important;
+}
+
+/* Botões com melhor hierarquia visual */
+.ant-btn-primary {
+  font-weight: 500 !important;
+  box-shadow: 0 2px 4px rgba(24, 144, 255, 0.2) !important;
+  border-radius: 6px !important;
+}
+
+.ant-btn-primary:hover {
+  box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+.ant-btn-default {
+  border-radius: 6px !important;
+}
+
+/* ========================================
+   3. PAINEL DE FILTROS AVANÇADOS
+   ======================================== */
+
+.ant-collapse-ghost > .ant-collapse-item {
+  border-top: 1px solid #f0f0f0 !important;
+  margin-top: 16px !important;
+}
+
+.ant-collapse-header {
+  padding: 12px 0 !important;
+  font-weight: 500 !important;
+  color: #1890ff !important;
+}
+
+.ant-collapse-header:hover {
+  color: #40a9ff !important;
+}
+
+/* Badge de contagem de filtros */
+.ant-badge-count {
+  font-size: 11px !important;
+  height: 18px !important;
+  line-height: 18px !important;
+  min-width: 18px !important;
+}
+
+/* ========================================
+   4. TABELA DE RESULTADOS
+   ======================================== */
+
+.ant-table-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ant-table-thead > tr > th {
+  background: #fafafa !important;
+  font-weight: 600 !important;
+  color: #262626 !important;
+  border-bottom: 2px solid #f0f0f0 !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #f5f5f5 !important;
+  cursor: pointer !important;
+}
+
+.selected-row {
+  background-color: #e6f7ff !important;
+}
+
+.selected-row:hover {
+  background-color: #bae7ff !important;
+}
+
+/* ========================================
+   5. ABAS (TABS)
+   ======================================== */
+
+.ant-tabs-nav {
+  margin-bottom: 24px !important;
+}
+
+.ant-tabs-tab {
+  font-weight: 500 !important;
+  font-size: 14px !important;
+  padding: 12px 16px !important;
+}
+
+.ant-tabs-tab-active {
+  font-weight: 600 !important;
+}
+
+/* ========================================
+   6. CARD DE DETALHES DO ITEM
+   ======================================== */
+
+.ant-descriptions-item-label {
+  background: #fafafa !important;
+  font-weight: 500 !important;
+}
+
+.ant-descriptions-item-content {
+  padding: 12px 16px !important;
+}
+
+/* Tags coloridas */
+.ant-tag {
+  border-radius: 4px !important;
+  font-weight: 500 !important;
+}
+
+/* ========================================
+   7. SIDEBAR / MENU LATERAL
+   ======================================== */
+
+.ant-layout-sider {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.ant-menu-item {
+  margin: 4px 8px !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.ant-menu-item-selected {
+  background-color: #e6f7ff !important;
+  font-weight: 600 !important;
+}
+
+.ant-menu-item:hover {
+  background-color: #f5f5f5 !important;
+}
+
+/* ========================================
+   8. RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .item-search-page {
+    padding: 16px;
+  }
+
+  .ant-card-body {
+    padding: 16px !important;
+  }
+
+  .ant-btn {
+    font-size: 13px !important;
+  }
+}
+
+/* ========================================
+   9. ACESSIBILIDADE
+   ======================================== */
+
+/* Melhor contraste para textos secundários */
+.ant-typography-secondary {
+  color: #595959 !important;
+}
+
+/* Foco visível para navegação por teclado */
+.ant-btn:focus-visible,
+.ant-input:focus-visible,
+.ant-select-selector:focus-visible {
+  outline: 2px solid #1890ff !important;
+  outline-offset: 2px !important;
+}
+
+/* Área de clique maior para mobile */
+@media (max-width: 768px) {
+  .ant-btn {
+    min-height: 44px !important;
+  }
+
+  .ant-input {
+    min-height: 44px !important;
+  }
+
+  .ant-select-selector {
+    min-height: 44px !important;
+  }
+}
+
+/* ========================================
+   10. ANIMAÇÕES SUAVES
+   ======================================== */
+
+.ant-card,
+.ant-btn,
+.ant-input,
+.ant-select-selector,
+.ant-table-row {
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1) !important;
+}
+
+/* Loading states mais agradáveis */
+.ant-spin {
+  color: #1890ff !important;
+}

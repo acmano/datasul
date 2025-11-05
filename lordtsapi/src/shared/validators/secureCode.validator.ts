@@ -1,45 +1,30 @@
-// src/shared/validators/secureCode.validator.ts
+/**
+ * Validators Joi para códigos seguros
+ *
+ * Wrapper sobre validators puros do core que integra com Joi.
+ * Mantém a interface atual mas usa lógica pura do core/validators.
+ *
+ * @module shared/validators/secureCode.validator
+ * @since 1.0.0
+ */
 
 import Joi from 'joi';
+import {
+  sanitizeCode,
+  validateCode,
+  validateSecureCode,
+  validateNumericFormat,
+} from '@/core/validators';
 
-const SQL_KEYWORDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'EXEC', 'UNION'];
-const DANGEROUS_PATTERNS = ['&&', '||', '|', '`', '$', '$(', '${'];
-
-export function sanitizeCode(value: string): string {
-  if (typeof value !== 'string') return value;
-
-  let sanitized = value.trim();
-  sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '');
-  sanitized = sanitized.replace(/\.\./g, '');
-  sanitized = sanitized.replace(/[\/\\]/g, '');
-  sanitized = sanitized.replace(/[';"\-\-]/g, '');
-  sanitized = sanitized.replace(/<[^>]*>/g, '');
-
-  return sanitized;
-}
-
-export function validateSecureCode(value: string): { valid: boolean; error?: string } {
-  if (!value || typeof value !== 'string') {
-    return { valid: false, error: 'Código inválido' };
-  }
-
-  const upper = value.toUpperCase();
-
-  for (const keyword of SQL_KEYWORDS) {
-    if (upper.includes(keyword)) {
-      return { valid: false, error: 'Código contém padrões não permitidos' };
-    }
-  }
-
-  for (const pattern of DANGEROUS_PATTERNS) {
-    if (value.includes(pattern)) {
-      return { valid: false, error: 'Código contém caracteres inválidos' };
-    }
-  }
-
-  return { valid: true };
-}
-
+/**
+ * Schema Joi para código alfanumérico seguro
+ *
+ * Usa validators puros do core para validação.
+ *
+ * @param minLength - Tamanho mínimo (padrão: 1)
+ * @param maxLength - Tamanho máximo (padrão: 8)
+ * @returns Schema Joi configurado
+ */
 export function secureAlphanumericSchema(minLength = 1, maxLength = 8) {
   return Joi.string()
     .required()
@@ -54,34 +39,16 @@ export function secureAlphanumericSchema(minLength = 1, maxLength = 8) {
         return helpers.error('any.required');
       }
 
-      // 3. Sanitiza
-      const sanitized = sanitizeCode(value);
+      // 3. Usa validação pura do core
+      const validation = validateCode(value, minLength, maxLength);
 
-      // 4. Valida se ficou vazio após sanitização
-      if (!sanitized || sanitized.length === 0) {
-        return helpers.error('any.invalid', { message: 'Código inválido' });
+      // 4. Se inválido, retorna erro
+      if (!validation.valid) {
+        return helpers.error('any.invalid', { message: validation.error });
       }
 
-      // 5. Valida tamanho
-      if (sanitized.length < minLength) {
-        return helpers.error('string.min', { limit: minLength });
-      }
-      if (sanitized.length > maxLength) {
-        return helpers.error('string.max', { limit: maxLength });
-      }
-
-      // 6. Valida formato alfanumérico ANTES de segurança
-      if (!/^[A-Za-z0-9]+$/.test(sanitized)) {
-        return helpers.error('any.invalid', { message: 'Código contém caracteres inválidos' });
-      }
-
-      // 7. Valida segurança (SQL injection, etc) POR ÚLTIMO
-      const securityValidation = validateSecureCode(sanitized);
-      if (!securityValidation.valid) {
-        return helpers.error('any.invalid', { message: securityValidation.error });
-      }
-
-      return sanitized;
+      // 5. Retorna valor sanitizado
+      return validation.sanitized;
     })
     .messages({
       'any.required': 'Código é obrigatório',
@@ -92,6 +59,15 @@ export function secureAlphanumericSchema(minLength = 1, maxLength = 8) {
     });
 }
 
+/**
+ * Schema Joi para código numérico seguro
+ *
+ * Usa validators puros do core para validação.
+ *
+ * @param minLength - Tamanho mínimo (padrão: 1)
+ * @param maxLength - Tamanho máximo (padrão: 8)
+ * @returns Schema Joi configurado
+ */
 export function secureNumericSchema(minLength = 1, maxLength = 8) {
   return Joi.string()
     .required()
@@ -100,23 +76,20 @@ export function secureNumericSchema(minLength = 1, maxLength = 8) {
         return helpers.error('string.base');
       }
 
+      // Sanitiza usando core
       const sanitized = sanitizeCode(value);
 
       if (!sanitized || sanitized.length === 0) {
         return helpers.error('any.invalid', { message: 'Código inválido' });
       }
 
-      if (sanitized.length < minLength) {
-        return helpers.error('string.min', { limit: minLength });
-      }
-      if (sanitized.length > maxLength) {
-        return helpers.error('string.max', { limit: maxLength });
-      }
-
-      if (!/^[0-9]+$/.test(sanitized)) {
-        return helpers.error('any.invalid', { message: 'Código contém caracteres inválidos' });
+      // Valida formato numérico usando core
+      const formatValidation = validateNumericFormat(sanitized, minLength, maxLength);
+      if (!formatValidation.valid) {
+        return helpers.error('any.invalid', { message: formatValidation.error });
       }
 
+      // Valida segurança usando core
       const securityValidation = validateSecureCode(sanitized);
       if (!securityValidation.valid) {
         return helpers.error('any.invalid', { message: securityValidation.error });
@@ -132,3 +105,6 @@ export function secureNumericSchema(minLength = 1, maxLength = 8) {
       'any.invalid': '{{#message}}',
     });
 }
+
+// Re-exporta funções puras do core para manter compatibilidade
+export { sanitizeCode, validateSecureCode } from '@/core/validators';

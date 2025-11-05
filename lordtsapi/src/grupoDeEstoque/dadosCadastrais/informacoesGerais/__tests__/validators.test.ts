@@ -3,13 +3,12 @@
 import { validateGrupoDeEstoqueInformacoesGeraisRequest } from '../validators';
 
 describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
-
   describe('validateGrupoDeEstoqueInformacoesGeraisRequest', () => {
-
     describe('Casos Válidos', () => {
-
       test('deve validar código alfanumérico', () => {
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: 'GE01' });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: 'GE01',
+        });
 
         expect(result.valid).toBe(true);
         expect(result.data).toEqual({ grupoDeEstoqueCodigo: 'GE01' });
@@ -18,25 +17,29 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve validar código com 16 caracteres (máximo)', () => {
         const codigo = '1234567890123456';
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: codigo });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: codigo,
+        });
 
         expect(result.valid).toBe(true);
         expect(result.data?.grupoDeEstoqueCodigo).toBe(codigo);
       });
 
       test('deve validar código com 1 caractere (mínimo)', () => {
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: 'G' });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: 'G',
+        });
 
         expect(result.valid).toBe(true);
         expect(result.data?.grupoDeEstoqueCodigo).toBe('G');
       });
-
     });
 
     describe('Sanitização de Entrada', () => {
-
       test('deve remover espaços em branco nas extremidades', () => {
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: '  GE01  ' });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: '  GE01  ',
+        });
 
         expect(result.valid).toBe(true);
         expect(result.data?.grupoDeEstoqueCodigo).toBe('GE01');
@@ -44,7 +47,7 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve remover caracteres de controle', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'GE01\x00\x1F'
+          grupoDeEstoqueCodigo: 'GE01\x00\x1F',
         });
 
         expect(result.valid).toBe(true);
@@ -53,7 +56,7 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve remover tentativas de path traversal', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: '..GE01..'
+          grupoDeEstoqueCodigo: '..GE01..',
         });
 
         expect(result.valid).toBe(true);
@@ -62,17 +65,15 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve sanitizar código complexo', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: '  GE-01"test;  '
+          grupoDeEstoqueCodigo: '  GE-01"test;  ',
         });
 
         expect(result.valid).toBe(true);
         expect(result.data?.grupoDeEstoqueCodigo).toBe('GE01test');
       });
-
     });
 
     describe('Casos Inválidos', () => {
-
       test('deve rejeitar código ausente', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({});
 
@@ -88,7 +89,9 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
       });
 
       test('deve rejeitar código só com espaços', () => {
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: '   ' });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: '   ',
+        });
 
         expect(result.valid).toBe(false);
         expect(result.error).toContain('inválido');
@@ -96,25 +99,27 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve rejeitar código maior que 16 caracteres', () => {
         const codigo = '12345678901234567';
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: codigo });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: codigo,
+        });
 
         expect(result.valid).toBe(false);
         expect(result.error).toContain('16 caracteres');
       });
 
       test('deve rejeitar código com tipo errado', () => {
-        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({ grupoDeEstoqueCodigo: 123 as any });
+        const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
+          grupoDeEstoqueCodigo: 123 as any,
+        });
 
         expect(result.valid).toBe(false);
       });
-
     });
 
     describe('Proteção contra SQL Injection', () => {
-
       test('deve bloquear SELECT', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'SELECTabc'
+          grupoDeEstoqueCodigo: 'SELECTabc',
         });
 
         expect(result.valid).toBe(false);
@@ -123,7 +128,7 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve bloquear INSERT', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'INSERTx'
+          grupoDeEstoqueCodigo: 'INSERTx',
         });
 
         expect(result.valid).toBe(false);
@@ -131,7 +136,7 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve bloquear DROP', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'DROPtable'
+          grupoDeEstoqueCodigo: 'DROPtable',
         });
 
         expect(result.valid).toBe(false);
@@ -139,19 +144,17 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve bloquear UNION', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'UNIONselect'
+          grupoDeEstoqueCodigo: 'UNIONselect',
         });
 
         expect(result.valid).toBe(false);
       });
-
     });
 
     describe('Proteção contra Command Injection', () => {
-
       test('deve bloquear pipe (|)', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'ge|test'
+          grupoDeEstoqueCodigo: 'ge|test',
         });
 
         expect(result.valid).toBe(false);
@@ -160,7 +163,7 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve bloquear && operator', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'ge&&test'
+          grupoDeEstoqueCodigo: 'ge&&test',
         });
 
         expect(result.valid).toBe(false);
@@ -168,14 +171,11 @@ describe('Validators - InformacoesGerais (GrupoDeEstoque)', () => {
 
       test('deve bloquear backticks', () => {
         const result = validateGrupoDeEstoqueInformacoesGeraisRequest({
-          grupoDeEstoqueCodigo: 'ge`test`'
+          grupoDeEstoqueCodigo: 'ge`test`',
         });
 
         expect(result.valid).toBe(false);
       });
-
     });
-
   });
-
 });

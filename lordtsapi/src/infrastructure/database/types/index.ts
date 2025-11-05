@@ -50,7 +50,7 @@ export type ConnectionType = 'sqlserver' | 'odbc';
 export interface ConnectionStatus {
   type: ConnectionType;
   mode: 'MOCK_DATA' | 'REAL_DATABASE';
-  error?: string;
+  error?: string | undefined;
 }
 
 /**
@@ -82,7 +82,7 @@ export interface ConnectionStatus {
 export interface QueryParameter {
   name: string;
   type: string;
-  value: any;
+  value: unknown;
 }
 
 /**
@@ -153,7 +153,7 @@ export interface IConnection {
    *
    * @param {string} sql - Query SQL a ser executada
    *
-   * @returns {Promise<any>} Promise com o resultado da query
+   * @returns {Promise<T[]>} Promise com o resultado da query
    *
    * @throws {Error} Se a query falhar
    *
@@ -180,7 +180,7 @@ export interface IConnection {
    * );
    * ```
    */
-  query(sql: string): Promise<any>;
+  query<T = unknown>(sql: string): Promise<T[]>;
 
   /**
    * Executa query SQL com parâmetros (previne SQL injection)
@@ -188,7 +188,7 @@ export interface IConnection {
    * @param {string} sql - Query SQL com placeholders (@paramName)
    * @param {QueryParameter[]} params - Array de parâmetros
    *
-   * @returns {Promise<any>} Promise com o resultado da query
+   * @returns {Promise<T[]>} Promise com o resultado da query
    *
    * @throws {Error} Se a query falhar ou parâmetros forem inválidos
    *
@@ -207,7 +207,7 @@ export interface IConnection {
    * );
    * ```
    */
-  queryWithParams(sql: string, params: QueryParameter[]): Promise<any>;
+  queryWithParams<T = unknown>(sql: string, params: QueryParameter[]): Promise<T[]>;
 
   /**
    * Fecha a conexão com o banco de dados
@@ -288,8 +288,8 @@ export interface IConnection {
  * const config: DatabaseConfig = {
  *   server: '10.105.0.4\\LOREN',
  *   port: 1433,
- *   user: 'dcloren',
- *   password: '#dcloren#',
+ *   user: 'sysprogress',
+ *   password: 'sysprogress',
  *   database: 'PRD_EMS2EMP',
  *   connectionTimeout: 30000,
  *   requestTimeout: 30000,

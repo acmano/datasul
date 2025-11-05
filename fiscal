@@ -1,0 +1,90 @@
+{
+  "success": true,
+  "data": {
+    "item": {
+      "codigo": "7530110",
+      "descricao": "MAXI DUCHA 127V 3200W C/21",
+      "gerais": {
+        "formaDescricao": "",
+        "formaObtencao": "",
+        "quantidadeFracionada": "",
+        "loteMultiplo": "",
+        "unidadeNegocio": {
+          "codigo": "",
+          "nome": ""
+        },
+        "origemUnidTrib": ""
+      },
+      "complementares": {
+        "tipoControle": "",
+        "tipoControleEstoque": "",
+        "emissaoNF": "",
+        "faturavel": "",
+        "baixaEstoque": ""
+      },
+      "fiscal": {
+        "servico": "",
+        "classificacao": {
+          "codigo": "",
+          "ncm": "",
+          "nome": ""
+        },
+        "ipi": {
+          "codigoTributacao": "",
+          "aliquota": "",
+          "apuracao": "",
+          "suspenso": "",
+          "diferenciado": "",
+          "incentivado": "",
+          "combustivelSolvente": "",
+          "familia": {
+            "codigo": "",
+            "nome": ""
+          }
+        },
+        "icms": {
+          "codigoTributacao": "",
+          "fatorReajuste": ""
+        },
+        "iss": {
+          "codigo": "",
+          "aliquota": ""
+        },
+        "inss": {
+          "servicoCodigo": ""
+        },
+        "DCR": "",
+        "sefazSP": ""
+      },
+      "pisCofins": {
+        "pis": {
+          "calculoPorUnidade": "",
+          "valorPorUnidade": "",
+          "aliquotaOrigem": "",
+          "aliquota": "",
+          "percentualReducao": "",
+          "retencao": {
+            "percentual": "",
+            "origem": ""
+          }
+        },
+        "cofins": {
+          "calculoPorUnidade": "",
+          "valorPorUnidade": "",
+          "aliquotaOrigem": "",
+          "aliquota": "",
+          "percentualReducao": "",
+          "retencao": {
+            "percentual": "",
+            "origem": ""
+          }
+        },
+        "retencaoCsll": {
+          "origem": "",
+          "percentual": ""
+        },
+        "substTotalNF": ""
+      }
+    }
+  }
+}

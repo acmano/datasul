@@ -1,14 +1,22 @@
 {
-  "extends": "./tsconfig.json",
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": "./",
-    "paths": {
-      "@api/*": ["src/api/*"],
-      "@config/*": ["src/config/*"],
-      "@infrastructure/*": ["src/infrastructure/*"],
-      "@shared/*": ["src/shared/*"]
-    },
-    "types": ["node", "express", "jest"]
+    // Types necessários para Jest
+    "types": ["jest", "node"],
+
+    // Permite módulos isolados (necessário para ts-jest)
+    "isolatedModules": true,
+
+    // Sem geração de arquivos de saída nos testes
+    "noEmit": true,
+
+    // Source maps inline para melhor debug nos testes
+    "sourceMap": false,
+    "inlineSourceMap": true,
+
+    // Não gerar declarações nos testes
+    "declaration": false
   },
   "include": [
     "src/**/*",
@@ -16,6 +24,7 @@
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "build"
   ]
 }

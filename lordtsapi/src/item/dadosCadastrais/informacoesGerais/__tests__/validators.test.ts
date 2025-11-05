@@ -4,14 +4,11 @@ import { validateItemInformacoesGeraisRequest } from '../validators';
 import { testItemCodigos, expectedErrors } from '@tests/factories/item.factory';
 
 describe('Validators - InformacoesGerais', () => {
-
   describe('validateItemInformacoesGeraisRequest', () => {
-
     // ========================================
     // CASOS DE SUCESSO ✅
     // ========================================
     describe('Casos Válidos', () => {
-
       test('deve validar código numérico simples', () => {
         const result = validateItemInformacoesGeraisRequest({ itemCodigo: '7530110' });
 
@@ -42,20 +39,16 @@ describe('Validators - InformacoesGerais', () => {
         expect(result.data?.itemCodigo).toBe('A');
       });
 
-      test.each(testItemCodigos.valid)(
-        'deve validar código válido: %s',
-        (codigo) => {
-          const result = validateItemInformacoesGeraisRequest({ itemCodigo: codigo });
-          expect(result.valid).toBe(true);
-        }
-      );
+      test.each(testItemCodigos.valid)('deve validar código válido: %s', (codigo) => {
+        const result = validateItemInformacoesGeraisRequest({ itemCodigo: codigo });
+        expect(result.valid).toBe(true);
+      });
     });
 
     // ========================================
     // SANITIZAÇÃO 🧹
     // ========================================
     describe('Sanitização de Entrada', () => {
-
       test('deve remover espaços em branco nas extremidades', () => {
         const result = validateItemInformacoesGeraisRequest({ itemCodigo: '  7530110  ' });
 
@@ -65,7 +58,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve remover caracteres de controle', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '7530110\x00\x1F'
+          itemCodigo: '7530110\x00\x1F',
         });
 
         expect(result.valid).toBe(true);
@@ -74,7 +67,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve remover tentativas de path traversal', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '..ABC123..'
+          itemCodigo: '..ABC123..',
         });
 
         expect(result.valid).toBe(true);
@@ -94,7 +87,6 @@ describe('Validators - InformacoesGerais', () => {
     // VALIDAÇÃO DE ERROS ❌
     // ========================================
     describe('Casos Inválidos', () => {
-
       test('deve rejeitar itemCodigo ausente', () => {
         const result = validateItemInformacoesGeraisRequest({});
 
@@ -136,11 +128,10 @@ describe('Validators - InformacoesGerais', () => {
     // SEGURANÇA 🛡️ - SQL INJECTION
     // ========================================
     describe('Proteção contra SQL Injection', () => {
-
       test('deve bloquear SELECT (dentro do limite de caracteres)', () => {
         // Usa código curto que passa tamanho mas tem SQL keyword
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'SELECTabc'
+          itemCodigo: 'SELECTabc',
         });
 
         expect(result.valid).toBe(false);
@@ -149,7 +140,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear INSERT', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'INSERTx'
+          itemCodigo: 'INSERTx',
         });
 
         expect(result.valid).toBe(false);
@@ -158,7 +149,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear DROP', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'DROPtable'
+          itemCodigo: 'DROPtable',
         });
 
         expect(result.valid).toBe(false);
@@ -167,7 +158,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear UNION', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'UNIONselect'
+          itemCodigo: 'UNIONselect',
         });
 
         expect(result.valid).toBe(false);
@@ -176,7 +167,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve remover aspas simples e duplas', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: "item'test"
+          itemCodigo: "item'test",
         });
 
         // Aspas são removidas na sanitização
@@ -186,7 +177,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve remover ponto e vírgula', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item;test'
+          itemCodigo: 'item;test',
         });
 
         // ; é removido na sanitização
@@ -199,10 +190,9 @@ describe('Validators - InformacoesGerais', () => {
     // SEGURANÇA 🛡️ - COMMAND INJECTION
     // ========================================
     describe('Proteção contra Command Injection', () => {
-
       test('deve bloquear pipe (|)', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item|test'
+          itemCodigo: 'item|test',
         });
 
         expect(result.valid).toBe(false);
@@ -212,7 +202,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear && operator', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item&&test'
+          itemCodigo: 'item&&test',
         });
 
         expect(result.valid).toBe(false);
@@ -222,7 +212,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear || operator', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item||test'
+          itemCodigo: 'item||test',
         });
 
         expect(result.valid).toBe(false);
@@ -232,7 +222,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear backticks', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item`test`'
+          itemCodigo: 'item`test`',
         });
 
         expect(result.valid).toBe(false);
@@ -242,7 +232,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear $() substitution', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'item$(test)'
+          itemCodigo: 'item$(test)',
         });
 
         expect(result.valid).toBe(false);
@@ -255,10 +245,9 @@ describe('Validators - InformacoesGerais', () => {
     // SEGURANÇA 🛡️ - XSS
     // ========================================
     describe('Proteção contra XSS', () => {
-
       test('deve remover tags HTML mas bloquear parênteses', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '<script>alert(1)</script>'
+          itemCodigo: '<script>alert(1)</script>',
         });
 
         // Tags <> são removidas, mas () permanecem e falham no regex
@@ -268,7 +257,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve remover tags mas bloquear caracteres especiais remanescentes', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '<img src=x>'
+          itemCodigo: '<img src=x>',
         });
 
         // Remove <>, mas resultado final é inválido
@@ -278,7 +267,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve bloquear script com caracteres especiais', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '<script>alert("xss")</script>'
+          itemCodigo: '<script>alert("xss")</script>',
         });
 
         // Aspas e parênteses causam erro de formato
@@ -287,7 +276,7 @@ describe('Validators - InformacoesGerais', () => {
 
       test('deve aceitar tags removidas que resultam em alfanumérico válido', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '<b>test123</b>'
+          itemCodigo: '<b>test123</b>',
         });
 
         // Remove <b> e </b> completamente, fica "test123"
@@ -300,7 +289,6 @@ describe('Validators - InformacoesGerais', () => {
     // EDGE CASES 🔍
     // ========================================
     describe('Edge Cases', () => {
-
       test('deve aceitar apenas números', () => {
         const result = validateItemInformacoesGeraisRequest({ itemCodigo: '123456' });
 
@@ -325,9 +313,9 @@ describe('Validators - InformacoesGerais', () => {
       test('deve rejeitar caracteres especiais', () => {
         const specialChars = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')'];
 
-        specialChars.forEach(char => {
+        specialChars.forEach((char) => {
           const result = validateItemInformacoesGeraisRequest({
-            itemCodigo: `item${char}test`
+            itemCodigo: `item${char}test`,
           });
 
           // Caracteres especiais causam erro
@@ -338,7 +326,7 @@ describe('Validators - InformacoesGerais', () => {
       test('deve sanitizar e validar corretamente códigos complexos', () => {
         // Código com vários caracteres especiais que serão removidos
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '  ABC-123"test;  '
+          itemCodigo: '  ABC-123"test;  ',
         });
 
         // Remove espaços, -, ", ; → fica ABC123test
@@ -351,7 +339,6 @@ describe('Validators - InformacoesGerais', () => {
     // FLUXO COMPLETO DE VALIDAÇÃO
     // ========================================
     describe('Fluxo de Validação Completo', () => {
-
       test('deve seguir ordem: sanitização → tamanho → formato → SQL', () => {
         // 1. Input com caracteres especiais
         const input = '  ITEM-123  ';
@@ -369,7 +356,7 @@ describe('Validators - InformacoesGerais', () => {
       test('deve falhar no tamanho antes de checar SQL', () => {
         // String longa com SQL keyword
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'SELECT1234567890' // 16 chars, mas SELECT está lá
+          itemCodigo: 'SELECT1234567890', // 16 chars, mas SELECT está lá
         });
 
         // Passa no tamanho (16 chars), mas falha no SQL keyword
@@ -380,7 +367,7 @@ describe('Validators - InformacoesGerais', () => {
       test('deve falhar no formato antes de checar SQL', () => {
         // String curta com SQL e caracteres inválidos
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: 'SELECT *' // Tem espaço
+          itemCodigo: 'SELECT *', // Tem espaço
         });
 
         // 1. Sanitiza (mantém espaço)
@@ -392,11 +379,10 @@ describe('Validators - InformacoesGerais', () => {
     });
 
     describe('Gaps de Mutation Testing', () => {
-
       // Gap 1: String que fica vazia após sanitização
       it('deve rejeitar código com apenas caracteres removíveis', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '//\\\\' // Só barras que serão removidas
+          itemCodigo: '//\\\\', // Só barras que serão removidas
         });
 
         expect(result.valid).toBe(false);
@@ -406,7 +392,7 @@ describe('Validators - InformacoesGerais', () => {
 
       it('deve rejeitar código com apenas tags HTML', () => {
         const result = validateItemInformacoesGeraisRequest({
-          itemCodigo: '<><><>' // Só tags removidas
+          itemCodigo: '<><><>', // Só tags removidas
         });
 
         expect(result.valid).toBe(false);
@@ -417,9 +403,9 @@ describe('Validators - InformacoesGerais', () => {
         // Este teste força o código a executar o loop
         const patterns = ['&&', '||', '|', '`', '$'];
 
-        patterns.forEach(pattern => {
+        patterns.forEach((pattern) => {
           const result = validateItemInformacoesGeraisRequest({
-            itemCodigo: `test${pattern}code`
+            itemCodigo: `test${pattern}code`,
           });
 
           expect(result.valid).toBe(false);
@@ -445,7 +431,5 @@ describe('Validators - InformacoesGerais', () => {
         });
       });
     });
-
-
   });
 });

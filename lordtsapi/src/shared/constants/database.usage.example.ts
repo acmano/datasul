@@ -1,21 +1,22 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * EXEMPLO DE USO - Database Constants
- * 
+ *
  * Este arquivo demonstra como usar as constantes compartilhadas
- * do @datasul/shared-types em repositories.
+ * do @acmano/lordtsapi-shared-types em repositories.
  */
 
-import { 
-  LINKED_SERVERS, 
+import {
+  LINKED_SERVERS,
   PROGRESS_TABLES,
   QUERY_CONFIG,
-  getProgressColumn
-} from '@datasul/shared-types';
+  getProgressColumn,
+} from '@acmano/lordtsapi-shared-types';
 
 /**
  * ANTES (hardcoded):
  */
-const queryAntes = `
+const _queryAntes = `
   SELECT item."it-codigo" as itemCodigo
   FROM OPENQUERY (
     PRD_EMS2EMP,
@@ -28,7 +29,7 @@ const queryAntes = `
 /**
  * DEPOIS (usando constants):
  */
-const queryDepois = `
+const _queryDepois = `
   SELECT item.${getProgressColumn('it-codigo')} as itemCodigo
   FROM OPENQUERY (
     ${LINKED_SERVERS.PRD_EMS2EMP},
@@ -48,5 +49,5 @@ const queryDepois = `
  */
 
 // Limites configuráveis
-const maxEstabelecimentos = QUERY_CONFIG.MAX_ESTABELECIMENTOS_PARALELO;
-const timeout = QUERY_CONFIG.DEFAULT_TIMEOUT;
+const _maxEstabelecimentos = QUERY_CONFIG.MAX_ESTABELECIMENTOS_PARALELO;
+const _timeout = QUERY_CONFIG.DEFAULT_TIMEOUT;

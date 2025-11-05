@@ -3,12 +3,18 @@
 import { FamiliaComercialInformacoesGeraisRepository } from './repository';
 import { FamiliaComercialNotFoundError } from '@shared/errors/CustomErrors';
 import { withErrorHandling, validateEntityExists } from '@shared/utils/serviceHelpers';
+import type { FamiliaComercialInformacoesGerais } from './types';
 
 export class InformacoesGeraisService {
-  static async getInformacoesGerais(familiaComercialCodigo: string): Promise<any | null> {
+  static async getInformacoesGerais(
+    familiaComercialCodigo: string
+  ): Promise<FamiliaComercialInformacoesGerais | null> {
     return withErrorHandling(
       async () => {
-        const familiaComercialData = await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster(familiaComercialCodigo);
+        const familiaComercialData =
+          await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster(
+            familiaComercialCodigo
+          );
 
         validateEntityExists(
           familiaComercialData,
@@ -19,15 +25,15 @@ export class InformacoesGeraisService {
         );
 
         return {
-          codigo: familiaComercialData.familiaComercialCodigo,
-          descricao: familiaComercialData.familiaComercialDescricao,
+          codigo: familiaComercialData.codigo,
+          descricao: familiaComercialData.descricao,
         };
       },
       {
         entityName: 'família comercial',
         codeFieldName: 'familiaComercialCodigo',
         codeValue: familiaComercialCodigo,
-        operationName: 'buscar informações gerais'
+        operationName: 'buscar informações gerais',
       },
       FamiliaComercialNotFoundError
     );

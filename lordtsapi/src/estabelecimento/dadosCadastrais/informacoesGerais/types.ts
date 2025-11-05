@@ -2,21 +2,16 @@
 
 /**
  * Types específicos do módulo Estabelecimento - Informações Gerais
- * Types compartilhados importados de @datasul/shared-types
+ * Types compartilhados importados de @acmano/lordtsapi-shared-types
  */
 
-import {
-  ApiResponse,
-  EstabelecimentoData
-} from '@datasul/shared-types';
+import { ApiResponse, EstabelecimentoData } from '@acmano/lordtsapi-shared-types';
 
 // ============================================================================
 // RE-EXPORTS (para compatibilidade)
 // ============================================================================
 
-export {
-  EstabelecimentoData
-};
+export { EstabelecimentoData };
 
 // ============================================================================
 // TYPES ESPECÍFICOS DESTE MÓDULO
@@ -24,10 +19,11 @@ export {
 
 /**
  * Resultado da query de estabelecimento master
+ * ODBC retorna colunas em lowercase após normalização
  */
 export interface EstabelecimentoMasterQueryResult {
-  estabelecimentoCodigo: string;
-  estabelecimentoNome: string;
+  codigo: string;
+  nome: string;
 }
 
 /**
@@ -48,4 +44,5 @@ export interface EstabelecimentoInformacoesGeraisRequestDTO {
 /**
  * DTO de resposta (usando ApiResponse genérico)
  */
-export type EstabelecimentoInformacoesGeraisResponseDTO = ApiResponse<EstabelecimentoInformacoesGerais>;
+export type EstabelecimentoInformacoesGeraisResponseDTO =
+  ApiResponse<EstabelecimentoInformacoesGerais>;

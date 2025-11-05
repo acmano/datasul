@@ -1,0 +1,33 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todos os Estabelecimentos
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo a ordenação para listar todos os estabelecimentos
+--   cadastrados no sistema.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + listar-todos.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - estabelecimento/listar/repository.ts :: listarTodos()
+--
+-- Performance:
+--   - Lê toda a tabela PUB.estabelec (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge (banco MULT)
+--   - Usa índice da coluna "nome" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODOS os estabelecimentos (ativos e inativos)
+--   - Ordenação alfabética por nome
+--   - Ordenação secundária por código
+--   - Quantidade depende do total cadastrado no sistema
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+ORDER BY  estabelec."cod-estabel"

@@ -20,11 +20,9 @@ export class ItemNotFoundError extends AppError {
 
 export class EstabelecimentoNotFoundError extends AppError {
   constructor(estabelecimentoCodigo: string) {
-    super(404,
-      `Estabelecimento ${estabelecimentoCodigo} não encontrado`,
-      true,
-      { estabelecimentoCodigo }
-    );
+    super(404, `Estabelecimento ${estabelecimentoCodigo} não encontrado`, true, {
+      estabelecimentoCodigo,
+    });
     this.name = 'EstabelecimentoNotFoundError';
   }
 }
@@ -37,16 +35,26 @@ export class FamiliaNotFoundError extends AppError {
 
 export class FamiliaComercialNotFoundError extends AppError {
   constructor(familiaComercialCodigo: string) {
-    super(404, `Familia Comercial ${familiaComercialCodigo} não encontrada`, true, { familiaComercialCodigo });
+    super(404, `Familia Comercial ${familiaComercialCodigo} não encontrada`, true, {
+      familiaComercialCodigo,
+    });
   }
 }
 
 export class GrupoDeEstoqueNotFoundError extends AppError {
   constructor(grupoDeEstoqueCodigo: string) {
-    super(404, `Grupo de Estoque ${grupoDeEstoqueCodigo} não encontrado`, true, { grupoDeEstoqueCodigo });
+    super(404, `Grupo de Estoque ${grupoDeEstoqueCodigo} não encontrado`, true, {
+      grupoDeEstoqueCodigo,
+    });
   }
 }
 
+export class DepositoNotFoundError extends AppError {
+  constructor(depositoCodigo: string) {
+    super(404, `Depósito ${depositoCodigo} não encontrado`, true, { depositoCodigo });
+    this.name = 'DepositoNotFoundError';
+  }
+}
 
 // ============================================================================
 // VALIDATION (400)
@@ -67,7 +75,7 @@ export class DatabaseError extends AppError {
     super(500, `Erro no banco de dados: ${message}`, true, {
       originalMessage: originalError?.message,
       ...(process.env.NODE_ENV === 'development' && {
-        stack: originalError?.stack
+        stack: originalError?.stack,
       }),
     });
   }
@@ -79,12 +87,7 @@ export class DatabaseError extends AppError {
 
 export class ConnectionTimeoutError extends AppError {
   constructor(service: string, timeout: number) {
-    super(
-      503,
-      `Timeout ao conectar com ${service} após ${timeout}ms`,
-      true,
-      { service, timeout }
-    );
+    super(503, `Timeout ao conectar com ${service} após ${timeout}ms`, true, { service, timeout });
   }
 }
 
@@ -126,12 +129,7 @@ export class AuthorizationError extends AppError {
 
 export class RateLimitError extends AppError {
   constructor(retryAfter?: number) {
-    super(
-      429,
-      'Muitas requisições. Tente novamente em alguns segundos.',
-      true,
-      { retryAfter }
-    );
+    super(429, 'Muitas requisições. Tente novamente em alguns segundos.', true, { retryAfter });
   }
 }
 

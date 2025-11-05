@@ -1,0 +1,42 @@
+SELECT  i."it-codigo"              as codigo
+      , i."desc-item"              as descricao
+      , i."cod-obsoleto"           as situacao
+      , i."tipo-contr"             as tipoControle
+      , i."tipo-con-est"           as tipoControleEstoque
+      , i."tipo-requis"            as tipoRequisicao
+      , i."log-consid-aloc-ativid" as consideraAlocAtividades
+      , i."log-programac-sfc"      as programaAlocAtividades
+      , i."val-overlap"            as taxaOverlap
+      , i.politica                 as politica
+      , i.demanda                  as demanda
+      , i."lote-multipl"           as loteMultiplo
+      , i."lote-minimo"            as loteMinimo
+      , i."lote-economi"           as loteEconomico
+      , i."tipo-est-seg"           as estoqueSegurancaTipo
+      , i."quant-segur"            as estoqueSegurancaQtd
+      , i."periodo-fixo"           as periodoFixo
+      , i."pto-repos"              as pontoReposicao
+      , i."tempo-segur"            as estoqueSegurancaTempo
+      , i."conv-tempo-seg"         as estoqueSegurancaConvTempo
+      , i."char-1"                 as char1
+      , i."classe-repro"           as mrpClasseReprog
+      , i."emissao-ord"            as mrpEmissaoOrdens
+      , i."contr-plan"             as mrpControlePlanej
+      , i."div-ordem"              as mrpDivisaoOrdens
+      , im."ind-lista-mrp"         as mrpProcesso
+      , i."res-int-comp"           as mrpRessupCompras
+      , i."res-for-comp"           as mrpRessupFornecedor
+      , i."res-cq-comp"            as mrpRessupQualidade
+      , i."ressup-fabri"           as mrpRessupFabrica
+      , i."res-cq-fabri"           as mrpRessupFabricaQual
+      , i."horiz-fixo"             as mrpRessupHorizFixo
+      , i."cd-origem"              as mrpPvOrigem
+      , i."cd-formula"             as mrpPvFormula
+      , i."ind-calc-meta"          as mrpMpsCriterio
+      , i."val-fator-custo-dis"    as mrpMpsFatorCusto
+      , i.prioridade               as mrpCrpPrioridade
+      , i."tipo-sched"             as mrpCrpProgramacao
+  FROM  pub.item i
+  LEFT  OUTER JOIN pub."item-man" im
+    ON  im."it-codigo" = i."it-codigo"
+  WHERE i."it-codigo" = ?

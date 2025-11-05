@@ -1,0 +1,96 @@
+name: Build and Deploy Frontend
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        clean: true
+        submodules: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@acmano'
+
+    - name: Configure NPM for GitHub Packages
+      run: |
+        rm -f .npmrc
+        echo "@acmano:registry=https://npm.pkg.github.com" > .npmrc
+        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+        echo "legacy-peer-deps=true" >> .npmrc
+
+    - name: Get version from Git
+      id: version
+      run: |
+        if git describe --tags --exact-match 2>/dev/null; then
+          echo "version=$(git describe --tags --exact-match)" >> $GITHUB_OUTPUT
+        else
+          echo "version=2.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Create production .env
+      run: |
+        echo "REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}" > .env.production
+        echo "REACT_APP_NAME=LOR0138 - Consulta de Itens" >> .env.production
+        echo "REACT_APP_VERSION=${{ steps.version.outputs.version }}" >> .env.production
+
+    - name: Install dependencies
+      run: npm ci --legacy-peer-deps
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Run tests with coverage
+      run: npm run test:coverage
+      env:
+        CI: true
+
+    - name: Upload coverage to artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage/
+        retention-days: 30
+
+    - name: Build React app
+      run: npm run build
+      env:
+        CI: false
+    
+    - name: Verify build
+      run: test -f build/index.html || exit 1
+
+    - name: Backup current version
+      run: |
+        if [ -d "/opt/aplicacoes/frontend/current/build" ]; then
+          sudo cp -r /opt/aplicacoes/frontend/current/build /opt/aplicacoes/frontend/backup-$(date +%Y%m%d-%H%M%S)
+        fi
+    
+    - name: Deploy files
+      run: |
+        sudo mkdir -p /opt/aplicacoes/frontend/current
+        sudo rm -rf /opt/aplicacoes/frontend/current/build
+        sudo cp -r build /opt/aplicacoes/frontend/current/
+        sudo chown -R www-data:www-data /opt/aplicacoes/frontend/current/build
+    
+    - name: Reload Nginx
+      run: sudo systemctl reload nginx
+    
+    - name: Wait for service
+      run: sleep 3
+    
+    - name: Health check
+      run: curl -f http://lor0138.lorenzetti.ibe/ && curl -f http://lordtsapi.lorenzetti.ibe/health

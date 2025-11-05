@@ -1,0 +1,82 @@
+# ESLint ignore file
+
+# Build output
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Test files that are not included in tsconfig
+tests/**
+**/__tests__/**
+*.test.ts
+*.spec.ts
+
+# Coverage
+coverage/
+
+# Logs
+*.log
+
+# Legacy code (not in use - excluded from tsconfig)
+src/api/**
+src/application/**
+src/core/**
+src/domain/**
+src/presentation/**
+
+# Legacy infrastructure
+src/infrastructure/database/DatabaseAdapter.ts
+src/infrastructure/database/QueryBuilder.ts
+src/infrastructure/database/connections/**
+src/infrastructure/logging/**
+src/infrastructure/monitoring/**
+src/infrastructure/observability/**
+src/infrastructure/process/**
+src/infrastructure/repositories/**
+src/infrastructure/chaos/**
+src/infrastructure/database/circuitBreaker/**
+src/infrastructure/database/multiRegion/**
+src/infrastructure/database/poolScaler/**
+src/infrastructure/database/retry/**
+src/infrastructure/ml/**
+src/infrastructure/tracing/**
+src/infrastructure/metrics/ConnectionMetrics.ts
+src/infrastructure/metrics/MultiRegionMetrics.ts
+
+# Legacy config
+src/config/elasticsearch.config.ts
+src/config/security.config.ts
+src/config/connections.config.ts
+src/config/multiRegion.config.ts
+src/config/poolScaler.config.ts
+src/config/retry.config.ts
+
+# Legacy shared
+src/shared/decorators/**
+src/shared/middlewares/jwt.middleware.ts
+src/shared/middlewares/tracing.middleware.ts
+src/shared/middlewares/validationErrors.middleware.ts
+src/shared/services/apiKey.service.ts
+src/shared/utils/UserRateLimiter.ts
+src/shared/utils/cache/**
+src/shared/utils/logger.ts
+src/shared/chaos/**
+src/shared/errors/CircuitBreakerErrors.ts
+src/shared/errors/RetryErrors.ts
+src/shared/health/**
+src/shared/ml/**
+src/shared/multiRegion/**
+src/shared/poolScaler/**
+src/shared/tracing/**
+src/types/**
+
+# Legacy item modules
+src/item/dadosCadastrais/**
+
+# Scripts
+scripts/**
+
+# Config files
+jest.integration.config.ts

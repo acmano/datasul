@@ -8,8 +8,10 @@ import { validateFamiliaComercialCodigo } from '@shared/validators/paramValidato
 
 export class InformacoesGeraisController {
   static getInformacoesGerais = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
-      const familiaComercialCodigo = validateFamiliaComercialCodigo(req.params.familiaComercialCodigo);
+    async (req: Request, res: Response, _next: NextFunction) => {
+      const familiaComercialCodigo = validateFamiliaComercialCodigo(
+        req.params.familiaComercialCodigo
+      );
 
       const result = await InformacoesGeraisService.getInformacoesGerais(familiaComercialCodigo);
 

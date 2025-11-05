@@ -44,8 +44,8 @@
  * Todas as propriedades podem ser sobrescritas via variáveis de ambiente.
  *
  * Variáveis de ambiente suportadas:
- * - APP_HOST: Hostname (padrão: lor0138.lorenzetti.ibe)
- * - APP_PORT: Porta (padrão: 3000)
+ * - HOST: Hostname (padrão: lor0138.lorenzetti.ibe)
+ * - PORT: Porta (padrão: 3000)
  * - APP_URL: URL completa (padrão: http://lor0138.lorenzetti.ibe:3000)
  *
  * @example Valores padrão
@@ -61,8 +61,8 @@
  * @example Usando variáveis de ambiente
  * ```bash
  * # .env
- * APP_HOST=192.168.1.100
- * APP_PORT=8080
+ * HOST=192.168.1.100
+ * PORT=8080
  * APP_URL=http://192.168.1.100:8080
  * ```
  *
@@ -115,10 +115,10 @@ export const appConfig = {
    * @example
    * ```bash
    * # .env
-   * APP_HOST=0.0.0.0  # Aceita conexões de qualquer IP
+   * HOST=0.0.0.0  # Aceita conexões de qualquer IP
    * ```
    */
-  host: process.env.APP_HOST || 'lor0138.lorenzetti.ibe',
+  host: process.env.HOST || 'lor0138.lorenzetti.ibe',
 
   /**
    * Porta onde o servidor irá escutar
@@ -144,19 +144,19 @@ export const appConfig = {
    * @example
    * ```bash
    * # .env
-   * APP_PORT=8080
+   * PORT=8080
    * ```
    *
    * @example Múltiplas instâncias
    * ```bash
    * # Instância 1
-   * APP_PORT=3000 npm start
+   * PORT=3000 npm start
    *
    * # Instância 2
-   * APP_PORT=3001 npm start
+   * PORT=3001 npm start
    * ```
    */
-  port: parseInt(process.env.APP_PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '3000', 10),
 
   /**
    * URL completa da aplicação
@@ -194,7 +194,9 @@ export const appConfig = {
    * - Documentação do Swagger
    * - Logs de inicialização
    */
-  url: process.env.APP_URL || 'http://lor0138.lorenzetti.ibe:3000',
+  url:
+    process.env.APP_URL ||
+    `http://${process.env.HOST || 'lor0138.lorenzetti.ibe'}:${process.env.PORT || '3000'}`,
 
   /**
    * URL base da aplicação com validação anti-localhost

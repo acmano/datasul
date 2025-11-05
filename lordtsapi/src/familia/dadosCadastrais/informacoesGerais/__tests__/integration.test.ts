@@ -1,4 +1,5 @@
 // src/familia/dadosCadastrais/informacoesGerais/__tests__/integration.test.ts
+import { log } from '@shared/utils/logger';
 
 import request from 'supertest';
 import { DatabaseTestHelper } from '@tests/helpers/database.helper';
@@ -12,7 +13,6 @@ import app from '@/app';
  */
 
 describe('INTEGRAÇÃO - API InformacoesGerais Familia (Banco Real)', () => {
-
   let usingRealDatabase = false;
   let testFamiliaCode: string;
 
@@ -26,8 +26,8 @@ describe('INTEGRAÇÃO - API InformacoesGerais Familia (Banco Real)', () => {
     // Usar código de familia conhecido
     testFamiliaCode = 'F001'; // Ajustar conforme dados reais
 
-    console.log(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
-    console.log(`📦 Família de teste: ${testFamiliaCode}`);
+    log.debug(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
+    log.debug(`📦 Família de teste: ${testFamiliaCode}`);
   });
 
   afterAll(async () => {
@@ -38,7 +38,6 @@ describe('INTEGRAÇÃO - API InformacoesGerais Familia (Banco Real)', () => {
   // TESTE 1: CONEXÃO COM BANCO
   // ========================================
   describe('Conexão com Banco de Dados', () => {
-
     it('deve conectar com banco ou usar mock', async () => {
       const isReady = await DatabaseTestHelper.waitUntilReady(5000);
       expect(isReady).toBe(true);
@@ -59,14 +58,12 @@ describe('INTEGRAÇÃO - API InformacoesGerais Familia (Banco Real)', () => {
         expect(response.body.database.type).toBe('sqlserver');
       }
     });
-
   });
 
   // ========================================
   // TESTE 2: BUSCAR FAMÍLIA REAL
   // ========================================
   describe('Buscar Informações Gerais (Dados Reais)', () => {
-
     it('deve buscar família existente com sucesso', async () => {
       const startTime = Date.now();
 
@@ -95,26 +92,25 @@ describe('INTEGRAÇÃO - API InformacoesGerais Familia (Banco Real)', () => {
       }
     });
 
-it('deve retornar 404 para família inexistente', async () => {
-  const invalidCode = 'INVALID999';
-  
-  const response = await request(app)
-    .get(`/api/familia/dadosCadastrais/informacoesGerais/${invalidCode}`)
-    .expect((res) => {
-      expect([200, 400, 404]).toContain(res.status);
-    });
+    it('deve retornar 404 para família inexistente', async () => {
+      const invalidCode = 'INVALID999';
 
-  if (response.status === 404) {
-    expect(response.body).toHaveProperty('error');
-  }
-});
+      const response = await request(app)
+        .get(`/api/familia/dadosCadastrais/informacoesGerais/${invalidCode}`)
+        .expect((res) => {
+          expect([200, 400, 404]).toContain(res.status);
+        });
+
+      if (response.status === 404) {
+        expect(response.body).toHaveProperty('error');
+      }
+    });
   });
 
   // ========================================
   // TESTE 3: VALIDAÇÃO DE DADOS
   // ========================================
   describe('Validação de Dados do Banco', () => {
-
     it('deve retornar estrutura de dados correta', async () => {
       const response = await request(app)
         .get(`/api/familia/dadosCadastrais/informacoesGerais/${testFamiliaCode}`)
@@ -131,23 +127,21 @@ it('deve retornar 404 para família inexistente', async () => {
         expect(typeof data.descricao).toBe('string');
       }
     });
-
   });
 
   // ========================================
   // TESTE 4: PERFORMANCE
   // ========================================
   describe('Performance (Banco Real)', () => {
-
     it('deve responder em menos de 2 segundos', async function () {
       if (!usingRealDatabase) {
-        console.log('⏭️  Teste de performance pulado - usando mock');
+        log.debug('⏭️  Teste de performance pulado - usando mock');
         return;
       }
 
       const startTime = Date.now();
 
-      await request(app)
+      const response = await request(app)
         .get(`/api/familia/dadosCadastrais/informacoesGerais/${testFamiliaCode}`)
         .expect((res) => {
           expect([200, 400, 404]).toContain(res.status);
@@ -159,7 +153,7 @@ it('deve retornar 404 para família inexistente', async () => {
 
     it('deve manter performance consistente em múltiplas requisições', async function () {
       if (!usingRealDatabase) {
-        console.log('⏭️  Teste de performance pulado - usando mock');
+        log.debug('⏭️  Teste de performance pulado - usando mock');
         return;
       }
 
@@ -169,7 +163,7 @@ it('deve retornar 404 para família inexistente', async () => {
       for (let i = 0; i < iterations; i++) {
         const start = Date.now();
 
-        await request(app)
+        const response = await request(app)
           .get(`/api/familia/dadosCadastrais/informacoesGerais/${testFamiliaCode}`)
           .expect((res) => {
             expect([200, 400, 404]).toContain(res.status);
@@ -180,17 +174,15 @@ it('deve retornar 404 para família inexistente', async () => {
 
       const avgDuration = durations.reduce((a, b) => a + b, 0) / durations.length;
 
-      console.log(`📊 Média de ${iterations} requisições: ${avgDuration.toFixed(0)}ms`);
+      log.debug(`📊 Média de ${iterations} requisições: ${avgDuration.toFixed(0)}ms`);
       expect(avgDuration).toBeLessThan(2000);
     });
-
   });
 
   // ========================================
   // TESTE 5: EDGE CASES
   // ========================================
   describe('Edge Cases (Banco Real)', () => {
-
     it('deve validar código alfanumérico', async () => {
       const alphaCode = 'FAM123';
 
@@ -226,17 +218,16 @@ it('deve retornar 404 para família inexistente', async () => {
 
       expect(response.body).toHaveProperty('error');
     });
-
   });
 
   // ========================================
   // TESTE 6: HEADERS E CORRELATION ID
   // ========================================
   describe('Headers e Correlation ID', () => {
-
     it('deve incluir Correlation ID na resposta', async () => {
-      const response = await request(app)
-        .get(`/api/familia/dadosCadastrais/informacoesGerais/${testFamiliaCode}`);
+      const response = await request(app).get(
+        `/api/familia/dadosCadastrais/informacoesGerais/${testFamiliaCode}`
+      );
 
       expect(response.headers['x-correlation-id']).toBeDefined();
     });
@@ -250,14 +241,12 @@ it('deve retornar 404 para família inexistente', async () => {
 
       expect(response.headers['x-correlation-id']).toBe(customId);
     });
-
   });
 
   // ========================================
   // TESTE 7: TIMEOUT E RESILÊNCIA
   // ========================================
   describe('Timeout e Resilência', () => {
-
     it('não deve travar em requisição inválida', async () => {
       const response = await request(app)
         .get('/api/familia/dadosCadastrais/informacoesGerais/INVALID')
@@ -266,16 +255,14 @@ it('deve retornar 404 para família inexistente', async () => {
       expect(response.status).toBeDefined();
       expect([200, 404, 400]).toContain(response.status);
     });
-
   });
 
   // ========================================
   // TESTE 8: RESUMO
   // ========================================
   describe('Resumo dos Testes', () => {
-
     it('deve informar fonte de dados usada', () => {
-      console.log(`
+      log.debug(`
         📊 RESULTADO DOS TESTES (FAMILIA):
         - Fonte de dados: ${usingRealDatabase ? 'BANCO REAL' : 'MOCK'}
         - Código testado: ${testFamiliaCode}
@@ -284,7 +271,5 @@ it('deve retornar 404 para família inexistente', async () => {
 
       expect(usingRealDatabase).toBeDefined();
     });
-
   });
-
 });

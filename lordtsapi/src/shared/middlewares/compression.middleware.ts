@@ -20,7 +20,7 @@
  */
 
 import compression from 'compression';
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 // ====================================================================
 // FUNÇÃO DE FILTRO
@@ -56,10 +56,10 @@ function shouldCompress(req: Request, res: Response): boolean {
  */
 export const compressionMiddleware = compression({
   filter: shouldCompress,
-  level: 6,          // Bom equilíbrio
-  threshold: 1024,   // Comprime a partir de 1KB
-  memLevel: 8,       // Buffer de ~256KB
-  strategy: 0,       // Estratégia padrão
+  level: 6, // Bom equilíbrio
+  threshold: 1024, // Comprime a partir de 1KB
+  memLevel: 8, // Buffer de ~256KB
+  strategy: 0, // Estratégia padrão
 });
 
 /**
@@ -70,9 +70,9 @@ export const compressionMiddleware = compression({
  */
 export const aggressiveCompression = compression({
   filter: shouldCompress,
-  level: 9,          // Máxima compressão
-  threshold: 512,    // Comprime mais coisas
-  memLevel: 9,       // Mais memória
+  level: 9, // Máxima compressão
+  threshold: 512, // Comprime mais coisas
+  memLevel: 9, // Mais memória
 });
 
 /**
@@ -83,9 +83,9 @@ export const aggressiveCompression = compression({
  */
 export const lightCompression = compression({
   filter: shouldCompress,
-  level: 1,          // Compressão rápida
-  threshold: 2048,   // Apenas respostas > 2KB
-  memLevel: 6,       // Menos memória
+  level: 1, // Compressão rápida
+  threshold: 2048, // Apenas respostas > 2KB
+  memLevel: 6, // Menos memória
 });
 
 // ====================================================================
@@ -116,7 +116,7 @@ export function createCustomCompression(options: {
  * Desabilita compressão para rota específica
  * Útil para arquivos já comprimidos (.zip, .gz, etc)
  */
-export function noCompression(_req: Request, res: Response, next: Function): void {
+export function noCompression(_req: Request, res: Response, next: NextFunction): void {
   res.setHeader('Cache-Control', 'no-transform');
   next();
 }

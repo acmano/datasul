@@ -227,13 +227,14 @@ router.get('/db-timeout', async (req: Request, res: Response) => {
       message: `Query completou após ${delay}s`,
       warning: 'Se você está vendo isso, o timeout de query NÃO funcionou!',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Esperamos que dê timeout
-    console.log('[TEST] Timeout de query funcionou:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.log('[TEST] Timeout de query funcionou:', errorMessage);
     res.status(408).json({
       success: false,
       error: 'Query timeout (esperado)',
-      message: error.message,
+      message: errorMessage,
     });
   }
 });

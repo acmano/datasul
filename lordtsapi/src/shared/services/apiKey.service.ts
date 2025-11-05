@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto';
-import { ApiKeyConfig, UserTier } from '@shared/types/apiKey.types';
+import { ApiKeyConfig, ApiKeyStats, UserTier } from '@shared/types/apiKey.types';
 import { log } from '@shared/utils/logger';
 
 /**
@@ -59,13 +59,13 @@ export class ApiKeyService {
       },
     ];
 
-    exampleKeys.forEach(key => {
+    exampleKeys.forEach((key) => {
       this.apiKeys.set(key.key, key);
     });
 
     log.info('API Keys inicializadas', {
       count: this.apiKeys.size,
-      tiers: Array.from(new Set(exampleKeys.map(k => k.tier)))
+      tiers: Array.from(new Set(exampleKeys.map((k) => k.tier))),
     });
   }
 
@@ -83,7 +83,7 @@ export class ApiKeyService {
     if (!keyConfig.active) {
       log.warn('API Key inativa', {
         apiKey: this.maskKey(apiKey),
-        userId: keyConfig.userId
+        userId: keyConfig.userId,
       });
       return null;
     }
@@ -93,7 +93,7 @@ export class ApiKeyService {
       log.warn('API Key expirada', {
         apiKey: this.maskKey(apiKey),
         userId: keyConfig.userId,
-        expiresAt: keyConfig.expiresAt
+        expiresAt: keyConfig.expiresAt,
       });
       return null;
     }
@@ -134,7 +134,7 @@ export class ApiKeyService {
       userId,
       tier,
       expiresAt,
-      apiKey: this.maskKey(apiKey)
+      apiKey: this.maskKey(apiKey),
     });
 
     return apiKey;
@@ -154,7 +154,7 @@ export class ApiKeyService {
 
     log.info('API Key revogada', {
       userId: keyConfig.userId,
-      apiKey: this.maskKey(apiKey)
+      apiKey: this.maskKey(apiKey),
     });
 
     return true;
@@ -164,8 +164,7 @@ export class ApiKeyService {
    * Lista API Keys de um usuário
    */
   static async getUserKeys(userId: string): Promise<ApiKeyConfig[]> {
-    return Array.from(this.apiKeys.values())
-      .filter(key => key.userId === userId);
+    return Array.from(this.apiKeys.values()).filter((key) => key.userId === userId);
   }
 
   /**
@@ -174,14 +173,14 @@ export class ApiKeyService {
   static async updateUserTier(userId: string, newTier: UserTier): Promise<void> {
     const userKeys = await this.getUserKeys(userId);
 
-    userKeys.forEach(keyConfig => {
+    userKeys.forEach((keyConfig) => {
       keyConfig.tier = newTier;
     });
 
     log.info('Tier do usuário atualizado', {
       userId,
       newTier,
-      keysUpdated: userKeys.length
+      keysUpdated: userKeys.length,
     });
   }
 
@@ -198,19 +197,19 @@ export class ApiKeyService {
   /**
    * Retorna estatísticas de API Keys
    */
-  static getStats(): any {
+  static getStats(): ApiKeyStats {
     const keys = Array.from(this.apiKeys.values());
 
     return {
       total: keys.length,
-      active: keys.filter(k => k.active).length,
-      inactive: keys.filter(k => !k.active).length,
+      active: keys.filter((k) => k.active).length,
+      inactive: keys.filter((k) => !k.active).length,
       byTier: {
-        free: keys.filter(k => k.tier === UserTier.FREE).length,
-        premium: keys.filter(k => k.tier === UserTier.PREMIUM).length,
-        enterprise: keys.filter(k => k.tier === UserTier.ENTERPRISE).length,
-        admin: keys.filter(k => k.tier === UserTier.ADMIN).length,
-      }
+        free: keys.filter((k) => k.tier === UserTier.FREE).length,
+        premium: keys.filter((k) => k.tier === UserTier.PREMIUM).length,
+        enterprise: keys.filter((k) => k.tier === UserTier.ENTERPRISE).length,
+        admin: keys.filter((k) => k.tier === UserTier.ADMIN).length,
+      },
     };
   }
 }

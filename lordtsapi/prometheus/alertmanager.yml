@@ -1,0 +1,168 @@
+# Alertmanager configuration for LordtsAPI
+
+global:
+  resolve_timeout: 5m
+  # SMTP settings (configure for email alerts)
+  # smtp_from: 'alertmanager@lordtsapi.com'
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_auth_username: 'your-email@gmail.com'
+  # smtp_auth_password: 'your-app-password'
+  # smtp_require_tls: true
+
+# Templates for alert notifications
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route tree for alert distribution
+route:
+  # Default receiver for all alerts
+  receiver: 'default-receiver'
+
+  # Group alerts to reduce notification spam
+  group_by: ['alertname', 'connection', 'environment']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+  # Routes for specific alert types
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      group_interval: 2m
+      repeat_interval: 1h
+      continue: true
+
+    # Warning alerts - batched notification
+    - match:
+        severity: warning
+      receiver: 'warning-receiver'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 6h
+
+    # Info alerts - daily digest
+    - match:
+        severity: info
+      receiver: 'info-receiver'
+      group_wait: 5m
+      group_interval: 1h
+      repeat_interval: 24h
+
+    # Database-specific alerts
+    - match:
+        component: database
+      receiver: 'database-team'
+      continue: true
+
+    # SLA violations
+    - match:
+        category: sla
+      receiver: 'sla-team'
+      continue: true
+
+# Inhibition rules - prevent notification spam
+inhibit_rules:
+  # If connection is down, inhibit other alerts for that connection
+  - source_match:
+      severity: critical
+      alertname: DatabaseConnectionDown
+    target_match_re:
+      severity: '(warning|info)'
+    equal: ['connection']
+
+  # If circuit breaker is open, inhibit error rate alerts
+  - source_match:
+      alertname: CircuitBreakerOpen
+    target_match:
+      alertname: HighErrorRateCritical
+    equal: ['connection']
+
+  # If pool is exhausted, inhibit pool utilization warnings
+  - source_match:
+      alertname: ConnectionPoolExhausted
+    target_match:
+      alertname: ConnectionPoolHighUtilization
+    equal: ['connection']
+
+  # If entire environment is down, inhibit individual connection alerts
+  - source_match:
+      alertname: EnvironmentDown
+    target_match_re:
+      alertname: '(DatabaseConnectionDown|HighErrorRateCritical)'
+    equal: ['environment']
+
+# Receivers - notification destinations
+receivers:
+  # Default receiver (console/logs)
+  - name: 'default-receiver'
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/webhook'
+        send_resolved: true
+
+  # Critical alerts receiver
+  - name: 'critical-receiver'
+    # Email notifications
+    # email_configs:
+    #   - to: 'oncall@lordtsapi.com'
+    #     subject: '🚨 CRITICAL: {{ .GroupLabels.alertname }}'
+    #     html: '{{ template "email.default.html" . }}'
+    #     send_resolved: true
+
+    # Slack notifications
+    # slack_configs:
+    #   - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+    #     channel: '#alerts-critical'
+    #     title: '🚨 {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+
+    # PagerDuty
+    # pagerduty_configs:
+    #   - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+    #     severity: 'critical'
+
+    # Webhook
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/critical'
+        send_resolved: true
+
+  # Warning alerts receiver
+  - name: 'warning-receiver'
+    # Slack notifications
+    # slack_configs:
+    #   - api_url: 'YOUR_SLACK_WEBHOOK_URL'
+    #     channel: '#alerts-warning'
+    #     title: '⚠️ {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    #     send_resolved: true
+
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/warning'
+        send_resolved: true
+
+  # Info alerts receiver
+  - name: 'info-receiver'
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/info'
+        send_resolved: true
+
+  # Database team receiver
+  - name: 'database-team'
+    # email_configs:
+    #   - to: 'database-team@lordtsapi.com'
+    #     subject: 'Database Alert: {{ .GroupLabels.alertname }}'
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/database'
+        send_resolved: true
+
+  # SLA team receiver
+  - name: 'sla-team'
+    # email_configs:
+    #   - to: 'sla-team@lordtsapi.com'
+    #     subject: 'SLA Violation: {{ .GroupLabels.alertname }}'
+    webhook_configs:
+      - url: 'http://localhost:3000/api/alerts/sla'
+        send_resolved: true

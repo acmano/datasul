@@ -1,6 +1,7 @@
 // src/shared/utils/gracefulShutdown.ts
 
 import { Server } from 'http';
+import { Socket } from 'net';
 import { log } from './logger';
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 
@@ -23,14 +24,14 @@ export class GracefulShutdown {
   private config: Required<ShutdownConfig>;
   private isShuttingDown: boolean = false;
   private shutdownTimer?: NodeJS.Timeout;
-  private activeConnections: Set<any> = new Set();
+  private activeConnections: Set<Socket> = new Set();
 
   constructor(server: Server, config: ShutdownConfig = {}) {
     this.server = server;
     this.config = {
       timeout: config.timeout || 10000,
-      onShutdownStart: config.onShutdownStart || (() => { }),
-      onShutdownComplete: config.onShutdownComplete || (() => { }),
+      onShutdownStart: config.onShutdownStart || (() => {}),
+      onShutdownComplete: config.onShutdownComplete || (() => {}),
     };
   }
 
@@ -66,9 +67,9 @@ export class GracefulShutdown {
     });
 
     // Unhandled Promise Rejection
-    process.on('unhandledRejection', (reason: any) => {
+    process.on('unhandledRejection', (reason: unknown) => {
       log.error('❌ Unhandled Promise Rejection - Forçando shutdown', {
-        reason: reason?.toString(),
+        reason: String(reason),
       });
       this.forceShutdown(1);
     });
@@ -240,10 +241,7 @@ export class GracefulShutdown {
 /**
  * Helper para setup simplificado
  */
-export function setupGracefulShutdown(
-  server: Server,
-  config?: ShutdownConfig
-): GracefulShutdown {
+export function setupGracefulShutdown(server: Server, config?: ShutdownConfig): GracefulShutdown {
   const shutdown = new GracefulShutdown(server, config);
   shutdown.init();
   return shutdown;

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    // Target e módulo
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022"],
+
+    // Resolução de módulos
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      // Raiz genérica (usar quando não houver path específico)
+      "@/*": ["src/*"],
+
+      // Arquitetura Clean Architecture
+      "@core/*": ["src/core/*"],
+      "@domain/*": ["src/domain/*"],
+      "@application/*": ["src/application/*"],
+      "@presentation/*": ["src/presentation/*"],
+
+      // Infraestrutura e configuração
+      "@infrastructure/*": ["src/infrastructure/*"],
+      "@config/*": ["src/config/*"],
+
+      // Módulos compartilhados (mais usado)
+      "@shared/*": ["src/shared/*"],
+
+      // Módulos de domínio/entidades
+      "@engenharia/*": ["src/engenharia/*"],
+      "@item/*": ["src/item/*"],
+      "@familia/*": ["src/familia/*"],
+      "@grupoDeEstoque/*": ["src/grupoDeEstoque/*"],
+      "@familiaComercial/*": ["src/familiaComercial/*"],
+      "@estabelecimento/*": ["src/estabelecimento/*"],
+      "@deposito/*": ["src/deposito/*"],
+      "@pcp/*": ["src/pcp/*"],
+      "@manufatura/*": ["src/manufatura/*"],
+      "@fiscal/*": ["src/fiscal/*"],
+
+      // Testes
+      "@tests/*": ["tests/*"]
+    },
+
+    // Interoperabilidade
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+
+    // Type checking (strict mode)
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": false, // Desabilitado temporariamente devido a erros de refactoring
+    "forceConsistentCasingInFileNames": true,
+
+    // Decorators (para class-validator)
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+
+    // Performance
+    "skipLibCheck": true,
+
+    // Emit
+    "declaration": true,
+    "sourceMap": true
+  }
+}

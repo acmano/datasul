@@ -6,6 +6,7 @@
  */
 
 import { DatabaseManager } from '../../infrastructure/database/DatabaseManager';
+import { checkElasticsearchHealth } from '@config/elasticsearch.config';
 import os from 'os';
 
 // ============================================================================
@@ -20,6 +21,7 @@ export interface HealthStatus {
     database: DatabaseCheck;
     memory: MemoryCheck;
     disk: DiskCheck;
+    elasticsearch: ElasticsearchCheck;
   };
 }
 
@@ -44,6 +46,14 @@ interface DiskCheck {
   message?: string;
 }
 
+interface ElasticsearchCheck {
+  status: 'ok' | 'degraded' | 'disabled' | 'error';
+  available?: boolean;
+  version?: string;
+  clusterName?: string;
+  error?: string;
+}
+
 // ============================================================================
 // CONSTANTES
 // ============================================================================
@@ -65,17 +75,19 @@ export class HealthCheckService {
    */
   static async check(): Promise<HealthStatus> {
     // Executa todos os checks em paralelo
-    const [databaseCheck, memoryCheck, diskCheck] = await Promise.all([
+    const [databaseCheck, memoryCheck, diskCheck, elasticsearchCheck] = await Promise.all([
       this.checkDatabase(),
       this.checkMemory(),
       this.checkDisk(),
+      this.checkElasticsearch(),
     ]);
 
     // Determina status geral
     const status = this.determineOverallStatus(
       databaseCheck,
       memoryCheck,
-      diskCheck
+      diskCheck,
+      elasticsearchCheck
     );
 
     return {
@@ -86,6 +98,7 @@ export class HealthCheckService {
         database: databaseCheck,
         memory: memoryCheck,
         disk: diskCheck,
+        elasticsearch: elasticsearchCheck,
       },
     };
   }
@@ -117,13 +130,12 @@ export class HealthCheckService {
         };
       }
 
-      // Executa query de teste
-      await DatabaseManager.queryEmp('SELECT 1 as test');
+      // Executa query de teste (Progress ODBC não suporta SELECT sem FROM)
+      await DatabaseManager.queryEmp('SELECT COUNT(*) as health FROM pub.item');
       const responseTime = Date.now() - startTime;
 
       // Determina status baseado no tempo de resposta
-      const status =
-        responseTime < DATABASE_RESPONSE_THRESHOLD_MS ? 'ok' : 'degraded';
+      const status = responseTime < DATABASE_RESPONSE_THRESHOLD_MS ? 'ok' : 'degraded';
 
       return {
         status,
@@ -184,12 +196,50 @@ export class HealthCheckService {
   }
 
   /**
+   * Verifica saúde do Elasticsearch
+   */
+  private static async checkElasticsearch(): Promise<ElasticsearchCheck> {
+    try {
+      const health = await checkElasticsearchHealth();
+
+      if (!health.available && health.error?.includes('não está habilitado')) {
+        return {
+          status: 'disabled',
+          available: false,
+        };
+      }
+
+      if (!health.available) {
+        return {
+          status: 'error',
+          available: false,
+          error: health.error,
+        };
+      }
+
+      return {
+        status: 'ok',
+        available: true,
+        version: health.version,
+        clusterName: health.clusterName,
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        available: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
    * Determina o status geral baseado nos checks individuais
    */
   private static determineOverallStatus(
     database: DatabaseCheck,
     memory: MemoryCheck,
-    disk: DiskCheck
+    disk: DiskCheck,
+    elasticsearch: ElasticsearchCheck
   ): 'healthy' | 'degraded' | 'unhealthy' {
     // Checks críticos falharam → UNHEALTHY
     if (database.status === 'error' || memory.status === 'critical') {
@@ -197,11 +247,14 @@ export class HealthCheckService {
     }
 
     // Algum check degraded/warning → DEGRADED
+    // Nota: Elasticsearch desabilitado não degrada o sistema
     if (
       database.status === 'degraded' ||
       memory.status === 'warning' ||
       disk.status === 'warning' ||
-      disk.status === 'critical'
+      disk.status === 'critical' ||
+      elasticsearch.status === 'error' ||
+      elasticsearch.status === 'degraded'
     ) {
       return 'degraded';
     }

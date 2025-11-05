@@ -356,13 +356,13 @@ const options: swaggerJsdoc.Options = {
               type: 'number',
               format: 'float',
               description: 'Peso líquido em kg',
-              example: 0.150,
+              example: 0.15,
             },
             pesoBruto: {
               type: 'number',
               format: 'float',
               description: 'Peso bruto em kg',
-              example: 0.200,
+              example: 0.2,
             },
             volume: {
               type: 'number',
@@ -470,8 +470,7 @@ const options: swaggerJsdoc.Options = {
               },
               example: {
                 error: 'RateLimitError',
-                message:
-                  'Muitas requisições. Tente novamente em alguns segundos.',
+                message: 'Muitas requisições. Tente novamente em alguns segundos.',
                 timestamp: '2025-10-04T12:00:00.000Z',
                 path: '/api/item/ITEM001/dados-cadastrais/informacoes-gerais',
                 correlationId: '550e8400-e29b-41d4-a716-446655440000',
@@ -569,13 +568,16 @@ const options: swaggerJsdoc.Options = {
    * O swagger-jsdoc procura por comentários @openapi nesses arquivos
    * e os adiciona à documentação gerada.
    *
+   * ATUALIZADO: Agora escaneia TODOS os arquivos .routes.ts no projeto,
+   * independente da estrutura de pastas, para garantir que toda a
+   * documentação seja incluída automaticamente.
+   *
    * @note
    * Usar glob patterns para incluir múltiplos arquivos
    */
   apis: [
-    './src/api/**/*.routes.ts', // Rotas da API
-    './src/api/**/*.controller.ts', // Controllers (caso tenham anotações)
-    './src/server.ts', // Endpoint raiz e configurações globais
+    './src/**/routes.ts', // Todos os arquivos routes.ts (inclui .routes.ts também)
+    './src/server.ts',
   ],
 };
 

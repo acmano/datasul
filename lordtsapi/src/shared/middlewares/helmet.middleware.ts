@@ -52,7 +52,7 @@ export const helmetMiddleware = helmet({
   // HTTP Strict Transport Security (HSTS)
   // ⚠️ Desabilite em development sem HTTPS
   hsts: {
-    maxAge: 31536000,        // 1 ano
+    maxAge: 31536000, // 1 ano
     includeSubDomains: true,
     preload: true,
   },
@@ -74,11 +74,7 @@ export const helmetMiddleware = helmet({
  * Headers de segurança customizados
  * Usar após helmetMiddleware
  */
-export const customSecurityHeaders = (
-  _req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const customSecurityHeaders = (_req: Request, res: Response, next: NextFunction): void => {
   // X-Frame-Options (reforça proteção)
   res.setHeader('X-Frame-Options', 'DENY');
 
@@ -123,10 +119,10 @@ export function getHelmetConfig(environment: string = 'production') {
     // HSTS apenas em produção
     hsts: isProduction
       ? {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
-      }
+          maxAge: 31536000,
+          includeSubDomains: true,
+          preload: true,
+        }
       : false,
     hidePoweredBy: true,
     frameguard: { action: 'deny' },

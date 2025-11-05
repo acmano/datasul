@@ -1,212 +1,193 @@
-# 📚 Documentação - Projeto LOR0138
+# Documentação Técnica - LOR0138
 
-> API REST para consulta de dados do ERP Totvs Datasul via SQL Server
+Bem-vindo à documentação técnica do projeto LOR0138 (Consulta de Itens e Estrutura de Produtos).
 
----
+## Índice Geral
 
-## 🎯 Início Rápido
+### Guias de Arquitetura
 
-| Você é... | Comece aqui |
-|-----------|-------------|
-| **Novo desenvolvedor** | [ARCHITECTURE.md](./ARCHITECTURE.md) → [SETUP.md](./SETUP.md) |
-| **DevOps/Deploy** | [DEPLOYMENT.md](./DEPLOYMENT.md) → [DOCKER.md](./DOCKER.md) |
-| **Testador/QA** | [TESTING.md](./TESTING.md) → [LOAD-TESTING.md](./LOAD-TESTING.md) |
-| **Usuário da API** | [API.md](./API.md) → Swagger: `/api-docs` |
-| **Troubleshooting** | [ARCHITECTURE.md](./ARCHITECTURE.md#-erros-comuns) |
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Visão geral da arquitetura do sistema
+- **[TECH_STACK.md](./TECH_STACK.md)** - Stack tecnológica completa (React, TypeScript, Ant Design, etc)
+- **[API_INTEGRATION.md](./API_INTEGRATION.md)** - Padrões de integração com APIs backend
 
----
+### Guias de Funcionalidades
 
-## 📖 Documentação Completa
+- **[ESTRUTURA_VISUALIZACOES.md](./ESTRUTURA_VISUALIZACOES.md)** - Sistema de visualização de estruturas (BOM)
+  - 5 tipos de visualização (Tabela, Sankey, Árvore, Treemap, Grafo)
+  - Drill-down pattern
+  - Sistema de cores e gradientes
+  - Performance e otimizações
+  - Como adicionar novas visualizações
 
-### 🏗️ Arquitetura e Fundamentos
+- **[EXPORT_SYSTEM.md](./EXPORT_SYSTEM.md)** - Sistema de exportação de dados
+  - Exportação CSV, Excel, PDF
+  - Impressão otimizada
+  - Builders modulares
+  - Como adicionar novos formatos
 
-- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Arquitetura do sistema, pontos críticos e fluxos
-- **[SETUP.md](./SETUP.md)** - Setup do ambiente de desenvolvimento
-- **[PROJECT-STRUCTURE.md](./PROJECT-STRUCTURE.md)** - Estrutura de diretórios e responsabilidades
+### Guias de Desenvolvimento
 
-### 🔧 Configuração
-
-- **[ENV-CONFIG.md](./ENV-CONFIG.md)** - Guia completo de variáveis de ambiente
-- **[DATABASE-CONFIG.md](./DATABASE-CONFIG.md)** - Configuração de bancos de dados
-
-### 🚀 Features e Funcionalidades
-
-- **[CACHE-GUIDE.md](./CACHE-GUIDE.md)** - Sistema de cache em camadas (L1 + L2)
-- **[API_Key_Rate_Limit.md](./API_Key_Rate_Limit.md)** - Autenticação e rate limiting
-- **[GRACEFUL-SHUTDOWN-GUIDE.md](./GRACEFUL-SHUTDOWN-GUIDE.md)** - Shutdown gracioso
-- **[CORRELATION-ID-GUIDE.md](./CORRELATION-ID-GUIDE.md)** - Request tracing
-- **[RETRY-GUIDE.md](./RETRY-GUIDE.md)** - Retry com backoff exponencial
-- **[METRICS-GUIDE.md](./METRICS-GUIDE.md)** - Sistema de métricas Prometheus
-
-### 📡 API
-
-- **[API.md](./API.md)** - Documentação completa da API REST
-- **[SWAGGER.md](./SWAGGER.md)** - Uso da documentação interativa
-
-### 🧪 Testes
-
-- **[TESTING.md](./TESTING.md)** - Estratégia geral de testes
-- **[UNIT-TESTING.md](./UNIT-TESTING.md)** - Testes unitários com Jest
-- **[INTEGRATION-TESTING.md](./INTEGRATION-TESTING.md)** - Testes de integração
-- **[LOAD-TESTING.md](./LOAD-TESTING.md)** - Testes de carga com k6
-- **[MUTATION_TESTING.md](./MUTATION_TESTING.md)** - Mutation testing
-
-### 🚢 Deploy e Operações
-
-- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Guia de deploy
-- **[DOCKER.md](./DOCKER.md)** - Containerização com Docker
-- **[KUBERNETES.md](./KUBERNETES.md)** - Deploy em Kubernetes
-- **[MONITORING.md](./MONITORING.md)** - Monitoramento e observabilidade
-
-### ✅ Checklists
-
-- **[CHECKLIST_CORRELATION.md](./CHECKLIST_CORRELATION.md)** - Implementação de Correlation ID
-- **[CHECKLIST_CACHE.md](./CHECKLIST_CACHE.md)** - Implementação de Cache
-- **[CHECKLIST_DEPLOY.md](./CHECKLIST_DEPLOY.md)** - Deploy em produção
-
-### 📝 Histórico
-
-- **[CHANGELOG.md](./CHANGELOG.md)** - Histórico de mudanças do projeto
+- **[NEW_MODULE_GUIDE.md](./NEW_MODULE_GUIDE.md)** - Como criar novos módulos
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Guia de contribuição
+- **[REFACTORING_SUMMARY.md](./REFACTORING_SUMMARY.md)** - Histórico de refactorings
 
 ---
 
-## 🔍 Documentos por Categoria
+## Documentação de Visualizações (Estrutura)
 
-### Para Desenvolvimento
+O sistema implementa **5 visualizações diferentes** para dados hierárquicos de BOM (Bill of Materials):
+
+| Visualização | Descrição | Casos de Uso |
+|--------------|-----------|--------------|
+| **Tabela** | Lista hierárquica com virtualização | Análise detalhada, exportação de dados |
+| **Sankey** | Diagrama de fluxo direcionado | Visualizar dependências e quantidades |
+| **Árvore** | Hierarquia clássica (3 orientações) | Entender estrutura organizacional |
+| **Treemap** | Mapa compacto por áreas | Visão geral rápida de composição |
+| **Grafo** | Rede com física (force/circular) | Explorar relações complexas |
+
+### Recursos Principais
+
+- **Drill-down**: Navegação hierárquica (duplo clique)
+- **Breadcrumb**: Histórico de navegação
+- **Processos de Fabricação**: Drawer com operações, tempos, recursos
+- **Cache**: Dados em cache para performance
+- **Exportação**: CSV, Excel, PDF para todas as visualizações
+- **Persistência**: Preferências salvas em localStorage
+- **Temas**: Suporte a light/dark mode
+- **Performance**: Virtualização, memoização, otimizações
+
+### Arquitetura de Dados
 
 ```
-ARCHITECTURE.md      → Entenda a arquitetura
-PROJECT-STRUCTURE.md → Navegue pelo código
-SETUP.md             → Configure seu ambiente
-TESTING.md           → Escreva testes
-```
-
-### Para Deploy
-
-```
-ENV-CONFIG.md        → Configure variáveis
-DEPLOYMENT.md        → Deploy passo a passo
-DOCKER.md            → Use containers
-MONITORING.md        → Monitore em produção
-```
-
-### Para Troubleshooting
-
-```
-ARCHITECTURE.md      → Erros comuns e soluções
-DATABASE-CONFIG.md   → Problemas de conexão
-LOGS.md              → Interprete logs
-MONITORING.md        → Debug em produção
+API Response (ItemPrincipal)
+    ↓
+adaptToTree()
+    ↓
+TreeNode (formato normalizado)
+    ↓
+┌───────────┬──────────────┬───────────┬────────────┬──────────┐
+│           │              │           │            │          │
+│ Tabela    │   Sankey     │  Árvore   │  Treemap   │  Grafo   │
+│ (Flat)    │ (Nodes+Links)│ (Hierarchy)│(Hierarchy) │(Nodes+L) │
+└───────────┴──────────────┴───────────┴────────────┴──────────┘
 ```
 
 ---
 
-## 🆘 Troubleshooting Rápido
+## Documentação do Sistema de Exportação
 
-### Problema de Conexão DB
+O sistema de exportação é **modular e extensível**, suportando múltiplos formatos:
 
-1. Verifique `.env` → [ENV-CONFIG.md](./ENV-CONFIG.md)
-2. Teste conexão → [DATABASE-CONFIG.md](./DATABASE-CONFIG.md)
-3. Veja logs → [ARCHITECTURE.md](./ARCHITECTURE.md#-logging)
+### Formatos Suportados
 
-### API Retornando Erros
+| Formato | Biblioteca | Uso |
+|---------|-----------|-----|
+| **CSV** | Papa Parse | Dados tabulares para Excel/análise |
+| **Excel** | xlsx (SheetJS) | Relatórios formatados com múltiplas abas |
+| **PDF** | jsPDF | Documentos para impressão/arquivo |
+| **Print** | window.print() | Impressão direta do browser |
 
-1. Verifique health check: `GET /health`
-2. Veja logs: `tail -f logs/app.log`
-3. Consulte [API.md](./API.md#-erros-comuns)
+### Builders Disponíveis
 
-### Performance Ruim
+```typescript
+// Tabela (FlatNode[])
+exportToCSV(flatNodes, filename)
+exportToExcel(flatNodes, filename)
+exportTableToPDF(flatNodes, filename)
+printTable(flatNodes)
 
-1. Verifique cache → [CACHE-GUIDE.md](./CACHE-GUIDE.md)
-2. Execute load test → [LOAD-TESTING.md](./LOAD-TESTING.md)
-3. Monitore métricas → [MONITORING.md](./MONITORING.md)
+// Gráficos ECharts
+exportChartToPDF(chartInstance, filename, title)
+printChart(chartInstance, title)
+```
 
----
+### Como Adicionar Novo Formato
 
-## 📚 Recursos Externos
-
-### Documentação Oficial
-
-- [Express.js](https://expressjs.com/)
-- [TypeScript](https://www.typescriptlang.org/docs/)
-- [Jest](https://jestjs.io/docs/getting-started)
-- [Prometheus](https://prometheus.io/docs/introduction/overview/)
-
-### Progress/Datasul
-
-- [Progress OpenEdge](https://docs.progress.com/bundle/openedge-117)
-- [SQL Server Linked Servers](https://learn.microsoft.com/en-us/sql/relational-databases/linked-servers/)
-
-### Ferramentas
-
-- [k6 Load Testing](https://k6.io/docs/)
-- [Docker](https://docs.docker.com/)
-- [Kubernetes](https://kubernetes.io/docs/)
+Consulte [EXPORT_SYSTEM.md](./EXPORT_SYSTEM.md) para guia completo de implementação.
 
 ---
 
-## 🤝 Contribuindo
+## Começando
 
-Para contribuir com a documentação:
+### Para Novos Desenvolvedores
 
-1. Siga o template existente
-2. Mantenha consistência de formato
-3. Adicione exemplos práticos
-4. Atualize o índice (este arquivo)
-5. Teste as instruções
+1. Leia [ARCHITECTURE.md](./ARCHITECTURE.md) para entender a estrutura geral
+2. Revise [TECH_STACK.md](./TECH_STACK.md) para conhecer as tecnologias
+3. Consulte [NEW_MODULE_GUIDE.md](./NEW_MODULE_GUIDE.md) para criar novos módulos
+4. Siga [CONTRIBUTING.md](./CONTRIBUTING.md) para contribuir
 
-### Template de Documento
+### Para Claude (IA Assistant)
 
-```markdown
-# Título do Documento
+Quando iniciar uma nova sessão:
 
-> Breve descrição de uma linha
+1. **Contexto de Estrutura**: Consulte [ESTRUTURA_VISUALIZACOES.md](./ESTRUTURA_VISUALIZACOES.md)
+   - Tipos de dados (ItemPrincipal → TreeNode → FlatNode)
+   - Como cada visualização funciona
+   - Padrão drill-down
+   - Sistema de cores
 
-## 📋 Visão Geral
+2. **Contexto de Exportação**: Consulte [EXPORT_SYSTEM.md](./EXPORT_SYSTEM.md)
+   - Builders disponíveis
+   - Como adicionar formatos
+   - Padrões de implementação
 
-Descrição detalhada...
+3. **Arquitetura Geral**: Consulte [ARCHITECTURE.md](./ARCHITECTURE.md)
+   - Estrutura de pastas
+   - Padrões de código
+   - Convenções
 
-## 🎯 Como Usar
+---
 
-Instruções passo a passo...
+## Estrutura de Pastas Documentadas
 
-## 💡 Exemplos
-
-Exemplos práticos...
-
-## ⚠️ Pontos Críticos
-
-Avisos importantes...
-
-## 🔗 Ver Também
-
-- [Documento Relacionado](./relacionado.md)
+```
+src/modules/engenharia/estrutura/
+├── components/          # Componentes de visualização
+│   ├── Main.tsx        # Orquestrador principal
+│   ├── TabelaItensVirtualized.tsx
+│   ├── Sankey.tsx
+│   ├── Arvore.tsx
+│   ├── Treemap.tsx
+│   └── Grafo.tsx
+│
+├── utils/              # Utilitários
+│   ├── dataProcessing.ts   # Transformações de dados
+│   ├── colorUtils.ts       # Sistema de cores
+│   ├── chartBuilders.ts    # Construtores ECharts
+│   └── exportUtils.ts      # Exportação CSV/Excel/PDF
+│
+├── types/              # TypeScript types
+│   └── estrutura.types.ts
+│
+└── services/           # Comunicação com API
+    └── estrutura.service.ts
 ```
 
 ---
 
-## 📊 Status da Documentação
+## Changelog da Documentação
 
-| Documento | Status | Última Atualização |
-|-----------|--------|-------------------|
-| ARCHITECTURE.md | ✅ Completo | 2025-01-06 |
-| SETUP.md | ✅ Completo | 2025-01-06 |
-| API.md | ✅ Completo | 2025-01-06 |
-| CACHE-GUIDE.md | ✅ Completo | 2025-01-06 |
-| TESTING.md | ✅ Completo | 2025-01-06 |
-| DEPLOYMENT.md | ✅ Completo | 2025-01-06 |
-| CHANGELOG.md | ✅ Completo | 2025-01-06 |
+| Data | Documento | Descrição |
+|------|-----------|-----------|
+| 2025-10-22 | ESTRUTURA_VISUALIZACOES.md | Criação inicial - documentação completa das 5 visualizações |
+| 2025-10-22 | EXPORT_SYSTEM.md | Documentação do sistema de exportação |
+| 2025-10-21 | NEW_MODULE_GUIDE.md | Guia de criação de módulos |
+| 2025-10-21 | ARCHITECTURE.md | Visão geral da arquitetura |
+| 2025-10-21 | TECH_STACK.md | Stack tecnológica |
 
 ---
 
-## 🔄 Manutenção
+## Contribuindo com a Documentação
 
-Esta documentação é mantida junto com o código e deve ser atualizada a cada:
+Ao adicionar novos recursos ou módulos:
 
-- ✅ Nova feature implementada
-- ✅ Mudança na arquitetura
-- ✅ Novo processo de deploy
-- ✅ Correção de bug crítico
+1. Atualize a documentação relevante
+2. Adicione exemplos de código
+3. Inclua diagramas ASCII quando útil
+4. Mantenha este README atualizado
+5. Adicione entrada no Changelog
 
-**Mantenedor**: Equipe LOR0138
-**Última Revisão**: 2025-01-06
+---
+
+**Última atualização**: 2025-10-22
+**Mantido por**: Equipe de Desenvolvimento

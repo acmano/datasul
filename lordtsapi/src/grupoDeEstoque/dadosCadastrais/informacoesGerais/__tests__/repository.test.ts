@@ -12,17 +12,20 @@ describe('Repository - GrupoDeEstoqueInformacoesGeraisRepository', () => {
 
   describe('getGrupoDeEstoqueMaster', () => {
     it('deve retornar dados quando encontrado', async () => {
-      const mockData = [{
-        grupoDeEstoqueCodigo: 'TEST123',
-        grupoDeEstoqueDescricao: 'Teste'
-      }];
+      const mockData = [
+        {
+          grupoDeEstoqueCodigo: 'TEST123',
+          grupoDeEstoqueDescricao: 'Teste',
+        },
+      ];
 
       (QueryCacheService.withGrupoDeEstoqueCache as jest.Mock).mockImplementation(
         async (query, params, fetcher) => fetcher()
       );
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockResolvedValue(mockData);
 
-      const result = await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster('TEST123');
+      const result =
+        await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster('TEST123');
 
       expect(result).toEqual(mockData[0]);
     });
@@ -33,7 +36,8 @@ describe('Repository - GrupoDeEstoqueInformacoesGeraisRepository', () => {
       );
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockResolvedValue([]);
 
-      const result = await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster('INEXISTENTE');
+      const result =
+        await GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster('INEXISTENTE');
 
       expect(result).toBeNull();
     });

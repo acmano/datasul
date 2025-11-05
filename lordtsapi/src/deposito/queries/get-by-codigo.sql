@@ -1,0 +1,30 @@
+-- ============================================================================
+-- Query Fragment: WHERE para Buscar Depósito por Código
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula WHERE para buscar um depósito
+--   específico pelo seu código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com deposito-projection.sql na execução:
+--   Query Final = deposito-projection.sql + get-by-codigo-where.sql
+--
+-- Parâmetros:
+--   ? (varchar) - Código do depósito a ser buscado (parâmetro ODBC)
+--
+-- Utilizado por:
+--   - deposito/dadosCadastrais/informacoesGerais/repository.ts :: getDepositoMaster()
+--
+-- Performance:
+--   - WHERE executado no Progress/OpenEdge
+--   - Retorna no máximo 1 registro
+--   - Usa índice primário da tabela
+--
+-- Exemplo de valor:
+--   ? = '01'     → Busca depósito com código '01'
+--   ? = 'DEP001' → Busca depósito com código 'DEP001'
+--
+-- Última atualização: 2025-10-26
+-- ============================================================================
+
+WHERE deposito."cod-depos" = ?

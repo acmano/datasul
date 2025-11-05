@@ -8,7 +8,17 @@ import Joi from 'joi';
  * @category Validators
  */
 
-const SQL_KEYWORDS = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'DROP', 'CREATE', 'ALTER', 'EXEC', 'UNION'];
+const SQL_KEYWORDS = [
+  'SELECT',
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'DROP',
+  'CREATE',
+  'ALTER',
+  'EXEC',
+  'UNION',
+];
 const DANGEROUS_PATTERNS = ['&&', '||', '|', '`', '$', '$(', '${'];
 
 export const secureCodeExtension: Joi.Extension = {
@@ -19,7 +29,7 @@ export const secureCodeExtension: Joi.Extension = {
     'secureCode.commandInjection': '{{#label}} contém caracteres não permitidos',
     'secureCode.invalidChars': '{{#label}} contém caracteres inválidos',
   },
-  
+
   // Pré-processamento: sanitiza a string ANTES das validações
   coerce: {
     from: 'string',
@@ -29,14 +39,15 @@ export const secureCodeExtension: Joi.Extension = {
       }
 
       let sanitized = value.trim();
+      // eslint-disable-next-line no-control-regex
       sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, ''); // Remove caracteres de controle
       sanitized = sanitized.replace(/\.\./g, ''); // Remove path traversal
-      sanitized = sanitized.replace(/[\/\\]/g, ''); // Remove slashes
-      sanitized = sanitized.replace(/[';"\-\-]/g, ''); // Remove SQL chars
+      sanitized = sanitized.replace(/[/\\]/g, ''); // Remove slashes
+      sanitized = sanitized.replace(/[';"--]/g, ''); // Remove SQL chars
       sanitized = sanitized.replace(/<[^>]*>/g, ''); // Remove HTML tags
 
       return { value: sanitized };
-    }
+    },
   },
 
   // Validação customizada: verifica padrões maliciosos
@@ -46,7 +57,7 @@ export const secureCodeExtension: Joi.Extension = {
     }
 
     const upper = value.toUpperCase();
-    
+
     // Verifica SQL keywords
     for (const keyword of SQL_KEYWORDS) {
       if (upper.includes(keyword)) {
@@ -75,9 +86,9 @@ export const secureCodeExtension: Joi.Extension = {
           return helpers.error('secureCode.invalidChars');
         }
         return value;
-      }
+      },
     },
-    
+
     numeric: {
       method() {
         return this.$_addRule('numeric');
@@ -87,7 +98,7 @@ export const secureCodeExtension: Joi.Extension = {
           return helpers.error('secureCode.invalidChars');
         }
         return value;
-      }
-    }
-  }
+      },
+    },
+  },
 };

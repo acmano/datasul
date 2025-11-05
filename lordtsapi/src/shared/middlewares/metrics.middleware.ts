@@ -33,11 +33,7 @@ import { metricsManager } from '@infrastructure/metrics/MetricsManager';
  * - Registrar ANTES das rotas
  * - Ignora endpoint /metrics (previne loop)
  */
-export function metricsMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function metricsMiddleware(req: Request, res: Response, next: NextFunction): void {
   // Ignora endpoint de métricas (previne loop)
   if (req.path === '/metrics') {
     return next();
@@ -100,12 +96,12 @@ export function metricsMiddleware(
  */
 function normalizeRoute(path: string): string {
   // Remove query strings
-  path = path.split('?')[0];
+  path = path.split('?')[0] || path;
 
   const patterns = [
     // Item codes específicos
     {
-      regex: /\/api\/item\/dadosCadastrais\/informacoesGerais\/[^\/]+$/,
+      regex: /\/api\/item\/dadosCadastrais\/informacoesGerais\/[^/]+$/,
       replacement: '/api/item/dadosCadastrais/informacoesGerais/:itemCodigo',
     },
 
@@ -143,11 +139,7 @@ function normalizeRoute(path: string): string {
  * - Usar APÓS o rate limiter
  * - Status 429 indica bloqueio
  */
-export function rateLimitMetricsMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+export function rateLimitMetricsMiddleware(req: Request, res: Response, next: NextFunction): void {
   const route = normalizeRoute(req.path);
   const userId = (req as any).userId || 'anonymous';
 

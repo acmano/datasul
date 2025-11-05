@@ -1,0 +1,39 @@
+# Fix Responsive Layout - 21px Overflow Issue
+
+## Problem
+The current flex layout causes 21px overflow on the rounded box due to cumulative padding/margins. The solution must be 100% dynamic and resolution-independent.
+
+## Root Cause
+- App.tsx Layout has `padding: 24px` on ALL sides
+- SearchForm Card has `marginBottom: 24px`
+- These fixed values don't account for available space properly
+- Need to use pure flex layout with gap instead of margins
+
+## Todo List
+
+[ ] Fix Layout padding in App.tsx (line ~468)
+    - Change to: padding: '0 24px 24px 24px' (no top padding)
+    - Add: overflow: 'hidden' to prevent overflow
+    - Ensure: height: 'calc(100vh - 64px)' is preserved
+
+[ ] Fix Content spacing in App.tsx (line ~476)
+    - Add: gap: 24 for flex spacing
+    - Add: overflow: 'hidden'
+    - Ensure: flex: 1 and minHeight: 0 are present
+
+[ ] Remove marginBottom from SearchForm Card (line ~478)
+    - Remove style={{ marginBottom: 24 }} if exists
+    - Gap from Content will handle spacing
+
+[ ] Ensure main Card respects flex (line ~492)
+    - Add: overflow: 'hidden' to style
+    - Verify: body styles have overflow: 'hidden'
+
+[ ] Test on multiple resolutions
+    - Test 1920x1080
+    - Test 1366x768
+    - Test 1280x720
+    - Verify no overflow on any resolution
+
+[ ] Commit changes
+    - Message: "fix: make rounded box fully responsive for all screen resolutions"

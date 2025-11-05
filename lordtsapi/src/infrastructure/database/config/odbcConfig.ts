@@ -55,11 +55,11 @@ export interface OdbcConfig {
  * ```typescript
  * // Para banco EMP
  * const connStr = getOdbcConnectionString('EMP');
- * // 'DSN=PRD_EMS2EMP;UID=dcloren;PWD=#dcloren#'
+ * // 'DSN=PRD_EMS2EMP;UID=sysprogress;PWD=sysprogress'
  *
  * // Para banco MULT
  * const connStr = getOdbcConnectionString('MULT');
- * // 'DSN=PRD_EMS2MULT;UID=dcloren;PWD=#dcloren#'
+ * // 'DSN=PRD_EMS2MULT;UID=sysprogress;PWD=sysprogress'
  * ```
  *
  * @remarks
@@ -104,7 +104,7 @@ export const getOdbcConnectionString = (database: 'EMP' | 'MULT'): string => {
  * ```typescript
  * const config = getOdbcConfig('EMP');
  * // {
- * //   connectionString: 'DSN=PRD_EMS2EMP;UID=dcloren;PWD=#dcloren#',
+ * //   connectionString: 'DSN=PRD_EMS2EMP;UID=sysprogress;PWD=sysprogress',
  * //   connectionTimeout: 15000,
  * //   commandTimeout: 30000
  * // }
@@ -126,15 +126,9 @@ export const getOdbcConfig = (database: 'EMP' | 'MULT'): OdbcConfig => {
 
   // Ler timeouts das variáveis de ambiente
   // IMPORTANTE: Usa parseInt() direto, então .env deve ter milissegundos puros
-  const connectionTimeout = parseInt(
-    process.env.ODBC_CONNECTION_TIMEOUT || '15000',
-    10
-  );
+  const connectionTimeout = parseInt(process.env.ODBC_CONNECTION_TIMEOUT || '15000', 10);
 
-  const commandTimeout = parseInt(
-    process.env.ODBC_COMMAND_TIMEOUT || '30000',
-    10
-  );
+  const commandTimeout = parseInt(process.env.ODBC_COMMAND_TIMEOUT || '30000', 10);
 
   return {
     connectionString,
@@ -164,9 +158,9 @@ export const getOdbcConfig = (database: 'EMP' | 'MULT'): OdbcConfig => {
  * ```typescript
  * try {
  *   validateOdbcConfig();
- *   console.log('Configuração ODBC válida!');
+ *   log.info('Configuração ODBC válida!');
  * } catch (error) {
- *   console.error('Erro na configuração:', error.message);
+ *   log.error('Erro na configuração:', error.message);
  * }
  * ```
  *
@@ -247,11 +241,11 @@ export const validateOdbcConfig = (): void => {
  * @example
  * ```typescript
  * const info = getOdbcConfigInfo('EMP');
- * console.log(info);
+ * log.info(info);
  * // {
  * //   database: 'EMP',
  * //   dsn: 'PRD_EMS2EMP',
- * //   user: 'dcloren',
+ * //   user: 'sysprogress',
  * //   hasPassword: true,
  * //   connectionTimeout: 15000,
  * //   commandTimeout: 30000
@@ -273,15 +267,9 @@ export const getOdbcConfigInfo = (database: 'EMP' | 'MULT') => {
   const user = process.env.ODBC_USER || process.env.DB_USER || '';
   const hasPassword = !!(process.env.ODBC_PASSWORD || process.env.DB_PASSWORD);
 
-  const connectionTimeout = parseInt(
-    process.env.ODBC_CONNECTION_TIMEOUT || '15000',
-    10
-  );
+  const connectionTimeout = parseInt(process.env.ODBC_CONNECTION_TIMEOUT || '15000', 10);
 
-  const commandTimeout = parseInt(
-    process.env.ODBC_COMMAND_TIMEOUT || '30000',
-    10
-  );
+  const commandTimeout = parseInt(process.env.ODBC_COMMAND_TIMEOUT || '30000', 10);
 
   return {
     database,

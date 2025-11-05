@@ -1,0 +1,48 @@
+{
+  "index_patterns": ["lordtsapi-logs-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.mapping.total_fields.limit": 2000,
+      "index.lifecycle.name": "lordtsapi-logs-policy",
+      "index.lifecycle.rollover_alias": "lordtsapi-logs"
+    },
+    "mappings": {
+      "dynamic": "true",
+      "dynamic_templates": [
+        {
+          "fields_as_keyword": {
+            "path_match": "fields.*",
+            "match_mapping_type": "*",
+            "mapping": {
+              "type": "keyword",
+              "ignore_above": 8191
+            }
+          }
+        }
+      ],
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "severity": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text",
+          "fields": {
+            "keyword": {
+              "type": "keyword",
+              "ignore_above": 256
+            }
+          }
+        },
+        "fields": {
+          "type": "object",
+          "dynamic": "true"
+        }
+      }
+    }
+  }
+}

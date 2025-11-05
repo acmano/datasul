@@ -13,6 +13,12 @@ import type { CacheAdapter } from './cache/CacheAdapter';
 
 type CacheStrategy = 'memory' | 'redis' | 'layered';
 
+interface CacheStats {
+  enabled: boolean;
+  strategy?: CacheStrategy;
+  [key: string]: unknown;
+}
+
 export class CacheManager {
   private static adapter: CacheAdapter | null = null;
   private static enabled = false;
@@ -63,7 +69,7 @@ export class CacheManager {
     this.strategy = 'memory';
   }
 
-  private static initializeRedis(ttl: number): void {
+  private static initializeRedis(_ttl: number): void {
     const redisUrl = process.env.CACHE_REDIS_URL || 'redis://lor0138.lorenzetti.ibe:6379';
     this.adapter = new RedisCacheAdapter(redisUrl, 'Cache-Redis');
     this.strategy = 'redis';
@@ -198,11 +204,7 @@ export class CacheManager {
   /**
    * Cache-aside pattern: busca ou executa função
    */
-  static async getOrSet<T>(
-    key: string,
-    fetchFn: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
+  static async getOrSet<T>(key: string, fetchFn: () => Promise<T>, ttl?: number): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== undefined) {
       return cached;
@@ -232,9 +234,9 @@ export class CacheManager {
   /**
    * Retorna estatísticas do cache
    */
-  static getStats(): any {
+  static getStats(): CacheStats {
     if (!this.enabled || !this.adapter) {
-      return { enabled: false, strategy: 'none' };
+      return { enabled: false };
     }
 
     if (this.adapter instanceof LayeredCacheAdapter) {
@@ -284,22 +286,14 @@ export function generateCacheKey(...parts: (string | number)[]): string {
  * Decorator para cachear métodos de classe
  */
 export function Cacheable(options: { ttl?: number; keyPrefix?: string } = {}) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+  return function (target: object, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
 
-    descriptor.value = async function (...args: any[]) {
-      const keyPrefix = options.keyPrefix || target.constructor.name;
-      const cacheKey = generateCacheKey(keyPrefix, propertyKey, ...args);
+    descriptor.value = async function (...args: unknown[]) {
+      const keyPrefix = options.keyPrefix || (target.constructor as { name: string }).name;
+      const cacheKey = generateCacheKey(keyPrefix, propertyKey, ...(args as (string | number)[]));
 
-      return CacheManager.getOrSet(
-        cacheKey,
-        () => originalMethod.apply(this, args),
-        options.ttl
-      );
+      return CacheManager.getOrSet(cacheKey, () => originalMethod.apply(this, args), options.ttl);
     };
 
     return descriptor;

@@ -32,11 +32,8 @@ export const apiLimiter = rateLimit({
       error: 'Limite de requisições excedido. Aguarde alguns minutos.',
     });
   },
-  skip: (req: Request) => {
-    return (
-      process.env.NODE_ENV === 'development' &&
-      process.env.SKIP_RATE_LIMIT === 'true'
-    );
+  skip: (_req: Request) => {
+    return process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true';
   },
 });
 
@@ -95,11 +92,8 @@ export const itemLimiter = rateLimit({
       error: 'Muitas consultas para este item específico. Aguarde um momento.',
     });
   },
-  skip: (req: Request) => {
-    return (
-      process.env.NODE_ENV === 'development' &&
-      process.env.SKIP_RATE_LIMIT === 'true'
-    );
+  skip: (_req: Request) => {
+    return process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true';
   },
 });
 
@@ -134,12 +128,9 @@ export function createCustomRateLimiter(options: {
       });
     },
     skip: options.skipInDev
-      ? (req: Request) => {
-        return (
-          process.env.NODE_ENV === 'development' &&
-          process.env.SKIP_RATE_LIMIT === 'true'
-        );
-      }
+      ? (_req: Request) => {
+          return process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true';
+        }
       : undefined,
   });
 }

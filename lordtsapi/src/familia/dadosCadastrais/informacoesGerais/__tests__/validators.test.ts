@@ -3,14 +3,11 @@
 import { validateFamiliaInformacoesGeraisRequest } from '../validators';
 
 describe('Validators - InformacoesGerais (Familia)', () => {
-
   describe('validateFamiliaInformacoesGeraisRequest', () => {
-
     // ========================================
     // CASOS DE SUCESSO
     // ========================================
     describe('Casos Válidos', () => {
-
       test('deve validar código numérico simples', () => {
         const result = validateFamiliaInformacoesGeraisRequest({ familiaCodigo: 'F001' });
 
@@ -40,14 +37,12 @@ describe('Validators - InformacoesGerais (Familia)', () => {
         expect(result.valid).toBe(true);
         expect(result.data?.familiaCodigo).toBe('F');
       });
-
     });
 
     // ========================================
     // SANITIZAÇÃO
     // ========================================
     describe('Sanitização de Entrada', () => {
-
       test('deve remover espaços em branco nas extremidades', () => {
         const result = validateFamiliaInformacoesGeraisRequest({ familiaCodigo: '  F001  ' });
 
@@ -57,7 +52,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve remover caracteres de controle', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'F001\x00\x1F'
+          familiaCodigo: 'F001\x00\x1F',
         });
 
         expect(result.valid).toBe(true);
@@ -66,7 +61,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve remover tentativas de path traversal', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: '..F001..'
+          familiaCodigo: '..F001..',
         });
 
         expect(result.valid).toBe(true);
@@ -75,20 +70,18 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve sanitizar código complexo', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: '  FAM-123"te;  '
+          familiaCodigo: '  FAM-123"te;  ',
         });
 
         expect(result.valid).toBe(true);
         expect(result.data?.familiaCodigo).toBe('FAM123te');
       });
-
     });
 
     // ========================================
     // CASOS INVÁLIDOS
     // ========================================
     describe('Casos Inválidos', () => {
-
       test('deve rejeitar código ausente', () => {
         const result = validateFamiliaInformacoesGeraisRequest({});
 
@@ -123,17 +116,15 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
         expect(result.valid).toBe(false);
       });
-
     });
 
     // ========================================
     // SEGURANÇA - SQL INJECTION
     // ========================================
     describe('Proteção contra SQL Injection', () => {
-
       test('deve bloquear SELECT', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'SELECTa'
+          familiaCodigo: 'SELECTa',
         });
 
         expect(result.valid).toBe(false);
@@ -142,7 +133,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear INSERT', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'INSERTx'
+          familiaCodigo: 'INSERTx',
         });
 
         expect(result.valid).toBe(false);
@@ -150,7 +141,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear DROP', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'DROPtabl'
+          familiaCodigo: 'DROPtabl',
         });
 
         expect(result.valid).toBe(false);
@@ -158,22 +149,20 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear UNION', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'UNIONsel'
+          familiaCodigo: 'UNIONsel',
         });
 
         expect(result.valid).toBe(false);
       });
-
     });
 
     // ========================================
     // SEGURANÇA - COMMAND INJECTION
     // ========================================
     describe('Proteção contra Command Injection', () => {
-
       test('deve bloquear pipe (|)', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'fam|test'
+          familiaCodigo: 'fam|test',
         });
 
         expect(result.valid).toBe(false);
@@ -182,7 +171,7 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear && operator', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'fam&&test'
+          familiaCodigo: 'fam&&test',
         });
 
         expect(result.valid).toBe(false);
@@ -190,14 +179,11 @@ describe('Validators - InformacoesGerais (Familia)', () => {
 
       test('deve bloquear backticks', () => {
         const result = validateFamiliaInformacoesGeraisRequest({
-          familiaCodigo: 'fam`test`'
+          familiaCodigo: 'fam`test`',
         });
 
         expect(result.valid).toBe(false);
       });
-
     });
-
   });
-
 });

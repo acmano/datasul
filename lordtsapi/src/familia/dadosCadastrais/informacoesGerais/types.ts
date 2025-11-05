@@ -2,23 +2,29 @@
 
 /**
  * Types específicos do módulo Familia - Informações Gerais
- * Types compartilhados importados de @datasul/shared-types
+ * Types compartilhados importados de @acmano/lordtsapi-shared-types
  */
 
-import {
-  ApiResponse,
-  FamiliaData,
-  FamiliaMasterQueryResult
-} from '@datasul/shared-types';
+import { ApiResponse, FamiliaData } from '@acmano/lordtsapi-shared-types';
+
+// ============================================================================
+// QUERY RESULT TYPES (ODBC lowercase)
+// ============================================================================
+
+/**
+ * Resultado da query getFamiliaMaster
+ * ODBC retorna colunas em lowercase após normalização
+ */
+export interface FamiliaMasterQueryResult {
+  codigo: string;
+  descricao: string;
+}
 
 // ============================================================================
 // RE-EXPORTS (para compatibilidade)
 // ============================================================================
 
-export {
-  FamiliaData,
-  FamiliaMasterQueryResult
-};
+export { FamiliaData };
 
 // ============================================================================
 // TYPES ESPECÍFICOS DESTE MÓDULO

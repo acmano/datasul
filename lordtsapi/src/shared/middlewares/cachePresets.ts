@@ -28,7 +28,7 @@ import { cacheMiddleware } from './cache.middleware';
  * Configurável via CACHE_HEALTH_TTL
  */
 export const healthCache = cacheMiddleware({
-  ttl: parseInt(process.env.CACHE_HEALTH_TTL || '30', 10)
+  ttl: parseInt(process.env.CACHE_HEALTH_TTL || '30', 10),
 });
 
 /**
@@ -36,7 +36,7 @@ export const healthCache = cacheMiddleware({
  * Configurável via CACHE_ITEM_TTL
  */
 export const itemCache = cacheMiddleware({
-  ttl: parseInt(process.env.CACHE_ITEM_TTL || '600', 10)
+  ttl: parseInt(process.env.CACHE_ITEM_TTL || '600', 10),
 });
 
 /**
@@ -44,7 +44,7 @@ export const itemCache = cacheMiddleware({
  * Configurável via CACHE_ESTABELECIMENTO_TTL
  */
 export const estabelecimentoCache = cacheMiddleware({
-  ttl: parseInt(process.env.CACHE_ESTABELECIMENTO_TTL || '900', 10)
+  ttl: parseInt(process.env.CACHE_ESTABELECIMENTO_TTL || '900', 10),
 });
 
 // ====================================================================
@@ -60,9 +60,6 @@ export function createCachePreset(config: {
   defaultTtl: number;
   description?: string;
 }) {
-  const ttl = parseInt(
-    process.env[config.envVar] || String(config.defaultTtl),
-    10
-  );
+  const ttl = parseInt(process.env[config.envVar] || String(config.defaultTtl), 10);
   return cacheMiddleware({ ttl });
 }

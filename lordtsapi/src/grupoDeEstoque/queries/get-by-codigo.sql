@@ -1,0 +1,31 @@
+-- ============================================================================
+-- Query Fragment: WHERE para Buscar Grupo de Estoque por Código
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula WHERE para buscar um
+--   grupo de estoque específico pelo seu código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + get-by-codigo.sql
+--
+-- Parâmetros:
+--   ? (varchar) - Código do grupo de estoque a ser buscado (parâmetro ODBC)
+--
+-- Utilizado por:
+--   - grupoDeEstoque/dadosCadastrais/informacoesGerais/repository.ts :: getGrupoDeEstoqueMaster()
+--
+-- Performance:
+--   - WHERE executado no Progress/OpenEdge (banco EMP)
+--   - Retorna no máximo 1 registro
+--   - Usa índice primário da tabela grup-estoque
+--
+-- Exemplo de valor:
+--   ? = '1'    → Busca grupo de estoque com código '1'
+--   ? = '100'  → Busca grupo de estoque com código '100'
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+WHERE grupoDeEstoque."ge-codigo" = ?

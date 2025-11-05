@@ -1,0 +1,25 @@
+{
+  "itemCodigo": "7530110",
+  "estruturaCompleta": {
+    "itemPrincipal": {
+      "codigo": "7530110",
+      "descricao": "Item de Teste",
+      "unidadeMedida": "UN",
+      "quantidade": 1,
+      "itensFilhos": [
+        {
+          "codigo": "COMP-001",
+          "descricao": "Componente 1",
+          "unidadeMedida": "UN",
+          "quantidade": 2,
+          "itensFilhos": []
+        }
+      ]
+    },
+    "metadata": {
+      "totalNiveis": 2,
+      "totalItens": 2,
+      "totalOperacoes": 0
+    }
+  }
+}

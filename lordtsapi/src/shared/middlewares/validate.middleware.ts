@@ -15,16 +15,20 @@ export const validate = (schema: ObjectSchema, source: ValidationSource = 'body'
 
     const { error, value } = schema.validate(dataToValidate, {
       abortEarly: false,
-      stripUnknown: true
+      stripUnknown: true,
     });
 
     if (error) {
-      const details = error.details.reduce((acc, detail) => {
-        acc[detail.path.join('.')] = detail.message;
-        return acc;
-      }, {} as Record<string, string>);
+      const details = error.details.reduce(
+        (acc, detail) => {
+          acc[detail.path.join('.')] = detail.message;
+          return acc;
+        },
+        {} as Record<string, string>
+      );
 
-      throw new ValidationError(error.details[0].message, details);
+      const firstError = error.details[0];
+      throw new ValidationError(firstError?.message || 'Erro de validação', details);
     }
 
     // Substitui dados originais pelos sanitizados

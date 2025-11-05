@@ -40,7 +40,7 @@ export function validateEntityExists<T>(
   codeFieldName: string,
   codeValue: string,
   entityName: string,
-  gender: 'M' | 'F' = 'F'  // ← NOVO: gênero padrão feminino
+  gender: 'M' | 'F' = 'F' // ← NOVO: gênero padrão feminino
 ): asserts entity is T {
   if (!entity) {
     const suffix = gender === 'M' ? 'não encontrado' : 'não encontrada';

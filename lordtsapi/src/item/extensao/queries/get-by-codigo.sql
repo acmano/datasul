@@ -1,0 +1,30 @@
+-- ============================================================================
+-- Query Fragment: WHERE para Buscar Item Extensão por Código
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula WHERE para buscar dados de
+--   extensão de um item específico pelo seu código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + get-by-codigo.sql
+--
+-- Parâmetros:
+--   ? (varchar) - Código do item a ser buscado (parâmetro ODBC)
+--
+-- Utilizado por:
+--   - item/extensao/repository.ts :: getByCodigo()
+--
+-- Performance:
+--   - WHERE executado no Progress/OpenEdge (banco ESP)
+--   - Retorna no máximo 1 registro
+--   - Usa índice primário da tabela ext-item
+--
+-- Exemplo de valor:
+--   ? = '7530110'  → Busca extensão do item com código '7530110'
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+WHERE ei."it-codigo" = ?

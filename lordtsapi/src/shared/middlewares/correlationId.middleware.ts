@@ -26,11 +26,7 @@ import { log } from '@shared/utils/logger';
 // CONSTANTES
 // ============================================================================
 
-const CORRELATION_ID_HEADERS = [
-  'x-correlation-id',
-  'x-request-id',
-  'correlation-id',
-] as const;
+const CORRELATION_ID_HEADERS = ['x-correlation-id', 'x-request-id', 'correlation-id'] as const;
 
 const RESPONSE_HEADER_NAME = 'X-Correlation-ID';
 
@@ -42,11 +38,7 @@ const RESPONSE_HEADER_NAME = 'X-Correlation-ID';
  * Middleware de Correlation ID
  * IMPORTANTE: Deve ser o PRIMEIRO middleware na cadeia
  */
-export const correlationIdMiddleware = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
+export const correlationIdMiddleware = (req: Request, res: Response, next: NextFunction): void => {
   // Tenta extrair Correlation ID dos headers
   const clientCorrelationId = CORRELATION_ID_HEADERS.reduce<string | undefined>(
     (found, headerName) => found || (req.headers[headerName] as string),

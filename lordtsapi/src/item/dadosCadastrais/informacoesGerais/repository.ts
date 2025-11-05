@@ -4,209 +4,238 @@ import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { QueryParameter } from '@infrastructure/database/types';
 import { QueryCacheService } from '@shared/utils/cache/QueryCacheService';
 import { log } from '@shared/utils/logger';
+import { ItemQueries } from '@/item/queries';
 
-import { FamiliaInformacoesGeraisRepository } from '@/familia/dadosCadastrais/informacoesGerais/repository';
-import { FamiliaComercialInformacoesGeraisRepository } from '@/familiaComercial/dadosCadastrais/informacoesGerais/repository';
-import { GrupoDeEstoqueInformacoesGeraisRepository } from '@/grupoDeEstoque/dadosCadastrais/informacoesGerais/repository';
-import { EstabelecimentoInformacoesGeraisRepository } from '@/estabelecimento/dadosCadastrais/informacoesGerais/repository';
+// Import types
+import type {
+  ItemMasterQueryResult,
+  ItemEstabelecimentoQueryResult,
+  ItemInformacoesGerais,
+} from './types';
+
+// Tipos RAW retornados pelo Progress ODBC (camelCase via SQL aliases)
+interface ItemMasterRawEmp {
+  itemCodigo?: string;
+  itemDescricao?: string;
+  itemUnidade?: string;
+  itemUnidadeDescricao?: string;
+  familiaCodigo?: number | string | null;
+  familiaComercialCodigo?: number | string | null;
+  grupoDeEstoqueCodigo?: number | string | null;
+  deposito?: string;
+  codLocalizacao?: string;
+  status?: string;
+  estabelecimentoPadraoCodigo?: string;
+  dataImplantacao?: string;
+  dataLiberacao?: string;
+  dataObsolescencia?: string;
+  narrativa?: string;
+  descricaoAlternativa?: string;
+  vendaEmbCodigo?: string;
+  vendaEmbDescricao?: string;
+  vendaEmbItens?: number;
+}
+
+interface ItemMasterRawEsp {
+  itemCodigo?: string;
+  endereco?: string;
+  descricaoResumida?: string;
+  contenedorCodigo?: string;
+  contenedorDescricao?: string;
+  teCodigo?: string;
+}
 
 /**
  * Repository - Informações Gerais do Item (com estrutura aninhada)
+ *
+ * ✨ REFATORADO: Queries extraídas para arquivos .sql separados
+ * @see ../../../queries/README.md para documentação completa
  */
 export class ItemInformacoesGeraisRepository {
-
   /**
    * Busca dados mestres do item com códigos de relacionamento
+   *
+   * ✨ MIGRADO PARA ODBC:
+   * - Query get-item-emp-main.sql (EMP database - item + unidade + embalagem venda)
+   * - Query get-item-esp-extended.sql (ESP database - dados estendidos + contenedor)
+   * - Query get-item-emp-embalagem.sql (EMP database - descrição embalagem TE) - condicional
+   * - Merge dos 3 resultados feito em TypeScript
+   *
+   * Cache: 10 minutos (configurado em QueryCacheService)
+   *
+   * @param itemCodigo - Código do item a buscar
+   * @returns Dados mestres do item ou null se não encontrado
    */
-  static async getItemMaster(itemCodigo: string): Promise<any | null> {
-    try {
-      const query = `
-        DECLARE @itemCodigo varchar(16) = @paramItemCodigo;
-        DECLARE @sql nvarchar(max);
+  static async getItemMaster(itemCodigo: string): Promise<ItemMasterQueryResult | null> {
+    const params: QueryParameter[] = [
+      { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo },
+    ];
 
-        SET @sql = N'
-          SELECT  item.itemCodigo
-                , item.itemDescricao
-                , item.itemUnidade
-                , item.familiaCodigo
-                , item.familiaComercialCodigo
-                , CAST(item.grupoDeEstoqueCodigo AS varchar(2)) as grupoDeEstoqueCodigo
-          FROM  OPENQUERY (
-            PRD_EMS2EMP
-          ,  ''SELECT  item."it-codigo"  as itemCodigo
-                    , item."desc-item"  as itemDescricao
-                    , item."un"         as itemUnidade
-                    , item."fm-codigo"  as familiaCodigo
-                    , item."fm-cod-com" as familiaComercialCodigo
-                    , item."ge-codigo"  as grupoDeEstoqueCodigo
-                FROM  pub.item item
-                WHERE item."it-codigo" = ''''' + @itemCodigo + '''''
-          '') as item
-        ';
+    // Executa queries EMP e ESP em paralelo
+    const [empResult, espResult] = await Promise.all([
+      // Query 1: Dados principais (EMP) - retorna lowercase
+      DatabaseManager.datasul('emp').query<ItemMasterRawEmp>(ItemQueries.getItemEmpMain(), params),
+      // Query 2: Dados estendidos (ESP) - retorna lowercase
+      DatabaseManager.datasul('esp').query<ItemMasterRawEsp>(
+        ItemQueries.getItemEspExtended(),
+        params
+      ),
+    ]);
 
-        EXEC sp_executesql @sql;
-      `;
+    // Se item não existe no EMP, retorna null
+    if (!empResult || empResult.length === 0) {
+      return null;
+    }
 
-      const params: QueryParameter[] = [
-        { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
+    const empDataRaw = empResult[0];
+    const espDataRaw = espResult && espResult.length > 0 ? espResult[0] : null;
+
+    // Transform from camelCase (SQL aliases) to camelCase (TypeScript)
+    // NOTE: Progress ODBC may return codes as numbers - convert to strings
+    const empData = {
+      itemCodigo: empDataRaw?.itemCodigo || '',
+      itemDescricao: empDataRaw?.itemDescricao || '',
+      itemUnidade: empDataRaw?.itemUnidade || '',
+      itemUnidadeDescricao: empDataRaw?.itemUnidadeDescricao || '',
+      // Convert numeric codes to strings (Progress ODBC behavior)
+      familiaCodigo: empDataRaw?.familiaCodigo != null ? String(empDataRaw.familiaCodigo) : null,
+      familiaComercialCodigo:
+        empDataRaw?.familiaComercialCodigo != null
+          ? String(empDataRaw.familiaComercialCodigo)
+          : null,
+      grupoDeEstoqueCodigo:
+        empDataRaw?.grupoDeEstoqueCodigo != null ? String(empDataRaw.grupoDeEstoqueCodigo) : null,
+      deposito: empDataRaw?.deposito || '',
+      codLocalizacao: empDataRaw?.codLocalizacao || '',
+      status: empDataRaw?.status || '',
+      estabelecimentoPadraoCodigo: empDataRaw?.estabelecimentoPadraoCodigo || '',
+      dataImplantacao: empDataRaw?.dataImplantacao || '',
+      dataLiberacao: empDataRaw?.dataLiberacao || '',
+      dataObsolescencia: empDataRaw?.dataObsolescencia || '',
+      narrativa: empDataRaw?.narrativa,
+      vendaEmbCodigo: empDataRaw?.vendaEmbCodigo,
+      vendaEmbDescricao: empDataRaw?.vendaEmbDescricao,
+      vendaEmbItens: empDataRaw?.vendaEmbItens,
+    };
+
+    const espData = espDataRaw?.itemCodigo
+      ? {
+          itemCodigo: espDataRaw.itemCodigo,
+          endereco: espDataRaw.endereco,
+          descricaoResumida: espDataRaw.descricaoResumida,
+          descricaoAlternativa: empDataRaw?.descricaoAlternativa,
+          contenedorCodigo: espDataRaw.contenedorCodigo,
+          contenedorDescricao: espDataRaw.contenedorDescricao,
+          teCodigo: espDataRaw.teCodigo,
+        }
+      : {};
+
+    // Query 3: Descrição da embalagem TE (EMP) - condicional
+    let teDescricao: string | undefined;
+    if (espData.teCodigo) {
+      const embParams: QueryParameter[] = [
+        { name: 'paramEmbalagemCodigo', type: 'varchar', value: espData.teCodigo },
       ];
 
-      const result = await QueryCacheService.withItemCache(
-        query,
-        params,
-        async () => DatabaseManager.queryEmpWithParams(query, params)
+      const embResult = await DatabaseManager.datasul('emp').query<{ teDescricao: string }>(
+        ItemQueries.getItemEmpEmbalagem(),
+        embParams
       );
 
-      return result && result.length > 0 ? result[0] : null;
-
-    } catch (error) {
-      throw error;
+      if (embResult && embResult.length > 0) {
+        teDescricao = embResult[0]?.teDescricao;
+      }
     }
+
+    // Merge dos 3 resultados
+    const merged: ItemMasterQueryResult = {
+      ...empData,
+      ...espData,
+      teDescricao,
+    } as ItemMasterQueryResult;
+
+    log.debug('=== ITEM MASTER MIGRADO (3 queries) ===', {
+      itemCodigo: merged.itemCodigo,
+      temEsp: !!espData.itemCodigo,
+      temTE: !!teDescricao,
+    });
+
+    return merged;
   }
 
   /**
    * Busca estabelecimentos do item
+   *
+   * Query: ../../../queries/get-item-estabelecimentos.sql
+   * Cache: 10 minutos (configurado em QueryCacheService)
+   *
+   * @param itemCodigo - Código do item a buscar
+   * @returns Lista de estabelecimentos onde o item está cadastrado
    */
-  static async getItemEstabelecimentos(itemCodigo: string): Promise<any[]> {
-    try {
-      const query = `
-        DECLARE @itemCodigo varchar(16) = @paramItemCodigo;
-        DECLARE @sql nvarchar(max);
+  static async getItemEstabelecimentos(
+    itemCodigo: string
+  ): Promise<ItemEstabelecimentoQueryResult[]> {
+    // Carrega query do arquivo (cached em memória após primeira leitura)
+    const query = ItemQueries.getItemEstabelecimentos();
 
-        SET @sql = N'
-          SELECT  itemUniEstab.itemCodigo
-                , itemUniEstab.estabelecimentoCodigo
-                , estabelec.estabelecimentoNome
-          FROM  OPENQUERY (
-            PRD_EMS2EMP,
-            ''SELECT  itemUniEstab."it-codigo"    as itemCodigo
-                    , itemUniEstab."cod-estabel"  as estabelecimentoCodigo
-                FROM  pub."item-uni-estab" itemUniEstab
-                WHERE itemUniEstab."it-codigo" = ''''' + @itemCodigo + '''''
-                ORDER BY  itemUniEstab."cod-estabel"''
-          ) as itemUniEstab
-          INNER JOIN OPENQUERY (
-            PRD_EMS2MULT,
-            ''SELECT  estabelec."cod-estabel" as estabelecimentoCodigo
-                    , estabelec.nome          as estabelecimentoNome
-                FROM   pub.estabelec estabelec''
-          ) as estabelec
-            ON  estabelec.estabelecimentoCodigo = itemUniEstab.estabelecimentoCodigo;
-        ';
-        EXEC sp_executesql @sql;
-      `;
+    const params: QueryParameter[] = [
+      { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo },
+    ];
 
-      const params: QueryParameter[] = [
-        { name: 'paramItemCodigo', type: 'varchar', value: itemCodigo }
-      ];
+    const result = await QueryCacheService.withEstabelecimentoCache(query, params, async () =>
+      DatabaseManager.datasul('emp').query<ItemEstabelecimentoQueryResult>(query, params)
+    );
 
-      const result = await QueryCacheService.withEstabelecimentoCache(
-        query,
-        params,
-        async () => DatabaseManager.queryEmpWithParams(query, params)
-      );
-
-      return result || [];
-
-    } catch (error) {
-      throw error;
-    }
+    return (result as ItemEstabelecimentoQueryResult[]) || [];
   }
 
   /**
    * Busca dados completos do item incluindo todos os relacionamentos
-   * Executa queries em paralelo para máxima performance
+   * REFATORADO: Retorna APENAS códigos para evitar loops de requisições
    */
-  static async getItemCompleto(itemCodigo: string): Promise<{
-    item: any | null;
-    familia: any | null;
-    familiaComercial: any | null;
-    grupoDeEstoque: any | null;
-    estabelecimentos: any[];
-  }> {
-    try {
-      // PASSO 1: Busca item e estabelecimentos em paralelo
-      const [itemData, estabelecimentosData] = await Promise.all([
-        this.getItemMaster(itemCodigo),
-        this.getItemEstabelecimentos(itemCodigo)
-      ]);
+  static async getItemCompleto(itemCodigo: string): Promise<ItemInformacoesGerais> {
+    // PASSO 1: Busca item e estabelecimentos em paralelo
+    const [itemData, estabelecimentosData] = await Promise.all([
+      this.getItemMaster(itemCodigo),
+      this.getItemEstabelecimentos(itemCodigo),
+    ]);
 
-      // Se item não existe, retorna tudo null/vazio
-      if (!itemData) {
-        return {
-          item: null,
-          familia: null,
-          familiaComercial: null,
-          grupoDeEstoque: null,
-          estabelecimentos: []
-        };
-      }
-
-      // PASSO 2: Busca relacionamentos em paralelo (se existirem e forem válidos)
-      const isValidCode = (code: any): code is string => {
-        return code !== null && code !== undefined && typeof code === 'string' && code.trim() !== '';
-      };
-
-      const [familiaData, familiaComercialData, grupoDeEstoqueData] = await Promise.all([
-        isValidCode(itemData.familiaCodigo)
-          ? FamiliaInformacoesGeraisRepository.getFamiliaMaster(itemData.familiaCodigo)
-          : Promise.resolve(null),
-        isValidCode(itemData.familiaComercialCodigo)
-          ? FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster(itemData.familiaComercialCodigo)
-          : Promise.resolve(null),
-        isValidCode(itemData.grupoDeEstoqueCodigo)
-          ? GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster(itemData.grupoDeEstoqueCodigo)
-          : Promise.resolve(null)
-      ]);
-
-      // PASSO 3: Enriquecer estabelecimentos com dados completos (em paralelo)
-      const estabelecimentosEnriquecidos = await Promise.all(
-        estabelecimentosData.slice(0, 50).map(async (estab) => {
-          try {
-            const dadosCompletos = await EstabelecimentoInformacoesGeraisRepository
-              .getEstabelecimentoMaster(estab.estabelecimentoCodigo);
-
-            return {
-              codigo: estab.estabelecimentoCodigo,
-              nome: dadosCompletos?.nome || 'Nome não disponível'
-            };
-          } catch (error) {
-            log.error(`Erro ao buscar estabelecimento ${estab.estabelecimentoCodigo}`, {
-              error: error instanceof Error ? error.message : error
-            });
-            return {
-              codigo: estab.estabelecimentoCodigo,
-              nome: 'Erro ao carregar'
-            };
-          }
-        })
-      );
-
-      log.info('📦 Estabelecimentos enriquecidos', {
-        total: estabelecimentosEnriquecidos.length,
-        dados: estabelecimentosEnriquecidos
-      });
-
+    // Se item não existe, retorna tudo null/vazio
+    if (!itemData) {
       return {
-        item: itemData,
-        familia: familiaData,
-        familiaComercial: familiaComercialData,
-        grupoDeEstoque: grupoDeEstoqueData,
-        estabelecimentos: estabelecimentosEnriquecidos
+        item: null,
+        familia: null,
+        familiaComercial: null,
+        grupoDeEstoque: null,
+        estabelecimentos: [],
       };
-
-    } catch (error) {
-      throw error;
     }
+
+    // PASSO 2: Retorna APENAS códigos (sem enriquecimento)
+    // Frontend deve buscar detalhes usando os endpoints específicos se necessário
+    log.info('📦 Retornando códigos sem enriquecimento', {
+      familia: itemData.familiaCodigo,
+      familiaComercial: itemData.familiaComercialCodigo,
+      grupoEstoque: itemData.grupoDeEstoqueCodigo,
+      estabelecimentos: estabelecimentosData.length,
+    });
+
+    return {
+      item: itemData,
+      familia: null,
+      familiaComercial: null,
+      grupoDeEstoque: null,
+      estabelecimentos: estabelecimentosData.map((estab) => ({
+        codigo: estab.estabelecimentoCodigo,
+        nome: 'Carregue detalhes separadamente', // Frontend fará isso on-demand
+      })),
+    };
   }
 
   /**
    * Invalida cache do item
    */
-  static async invalidateCache(itemCodigo: string): Promise<void> {
-    await QueryCacheService.invalidateMultiple([
-      'item:*',
-      'estabelecimento:*'
-    ]);
+  static async invalidateCache(_itemCodigo: string): Promise<void> {
+    await QueryCacheService.invalidateMultiple(['item:*', 'estabelecimento:*']);
   }
 }

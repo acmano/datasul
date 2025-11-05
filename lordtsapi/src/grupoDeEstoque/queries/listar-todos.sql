@@ -1,0 +1,33 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todos os Grupos de Estoque
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo a ordenação para listar todos os grupos de
+--   estoque cadastrados no sistema.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + listar-todos.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - grupoDeEstoque/listar/repository.ts :: listarTodos()
+--
+-- Performance:
+--   - Lê toda a tabela PUB."grup-estoque" (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge (banco EMP)
+--   - Usa índice da coluna "ge-codigo" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODOS os grupos de estoque cadastrados
+--   - Ordenação alfabética por código
+--   - Quantidade depende do total cadastrado no sistema
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- Corrigido erro de sintaxe: grupoEstoque → grupoDeEstoque
+-- ============================================================================
+
+ORDER BY  grupoDeEstoque."ge-codigo"

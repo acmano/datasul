@@ -3,43 +3,47 @@
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { QueryParameter } from '@infrastructure/database/types';
 import { QueryCacheService } from '@shared/utils/cache/QueryCacheService';
+import { GrupoDeEstoqueQueries } from '../../queries';
+import type { GrupoDeEstoqueMasterQueryResult } from './types';
 
+/**
+ * Repository para informações gerais de grupos de estoque
+ *
+ * Responsabilidades:
+ * - Buscar dados cadastrais de um grupo de estoque específico
+ * - Gerenciar cache de queries
+ */
 export class GrupoDeEstoqueInformacoesGeraisRepository {
-  static async getGrupoDeEstoqueMaster(grupoDeEstoqueCodigo: string): Promise<any | null> {
-    const query = `
-      DECLARE @grupoDeEstoqueCodigo varchar(16) = @paramGrupoDeEstoqueCodigo;
-      DECLARE @sql nvarchar(max);
-
-      SET @sql = N'
-        SELECT  entity."ge-codigo" as grupoDeEstoqueCodigo
-              , entity."descricao" as grupoDeEstoqueDescricao
-          FROM  OPENQUERY (
-            PRD_EMS2EMP
-          ,  ''SELECT  entity."ge-codigo"
-                     , entity."descricao"
-                 FROM   pub."grup-estoque" entity
-                 WHERE  entity."ge-codigo" = ''''' + @grupoDeEstoqueCodigo + '''''
-             ''
-          ) as entity
-      ';
-
-      EXEC sp_executesql @sql;
-    `;
+  /**
+   * Busca informações completas de um grupo de estoque pelo código
+   *
+   * @param grupoDeEstoqueCodigo - Código do grupo de estoque
+   * @returns Objeto com informações do grupo ou null se não encontrado
+   * @throws Error em caso de falha na consulta ao banco
+   */
+  static async getGrupoDeEstoqueMaster(
+    grupoDeEstoqueCodigo: string
+  ): Promise<GrupoDeEstoqueMasterQueryResult | null> {
+    // Carrega query do arquivo (cached automaticamente)
+    const query = GrupoDeEstoqueQueries.getByCodigo();
 
     const params: QueryParameter[] = [
-      { name: 'paramGrupoDeEstoqueCodigo', type: 'varchar', value: grupoDeEstoqueCodigo }
+      { name: 'paramGrupoDeEstoqueCodigo', type: 'varchar', value: grupoDeEstoqueCodigo },
     ];
 
-    const result = await QueryCacheService.withGrupoDeEstoqueCache(
-      query,
-      params,
-      async () => DatabaseManager.queryEmpWithParams(query, params)
+    const result = await QueryCacheService.withGrupoDeEstoqueCache(query, params, async () =>
+      DatabaseManager.datasul('emp').query<GrupoDeEstoqueMasterQueryResult>(query, params)
     );
 
-    return result && result.length > 0 ? result[0] : null;
+    return result && result.length > 0 ? result[0] || null : null;
   }
 
-  static async invalidateCache(grupoDeEstoqueCodigo: string): Promise<void> {
+  /**
+   * Invalida o cache de um grupo de estoque específico
+   *
+   * @param grupoDeEstoqueCodigo - Código do grupo de estoque
+   */
+  static async invalidateCache(_grupoDeEstoqueCodigo: string): Promise<void> {
     await QueryCacheService.invalidateMultiple(['grupoDeEstoque:*']);
   }
 }

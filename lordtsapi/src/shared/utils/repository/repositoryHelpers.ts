@@ -5,6 +5,7 @@
 import { DatabaseManager } from '@infrastructure/database/DatabaseManager';
 import { QueryParameter } from '@infrastructure/database/types';
 import { QueryCacheService } from '@shared/utils/cache/QueryCacheService';
+import { log } from '@shared/utils/logger';
 
 /**
  * Executa query com cache automático
@@ -18,10 +19,8 @@ export async function executeWithCache<T>(
     fetcher: () => Promise<T[]>
   ) => Promise<T[]>
 ): Promise<T[]> {
-  return cacheStrategy(
-    query,
-    params,
-    async () => DatabaseManager.queryEmpWithParams(query, params)
+  return cacheStrategy(query, params, async () =>
+    DatabaseManager.queryEmpWithParams(query, params)
   );
 }
 
@@ -39,7 +38,7 @@ export async function executeAndGetFirst<T>(
 ): Promise<T | null> {
   try {
     const result = await executeWithCache(query, params, cacheStrategy);
-    return result && result.length > 0 ? result[0] : null;
+    return result && result.length > 0 ? (result[0] ?? null) : null;
   } catch (error) {
     console.error('Erro ao executar query:', error);
     throw error;
@@ -51,5 +50,5 @@ export async function executeAndGetFirst<T>(
  */
 export async function invalidateCachePatterns(patterns: string[]): Promise<void> {
   await QueryCacheService.invalidateMultiple(patterns);
-  console.log('Cache invalidado para padrões:', patterns);
+  log.debug('Cache invalidado para padrões:', { patterns, count: patterns.length });
 }

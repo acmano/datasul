@@ -115,8 +115,8 @@ API_PREFIX=/api
 # Banco de Dados
 DB_CONNECTION_TYPE=sqlserver
 DB_SERVER=10.105.0.4\LOREN
-DB_USER=dcloren
-DB_PASSWORD='#dcloren#'
+DB_USER=sysprogress
+DB_PASSWORD='sysprogress'
 DB_DATABASE_EMP=
 DB_DATABASE_MULT=
 
@@ -626,8 +626,8 @@ metadata:
 type: Opaque
 stringData:
   DB_SERVER: "10.105.0.4\\LOREN"
-  DB_USER: "dcloren"
-  DB_PASSWORD: "#dcloren#"
+  DB_USER: "sysprogress"
+  DB_PASSWORD: "sysprogress"
   DB_DATABASE_EMP: ""
   DB_DATABASE_MULT: ""
 ```
@@ -1017,7 +1017,7 @@ npm run validate:config
 telnet 10.105.0.4 1433
 
 # Verificar credenciais
-sqlcmd -S 10.105.0.4\LOREN -U dcloren -P '#dcloren#'
+sqlcmd -S 10.105.0.4\LOREN -U sysprogress -P 'sysprogress'
 ```
 
 **Solução:** Verificar firewall, credenciais, SQL Server online

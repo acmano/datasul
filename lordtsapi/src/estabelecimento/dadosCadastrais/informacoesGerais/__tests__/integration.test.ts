@@ -1,11 +1,11 @@
 // src/estabelecimento/dadosCadastrais/informacoesGerais/__tests__/integration.test.ts
+import { log } from '@shared/utils/logger';
 
 import request from 'supertest';
 import { DatabaseTestHelper } from '@tests/helpers/database.helper';
 import app from '@/app';
 
 describe('INTEGRAÇÃO - API InformacoesGerais Estabelecimento (Banco Real)', () => {
-
   let usingRealDatabase = false;
   let testEstabelecimentoCode: string;
 
@@ -15,8 +15,8 @@ describe('INTEGRAÇÃO - API InformacoesGerais Estabelecimento (Banco Real)', ()
 
     testEstabelecimentoCode = '101';
 
-    console.log(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
-    console.log(`📦 Estabelecimento de teste: ${testEstabelecimentoCode}`);
+    log.debug(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
+    log.debug(`📦 Estabelecimento de teste: ${testEstabelecimentoCode}`);
   });
 
   afterAll(async () => {
@@ -24,16 +24,13 @@ describe('INTEGRAÇÃO - API InformacoesGerais Estabelecimento (Banco Real)', ()
   });
 
   describe('Conexão com Banco de Dados', () => {
-
     it('deve conectar com banco ou usar mock', async () => {
       const isReady = await DatabaseTestHelper.waitUntilReady(5000);
       expect(isReady).toBe(true);
     });
-
   });
 
   describe('Buscar Informações Gerais (Dados Reais)', () => {
-
     it('deve buscar estabelecimento existente com sucesso', async () => {
       const startTime = Date.now();
 
@@ -58,24 +55,22 @@ describe('INTEGRAÇÃO - API InformacoesGerais Estabelecimento (Banco Real)', ()
       }
     });
 
-it('deve retornar 404 para estabelecimento inexistente', async () => {
-  const invalidCode = '99999';
-  
-  const response = await request(app)
-    .get(`/api/estabelecimento/dadosCadastrais/informacoesGerais/${invalidCode}`)
-    .expect((res) => {
-      expect([200, 404]).toContain(res.status);
+    it('deve retornar 404 para estabelecimento inexistente', async () => {
+      const invalidCode = '99999';
+
+      const response = await request(app)
+        .get(`/api/estabelecimento/dadosCadastrais/informacoesGerais/${invalidCode}`)
+        .expect((res) => {
+          expect([200, 404]).toContain(res.status);
+        });
+
+      if (response.status === 404) {
+        expect(response.body).toHaveProperty('error');
+      }
     });
-
-  if (response.status === 404) {
-    expect(response.body).toHaveProperty('error');
-  }
-});
-
   });
 
   describe('Validação de Dados do Banco', () => {
-
     it('deve retornar estrutura de dados correta', async () => {
       const response = await request(app)
         .get(`/api/estabelecimento/dadosCadastrais/informacoesGerais/${testEstabelecimentoCode}`)
@@ -91,20 +86,18 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
         expect(typeof data.descricao).toBe('string');
       }
     });
-
   });
 
   describe('Performance (Banco Real)', () => {
-
     it('deve responder em menos de 2 segundos', async function () {
       if (!usingRealDatabase) {
-        console.log('⏭️  Teste de performance pulado - usando mock');
+        log.debug('⏭️  Teste de performance pulado - usando mock');
         return;
       }
 
       const startTime = Date.now();
 
-      await request(app)
+      const response = await request(app)
         .get(`/api/estabelecimento/dadosCadastrais/informacoesGerais/${testEstabelecimentoCode}`)
         .expect((res) => {
           expect([200, 404]).toContain(res.status);
@@ -113,11 +106,9 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(2000);
     });
-
   });
 
   describe('Edge Cases (Banco Real)', () => {
-
     it('deve validar código numérico de 3 dígitos (típico)', async () => {
       const code = '101';
 
@@ -165,14 +156,13 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
 
       expect(response.status).not.toBe(400);
     });
-
   });
 
   describe('Headers e Correlation ID', () => {
-
     it('deve incluir Correlation ID na resposta', async () => {
-      const response = await request(app)
-        .get(`/api/estabelecimento/dadosCadastrais/informacoesGerais/${testEstabelecimentoCode}`);
+      const response = await request(app).get(
+        `/api/estabelecimento/dadosCadastrais/informacoesGerais/${testEstabelecimentoCode}`
+      );
 
       expect(response.headers['x-correlation-id']).toBeDefined();
     });
@@ -186,11 +176,9 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
 
       expect(response.headers['x-correlation-id']).toBe(customId);
     });
-
   });
 
   describe('Timeout e Resilência', () => {
-
     it('não deve travar em requisição inválida', async () => {
       const response = await request(app)
         .get('/api/estabelecimento/dadosCadastrais/informacoesGerais/INVALID')
@@ -199,13 +187,11 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
       expect(response.status).toBeDefined();
       expect([200, 404, 400]).toContain(response.status);
     });
-
   });
 
   describe('Resumo dos Testes', () => {
-
     it('deve informar fonte de dados usada', () => {
-      console.log(`
+      log.debug(`
         📊 RESULTADO DOS TESTES (ESTABELECIMENTO):
         - Fonte de dados: ${usingRealDatabase ? 'BANCO REAL' : 'MOCK'}
         - Código testado: ${testEstabelecimentoCode}
@@ -214,7 +200,5 @@ it('deve retornar 404 para estabelecimento inexistente', async () => {
 
       expect(usingRealDatabase).toBeDefined();
     });
-
   });
-
 });

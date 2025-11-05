@@ -2,6 +2,7 @@
 
 import client from 'prom-client';
 import { MetricsConfig } from '@shared/types/metrics.types';
+import { log } from '@shared/utils/logger';
 
 /**
  * Gerenciador central de métricas Prometheus
@@ -179,6 +180,31 @@ export class MetricsManager {
    */
   public healthCheckDuration: client.Histogram<string>;
 
+  // ========================================
+  // 🤖 ML ANOMALY DETECTION METRICS
+  // ========================================
+
+  /**
+   * Total de anomalias detectadas
+   * Counter: incrementa a cada anomalia detectada
+   * Labels: connection, metric, severity
+   */
+  public mlAnomaliesDetected: client.Counter<string>;
+
+  /**
+   * Health score das conexões (0-100)
+   * Gauge: atualizado periodicamente
+   * Labels: connection
+   */
+  public mlHealthScore: client.Gauge<string>;
+
+  /**
+   * Baseline drift (desvio da baseline)
+   * Gauge: mostra o quanto a métrica desviou da baseline
+   * Labels: connection, metric
+   */
+  public mlBaselineDrift: client.Gauge<string>;
+
   /**
    * Construtor privado para implementação do padrão Singleton
    *
@@ -311,6 +337,30 @@ export class MetricsManager {
     });
 
     // ========================================
+    // 🤖 ML ANOMALY DETECTION METRICS
+    // ========================================
+    this.mlAnomaliesDetected = new client.Counter({
+      name: `${prefix}ml_anomalies_detected_total`,
+      help: 'Total de anomalias detectadas por conexão',
+      labelNames: ['connection', 'metric', 'severity'],
+      registers: [this.registry],
+    });
+
+    this.mlHealthScore = new client.Gauge({
+      name: `${prefix}ml_health_score`,
+      help: 'Health score da conexão (0-100, 100 = perfeito)',
+      labelNames: ['connection'],
+      registers: [this.registry],
+    });
+
+    this.mlBaselineDrift = new client.Gauge({
+      name: `${prefix}ml_baseline_drift`,
+      help: 'Desvio da métrica em relação à baseline',
+      labelNames: ['connection', 'metric'],
+      registers: [this.registry],
+    });
+
+    // ========================================
     // 💻 SYSTEM METRICS (Node.js default)
     // ========================================
     if (config.collectDefaultMetrics !== false) {
@@ -321,7 +371,7 @@ export class MetricsManager {
     }
 
     this.isInitialized = true;
-    console.log('✅ MetricsManager inicializado');
+    log.info('✅ MetricsManager inicializado');
   }
 
   /**
@@ -499,6 +549,75 @@ export class MetricsManager {
    */
   registerCustomMetric(metric: client.Metric): void {
     this.registry.registerMetric(metric);
+  }
+
+  // ========================================
+  // 🤖 ML ANOMALY DETECTION HELPER METHODS
+  // ========================================
+
+  /**
+   * Registra uma anomalia detectada
+   *
+   * @param connectionId - Connection identifier (DSN)
+   * @param metric - Metric name (latency, throughput, errorRate, poolUtilization)
+   * @param severity - Severity level (low, medium, high, critical)
+   *
+   * @example
+   * metricsManager.recordMLAnomaly('DtsPrdEmp', 'latency', 'high');
+   */
+  recordMLAnomaly(connectionId: string, metric: string, severity: string): void {
+    this.mlAnomaliesDetected.inc({
+      connection: connectionId,
+      metric,
+      severity,
+    });
+  }
+
+  /**
+   * Atualiza o health score de uma conexão
+   *
+   * @param connectionId - Connection identifier (DSN)
+   * @param score - Health score (0-100)
+   *
+   * @example
+   * metricsManager.updateMLHealthScore('DtsPrdEmp', 95);
+   */
+  updateMLHealthScore(connectionId: string, score: number): void {
+    this.mlHealthScore.set({ connection: connectionId }, score);
+  }
+
+  /**
+   * Atualiza o baseline drift de uma métrica
+   *
+   * @param connectionId - Connection identifier (DSN)
+   * @param metric - Metric name
+   * @param drift - Drift value (how much deviated from baseline)
+   *
+   * @example
+   * metricsManager.updateMLBaselineDrift('DtsPrdEmp', 'latency', 2.5);
+   */
+  updateMLBaselineDrift(connectionId: string, metric: string, drift: number): void {
+    this.mlBaselineDrift.set({ connection: connectionId, metric }, drift);
+  }
+
+  /**
+   * Incrementa contador de anomalias detectadas
+   *
+   * @param connectionId - Connection identifier (DSN)
+   * @param count - Number of anomalies to increment
+   *
+   * @example
+   * metricsManager.incrementMLAnomaliesDetected('DtsPrdEmp', 3);
+   */
+  incrementMLAnomaliesDetected(connectionId: string, count: number): void {
+    // Increment for each severity level (generic)
+    for (let i = 0; i < count; i++) {
+      this.mlAnomaliesDetected.inc({
+        connection: connectionId,
+        metric: 'all',
+        severity: 'all',
+      });
+    }
   }
 }
 

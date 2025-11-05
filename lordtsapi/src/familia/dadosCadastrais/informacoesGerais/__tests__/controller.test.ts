@@ -1,6 +1,6 @@
 // src/familia/dadosCadastrais/informacoesGerais/__tests__/controller.test.ts
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { InformacoesGeraisController } from '../controller';
 import { InformacoesGeraisService } from '../service';
 import { FamiliaNotFoundError, ValidationError } from '@shared/errors/CustomErrors';
@@ -34,11 +34,10 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
   // CASOS DE SUCESSO
   // ========================================
   describe('getInformacoesGerais - Sucesso', () => {
-
     it('deve retornar 200 com dados da família', async () => {
       const mockData = {
         codigo: 'F001',
-        descricao: 'Válvulas e Conexões'
+        descricao: 'Válvulas e Conexões',
       };
       mockRequest.params = { familiaCodigo: 'F001' };
 
@@ -91,14 +90,12 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
         })
       );
     });
-
   });
 
   // ========================================
   // VALIDAÇÃO
   // ========================================
   describe('getInformacoesGerais - Validação', () => {
-
     it('deve lançar ValidationError se familiaCodigo ausente', async () => {
       mockRequest.params = {};
 
@@ -108,9 +105,7 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.any(ValidationError)
-      );
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ValidationError));
     });
 
     it('deve lançar ValidationError se familiaCodigo vazio', async () => {
@@ -122,9 +117,7 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.any(ValidationError)
-      );
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ValidationError));
     });
 
     it('deve lançar ValidationError se familiaCodigo só espaços', async () => {
@@ -136,9 +129,7 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
         mockNext
       );
 
-      expect(mockNext).toHaveBeenCalledWith(
-        expect.any(ValidationError)
-      );
+      expect(mockNext).toHaveBeenCalledWith(expect.any(ValidationError));
     });
 
     it('deve incluir mensagem descritiva no ValidationError', async () => {
@@ -156,7 +147,7 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
     });
 
     it('deve aceitar familiaCodigo válido com 8 caracteres', async () => {
-      const codigo = '12345678';  
+      const codigo = '12345678';
       const mockData = { codigo, descricao: 'Test' };
       mockRequest.params = { familiaCodigo: codigo };
 
@@ -171,19 +162,18 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
       expect(mockResponse.json).toHaveBeenCalled();
       expect(mockNext).not.toHaveBeenCalled();
     });
-
   });
 
   // ========================================
   // FAMÍLIA NÃO ENCONTRADA
   // ========================================
   describe('getInformacoesGerais - Família Não Encontrada', () => {
-
     it('deve não retornar resposta quando Service lança FamiliaNotFoundError', async () => {
       mockRequest.params = { familiaCodigo: 'F001' };
 
-      (InformacoesGeraisService.getInformacoesGerais as jest.Mock)
-        .mockRejectedValue(new FamiliaNotFoundError('F001'));
+      (InformacoesGeraisService.getInformacoesGerais as jest.Mock).mockRejectedValue(
+        new FamiliaNotFoundError('F001')
+      );
 
       await InformacoesGeraisController.getInformacoesGerais(
         mockRequest as Request,
@@ -197,8 +187,9 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
     it('deve não retornar resposta com família inexistente', async () => {
       mockRequest.params = { familiaCodigo: 'INEXISTENTE' };
 
-      (InformacoesGeraisService.getInformacoesGerais as jest.Mock)
-        .mockRejectedValue(new FamiliaNotFoundError('INEXISTENTE'));
+      (InformacoesGeraisService.getInformacoesGerais as jest.Mock).mockRejectedValue(
+        new FamiliaNotFoundError('INEXISTENTE')
+      );
 
       await InformacoesGeraisController.getInformacoesGerais(
         mockRequest as Request,
@@ -208,19 +199,18 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
 
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
-
   });
 
   // ========================================
   // ERROS DO SERVICE
   // ========================================
   describe('getInformacoesGerais - Erros do Service', () => {
-
     it('deve não retornar resposta quando Service lança erro', async () => {
       mockRequest.params = { familiaCodigo: 'F001' };
 
-      (InformacoesGeraisService.getInformacoesGerais as jest.Mock)
-        .mockRejectedValue(new Error('Erro de banco'));
+      (InformacoesGeraisService.getInformacoesGerais as jest.Mock).mockRejectedValue(
+        new Error('Erro de banco')
+      );
 
       await InformacoesGeraisController.getInformacoesGerais(
         mockRequest as Request,
@@ -234,8 +224,9 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
     it('não deve retornar resposta em caso de erro', async () => {
       mockRequest.params = { familiaCodigo: 'F001' };
 
-      (InformacoesGeraisService.getInformacoesGerais as jest.Mock)
-        .mockRejectedValue(new FamiliaNotFoundError('F001'));
+      (InformacoesGeraisService.getInformacoesGerais as jest.Mock).mockRejectedValue(
+        new FamiliaNotFoundError('F001')
+      );
 
       await InformacoesGeraisController.getInformacoesGerais(
         mockRequest as Request,
@@ -245,19 +236,18 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
 
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
-
   });
 
   // ========================================
   // ASYNC HANDLER BEHAVIOR
   // ========================================
   describe('AsyncHandler Behavior', () => {
-
     it('deve não retornar resposta em caso de erro assíncrono', async () => {
       mockRequest.params = { familiaCodigo: 'F001' };
 
-      (InformacoesGeraisService.getInformacoesGerais as jest.Mock)
-        .mockRejectedValue(new Error('Async error'));
+      (InformacoesGeraisService.getInformacoesGerais as jest.Mock).mockRejectedValue(
+        new Error('Async error')
+      );
 
       await InformacoesGeraisController.getInformacoesGerais(
         mockRequest as Request,
@@ -267,7 +257,5 @@ describe('Controller - InformacoesGeraisController (Familia)', () => {
 
       expect(mockResponse.json).not.toHaveBeenCalled();
     });
-
   });
-
 });

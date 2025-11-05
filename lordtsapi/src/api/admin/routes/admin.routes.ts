@@ -128,6 +128,9 @@ router.post('/api-keys/:apiKey/revoke', apiKeyAuth, async (req: Request, res: Re
   }
 
   const { apiKey } = req.params;
+  if (!apiKey) {
+    throw new ValidationError('API Key é obrigatória');
+  }
   const revoked = await ApiKeyService.revokeKey(apiKey);
 
   res.json({
@@ -198,6 +201,9 @@ router.post('/rate-limit/reset/:userId', apiKeyAuth, async (req: Request, res: R
   }
 
   const { userId } = req.params;
+  if (!userId) {
+    throw new ValidationError('User ID é obrigatório');
+  }
   UserRateLimiter.resetUser(userId);
 
   res.json({
@@ -248,6 +254,10 @@ router.put('/users/:userId/tier', apiKeyAuth, async (req: Request, res: Response
 
   const { userId } = req.params;
   const { tier } = req.body;
+
+  if (!userId) {
+    throw new ValidationError('User ID é obrigatório');
+  }
 
   if (!tier || !Object.values(UserTier).includes(tier)) {
     throw new ValidationError('Tier inválido', {

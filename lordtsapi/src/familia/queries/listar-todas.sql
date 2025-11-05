@@ -1,0 +1,32 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todas as Famílias
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo a ordenação para listar todas as famílias
+--   cadastradas no sistema.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + listar-todas.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - familia/listar/repository.ts :: listarTodas()
+--
+-- Performance:
+--   - Lê toda a tabela PUB.familia (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge (banco EMP)
+--   - Usa índice da coluna "fm-codigo" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODAS as famílias cadastradas
+--   - Ordenação alfabética por código
+--   - Quantidade depende do total cadastrado no sistema
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+ORDER BY  familia."fm-codigo"

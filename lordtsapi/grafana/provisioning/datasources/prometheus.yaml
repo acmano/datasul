@@ -1,0 +1,27 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 30s
+      queryTimeout: 60s
+      # Enable alerting
+      manageAlerts: true
+      # Prometheus version
+      prometheusType: Prometheus
+      prometheusVersion: 2.45.0
+      # Exemplars
+      exemplarTraceIdDestinations:
+        - name: traceID
+          datasourceUid: jaeger
+      # Cache settings
+      cacheLevel: 'High'
+      incrementalQuerying: true
+      disableMetricsLookup: false
+    version: 1

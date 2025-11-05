@@ -1,6 +1,7 @@
 // src/infrastructure/database/connections/MockConnection.ts
 
 import { IConnection, QueryParameter } from '../types';
+import { log } from '@shared/utils/logger';
 
 /**
  * Conexão mockada para desenvolvimento e testes
@@ -119,7 +120,7 @@ export class MockConnection implements IConnection {
    * - Sempre retorna sucesso
    */
   async connect(): Promise<void> {
-    console.log('Mock connection iniciada');
+    log.debug('Mock connection iniciada');
   }
 
   /**
@@ -158,15 +159,15 @@ export class MockConnection implements IConnection {
    * - Sempre retorna os mesmos dados fixos
    * - Use apenas para desenvolvimento e testes
    */
-  async query(queryString: string): Promise<any> {
-    console.log('Mock query executada:', queryString);
+  async query<T = unknown>(queryString: string): Promise<T[]> {
+    log.debug(`Mock query executada: ${queryString}`);
 
     if (queryString.includes('pub.item')) {
-      return [this.mockData.item];
+      return [this.mockData.item] as T[];
     }
 
     if (queryString.includes('item-uni-estab')) {
-      return this.mockData.estabelecimentos;
+      return this.mockData.estabelecimentos as T[];
     }
 
     return [];
@@ -202,37 +203,38 @@ export class MockConnection implements IConnection {
    * - Não valida tipos ou valores
    * - Use apenas para testes
    */
-  async queryWithParams(queryString: string, params: QueryParameter[]): Promise<any> {
-    console.log('🔍 Mock queryWithParams chamado');
-    console.log('Query:', queryString);
-    console.log('Params:', JSON.stringify(params));
+  async queryWithParams<T = unknown>(queryString: string, params: QueryParameter[]): Promise<T[]> {
+    log.debug('🔍 Mock queryWithParams chamado');
+    log.debug(`Query: ${queryString}`);
+    log.debug(`Params: ${JSON.stringify(params)}`);
 
-    const hasInvalidCode = params.some(p => 
-      typeof p.value === 'string' && 
-      (p.value.includes('INVALID') || p.value.includes('XXX'))
+    const hasInvalidCode = params.some(
+      (p) => typeof p.value === 'string' && (p.value.includes('INVALID') || p.value.includes('XXX'))
     );
-    
+
     if (hasInvalidCode) {
-      console.log('✅ Detectou código inválido nos params - retornando []');
+      log.debug('✅ Detectou código inválido nos params - retornando []');
       return [];
     }
 
     if (queryString.includes('pub.item')) {
-      console.log('✅ Retornando mockData.item');
-      return [this.mockData.item];
+      log.debug('✅ Retornando mockData.item');
+      return [this.mockData.item] as T[];
     }
 
     if (queryString.includes('item-uni-estab')) {
-      console.log('✅ Retornando mockData.itemEstabelecimentos');  // ← ADICIONAR
-      return this.mockData.itemEstabelecimentos;
+      log.debug('✅ Retornando mockData.itemEstabelecimentos');
+      return this.mockData.itemEstabelecimentos as T[];
     }
 
     if (queryString.includes('pub.estabelec') || queryString.includes('pub."estabelec"')) {
-      console.log('✅ Retornando mockData.estabelecimentos:', JSON.stringify(this.mockData.estabelecimentos));  // ← ADICIONAR
-      return this.mockData.estabelecimentos;
+      log.debug(
+        `✅ Retornando mockData.estabelecimentos: ${JSON.stringify(this.mockData.estabelecimentos)}`
+      );
+      return this.mockData.estabelecimentos as T[];
     }
 
-    console.log('❌ Query não reconhecida - retornando []');  // ← ADICIONAR
+    log.debug('❌ Query não reconhecida - retornando []');
     return [];
   }
 
@@ -254,7 +256,7 @@ export class MockConnection implements IConnection {
    * - Sempre retorna sucesso
    */
   async close(): Promise<void> {
-    console.log('Mock connection fechada');
+    log.debug('Mock connection fechada');
   }
 
   /**

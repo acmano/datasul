@@ -17,15 +17,15 @@ describe('Service - InformacoesGeraisService (GrupoDeEstoque)', () => {
   });
 
   describe('getInformacoesGerais - Sucesso', () => {
-
     it('deve retornar informações quando encontrado', async () => {
       const mockData = {
         grupoDeEstoqueCodigo: 'TEST123',
-        grupoDeEstoqueDescricao: 'Grupo Teste'
+        grupoDeEstoqueDescricao: 'Grupo Teste',
       };
 
-      (GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock)
-        .mockResolvedValue(mockData);
+      (
+        GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock
+      ).mockResolvedValue(mockData);
 
       const result = await InformacoesGeraisService.getInformacoesGerais('TEST123');
 
@@ -33,17 +33,17 @@ describe('Service - InformacoesGeraisService (GrupoDeEstoque)', () => {
       expect(result.codigo).toBe('TEST123');
       expect(result.descricao).toBe('Grupo Teste');
     });
-
   });
 
   describe('getInformacoesGerais - Não Encontrado', () => {
     it('deve lançar erro quando não existe', async () => {
-      (GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock)
-        .mockResolvedValue(null);
+      (
+        GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock
+      ).mockResolvedValue(null);
 
-      await expect(
-        InformacoesGeraisService.getInformacoesGerais('INEXISTENTE')
-      ).rejects.toThrow(GrupoDeEstoqueNotFoundError);
+      await expect(InformacoesGeraisService.getInformacoesGerais('INEXISTENTE')).rejects.toThrow(
+        GrupoDeEstoqueNotFoundError
+      );
     });
   });
 
@@ -51,12 +51,13 @@ describe('Service - InformacoesGeraisService (GrupoDeEstoque)', () => {
     it('deve converter erros de banco em DatabaseError', async () => {
       const dbError = new Error('Conexão perdida');
 
-      (GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock)
-        .mockRejectedValue(dbError);
+      (
+        GrupoDeEstoqueInformacoesGeraisRepository.getGrupoDeEstoqueMaster as jest.Mock
+      ).mockRejectedValue(dbError);
 
-      await expect(
-        InformacoesGeraisService.getInformacoesGerais('TEST123')
-      ).rejects.toThrow(DatabaseError);
+      await expect(InformacoesGeraisService.getInformacoesGerais('TEST123')).rejects.toThrow(
+        DatabaseError
+      );
     });
   });
 });

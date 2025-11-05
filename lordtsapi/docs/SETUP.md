@@ -71,8 +71,8 @@ PORT=3000
 DB_CONNECTION_TYPE=sqlserver    # ou 'odbc'
 DB_SERVER=10.105.0.4\LOREN
 DB_PORT=1433
-DB_USER=dcloren
-DB_PASSWORD='#dcloren#'        # Aspas simples se tiver #
+DB_USER=sysprogress
+DB_PASSWORD='sysprogress'        # Aspas simples se tiver #
 
 # Database vazio = usa default do SQL user
 DB_DATABASE_EMP=
@@ -293,8 +293,8 @@ SELECT TOP 1 * FROM OPENQUERY(PRD_EMS2EMP, 'SELECT * FROM pub.item')
 ```env
 DB_CONNECTION_TYPE=sqlserver
 DB_SERVER=10.105.0.4\LOREN
-DB_USER=dcloren
-DB_PASSWORD='#dcloren#'
+DB_USER=sysprogress
+DB_PASSWORD='sysprogress'
 ```
 
 ### ODBC (Fallback)

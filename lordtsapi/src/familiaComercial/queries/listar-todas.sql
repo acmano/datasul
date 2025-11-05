@@ -1,0 +1,32 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todas as Famílias Comerciais
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo a ordenação para listar todas as famílias
+--   comerciais cadastradas no sistema.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + listar-todas.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - familiaComercial/listar/repository.ts :: listarTodas()
+--
+-- Performance:
+--   - Lê toda a tabela PUB."fam-comerc" (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge (banco EMP)
+--   - Usa índice da coluna "fm-cod-com" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODAS as famílias comerciais cadastradas
+--   - Ordenação alfabética por código
+--   - Quantidade depende do total cadastrado no sistema
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+ORDER BY  familiaComercial."fm-cod-com"

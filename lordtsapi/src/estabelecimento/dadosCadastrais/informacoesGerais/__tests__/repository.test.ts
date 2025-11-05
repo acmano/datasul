@@ -14,17 +14,20 @@ describe('Repository - EstabelecimentoInformacoesGeraisRepository', () => {
 
   describe('getEstabelecimentoMaster', () => {
     it('deve retornar dados quando encontrado', async () => {
-      const mockData = [{
-        codigo: 'TEST123',
-        nome: 'Estabelecimento Teste'
-      }];
+      const mockData = [
+        {
+          codigo: 'TEST123',
+          nome: 'Estabelecimento Teste',
+        },
+      ];
 
       (QueryCacheService.withEstabelecimentoCache as jest.Mock).mockImplementation(
         async (query, params, fetcher) => fetcher()
       );
       (DatabaseManager.queryMultWithParams as jest.Mock).mockResolvedValue(mockData);
 
-      const result = await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster('TEST123');
+      const result =
+        await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster('TEST123');
 
       expect(result).toEqual(mockData[0]);
     });
@@ -35,7 +38,8 @@ describe('Repository - EstabelecimentoInformacoesGeraisRepository', () => {
       );
       (DatabaseManager.queryMultWithParams as jest.Mock).mockResolvedValue([]);
 
-      const result = await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster('INEXISTENTE');
+      const result =
+        await EstabelecimentoInformacoesGeraisRepository.getEstabelecimentoMaster('INEXISTENTE');
 
       expect(result).toBeNull();
     });

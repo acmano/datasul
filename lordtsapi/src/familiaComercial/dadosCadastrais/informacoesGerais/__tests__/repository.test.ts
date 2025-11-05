@@ -12,17 +12,20 @@ describe('Repository - FamiliaComercialInformacoesGeraisRepository', () => {
 
   describe('getFamiliaComercialMaster', () => {
     it('deve retornar dados quando encontrado', async () => {
-      const mockData = [{
-        familiaComercialCodigo: 'TEST123',
-        familiaComercialDescricao: 'Teste'
-      }];
+      const mockData = [
+        {
+          familiaComercialCodigo: 'TEST123',
+          familiaComercialDescricao: 'Teste',
+        },
+      ];
 
       (QueryCacheService.withFamiliaComercialCache as jest.Mock).mockImplementation(
         async (query, params, fetcher) => fetcher()
       );
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockResolvedValue(mockData);
 
-      const result = await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster('TEST123');
+      const result =
+        await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster('TEST123');
 
       expect(result).toEqual(mockData[0]);
     });
@@ -33,7 +36,8 @@ describe('Repository - FamiliaComercialInformacoesGeraisRepository', () => {
       );
       (DatabaseManager.queryEmpWithParams as jest.Mock).mockResolvedValue([]);
 
-      const result = await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster('INEXISTENTE');
+      const result =
+        await FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster('INEXISTENTE');
 
       expect(result).toBeNull();
     });

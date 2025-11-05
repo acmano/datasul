@@ -172,8 +172,8 @@ cp .env.example .env.test
 # DATABASE - Banco de Produção (READ-ONLY)
 # ========================================
 DB_SERVER=10.105.0.4\LOREN
-DB_USER=dcloren
-DB_PASSWORD='#dcloren#'           # ⚠️ Aspas simples obrigatórias!
+DB_USER=sysprogress
+DB_PASSWORD='sysprogress'           # ⚠️ Aspas simples obrigatórias!
 DB_DATABASE_EMP=                  # Vazio = usa default do user
 DB_DATABASE_MULT=                 # Vazio = usa default do user
 DB_CONNECTION_TIMEOUT=30000       # 30s em milissegundos
@@ -805,7 +805,7 @@ describe('Testes lentos', () => {
 });
 ```
 
-### Erro: "Login failed for user 'dcloren'"
+### Erro: "Login failed for user 'sysprogress'"
 
 **Causa:** Configuração incorreta do `.env.test`
 
@@ -813,13 +813,13 @@ describe('Testes lentos', () => {
 
 ```env
 # ❌ ERRADO - # é interpretado como comentário
-DB_PASSWORD=#dcloren#
+DB_PASSWORD=sysprogress
 
 # ❌ ERRADO - Aspas duplas são incluídas na senha
-DB_PASSWORD="#dcloren#"
+DB_PASSWORD="sysprogress"
 
 # ✅ CORRETO - Aspas simples
-DB_PASSWORD='#dcloren#'
+DB_PASSWORD='sysprogress'
 ```
 
 ### Erro: "Cannot read property 'query' of undefined"
@@ -856,7 +856,7 @@ afterAll(async () => {
 
 ```bash
 # Testar conexão manual
-sqlcmd -S "10.105.0.4\LOREN" -U dcloren -P '#dcloren#'
+sqlcmd -S "10.105.0.4\LOREN" -U sysprogress -P 'sysprogress'
 ```
 
 **Diagnosticar:**

@@ -1,0 +1,53 @@
+# EditorConfig - Configuração de estilo de código
+# https://editorconfig.org
+
+# Arquivo raiz
+root = true
+
+# Configurações padrão para todos os arquivos
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+# TypeScript e JavaScript
+[*.{ts,tsx,js,jsx,mjs,cjs}]
+indent_size = 2
+max_line_length = 100
+
+# JSON
+[*.json]
+indent_size = 2
+
+# YAML
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown
+[*.md]
+trim_trailing_whitespace = false
+max_line_length = off
+
+# Shell scripts
+[*.sh]
+indent_size = 2
+end_of_line = lf
+
+# SQL
+[*.sql]
+indent_size = 2
+
+# Configuração de ambiente
+[*.env*]
+trim_trailing_whitespace = true
+
+# Makefiles precisam de tabs
+[Makefile]
+indent_style = tab
+
+# Arquivos de configuração do Windows
+[*.{bat,cmd,ps1}]
+end_of_line = crlf

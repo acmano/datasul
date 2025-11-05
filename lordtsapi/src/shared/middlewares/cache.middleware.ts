@@ -7,7 +7,7 @@
  * @see cache.middleware.md para documentação completa
  *
  * Exports:
- * - cacheMiddleware: Cache automático de respostas GET
+ * - cacheMiddleware: Cache automático de respostas GET/POST
  * - invalidateCacheMiddleware: Invalidação por mutação
  * - createCachePreset: Factory de presets (short/medium/long)
  * - noCache: Desabilita cache completamente
@@ -17,6 +17,7 @@
  * - Geração de chave customizável
  * - Condições de cache flexíveis
  * - Headers de debug (X-Cache: HIT/MISS)
+ * - Suporte a GET e POST
  */
 
 import { Request, Response, NextFunction } from 'express';
@@ -31,6 +32,7 @@ interface CacheOptions {
   ttl?: number;
   keyGenerator?: (req: Request) => string;
   condition?: (req: Request, res: Response) => boolean;
+  allowedMethods?: string[];
 }
 
 interface CachedResponse {
@@ -45,14 +47,15 @@ interface CachedResponse {
 
 /**
  * Middleware de cache HTTP
- * @param options - Configurações de cache (ttl, keyGenerator, condition)
+ * @param options - Configurações de cache (ttl, keyGenerator, condition, allowedMethods)
  */
 export function cacheMiddleware(options: CacheOptions = {}) {
-  const ttl = options.ttl || 300; // 5 minutos padrão
+  const ttl = options.ttl || 300;
+  const allowedMethods = options.allowedMethods || ['GET'];
 
   return async (req: Request, res: Response, next: NextFunction) => {
-    // Apenas cacheia GET
-    if (req.method !== 'GET') {
+    // Verificar método permitido
+    if (!allowedMethods.includes(req.method)) {
       return next();
     }
 
@@ -69,7 +72,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       log.debug('Cache HTTP HIT', {
         correlationId: req.id,
         cacheKey,
-        url: req.url
+        url: req.url,
       });
 
       res.setHeader('X-Cache', 'HIT');
@@ -85,16 +88,14 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     log.debug('Cache HTTP MISS', {
       correlationId: req.id,
       cacheKey,
-      url: req.url
+      url: req.url,
     });
 
     const originalJson = res.json.bind(res);
 
     res.json = function (body: any): Response {
       // Verificar condição de cache
-      const shouldCache = options.condition
-        ? options.condition(req, res)
-        : res.statusCode === 200;
+      const shouldCache = options.condition ? options.condition(req, res) : res.statusCode === 200;
 
       if (shouldCache) {
         const cachedResponse: CachedResponse = {
@@ -113,7 +114,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
               statusCode: res.statusCode,
             });
           })
-          .catch(err => {
+          .catch((err) => {
             log.error('Erro ao armazenar cache', { error: err });
           });
       }
@@ -136,16 +137,12 @@ export function cacheMiddleware(options: CacheOptions = {}) {
  * Middleware de invalidação de cache por mutação
  * @param pattern - Padrão de chaves a invalidar ou função
  */
-export function invalidateCacheMiddleware(
-  pattern: string | ((req: Request) => string)
-) {
+export function invalidateCacheMiddleware(pattern: string | ((req: Request) => string)) {
   return (req: Request, res: Response, next: NextFunction) => {
     res.on('finish', async () => {
       // Apenas invalida se sucesso (2xx)
       if (res.statusCode >= 200 && res.statusCode < 300) {
-        const cachePattern = typeof pattern === 'function'
-          ? pattern(req)
-          : pattern;
+        const cachePattern = typeof pattern === 'function' ? pattern(req) : pattern;
 
         const removed = await CacheManager.invalidate(cachePattern);
 
@@ -170,17 +167,27 @@ export function invalidateCacheMiddleware(
 // ====================================================================
 
 function generateDefaultCacheKey(req: Request): string {
-  const { method, path, query } = req;
+  const { method, path } = req;
 
-  // Ordenar query params para consistência
-  const sortedQuery = Object.keys(query)
+  let params: any;
+
+  if (method === 'GET') {
+    params = req.query;
+  } else if (method === 'POST') {
+    params = req.body;
+  } else {
+    params = {};
+  }
+
+  // Ordenar params para consistência
+  const sortedParams = Object.keys(params)
     .sort()
-    .map(key => `${key}=${query[key]}`)
+    .map((key) => `${key}=${params[key]}`)
     .join('&');
 
   const parts = [method, path];
-  if (sortedQuery) {
-    parts.push(sortedQuery);
+  if (sortedParams) {
+    parts.push(sortedParams);
   }
 
   return generateCacheKey(...parts);
@@ -189,13 +196,9 @@ function generateDefaultCacheKey(req: Request): string {
 function getRelevantHeaders(res: Response): Record<string, string> {
   const relevantHeaders: Record<string, string> = {};
 
-  const headersToPreserve = [
-    'content-type',
-    'content-encoding',
-    'x-correlation-id',
-  ];
+  const headersToPreserve = ['content-type', 'content-encoding', 'x-correlation-id'];
 
-  headersToPreserve.forEach(header => {
+  headersToPreserve.forEach((header) => {
     const value = res.getHeader(header);
     if (value) {
       relevantHeaders[header] = String(value);
@@ -215,9 +218,9 @@ function getRelevantHeaders(res: Response): Record<string, string> {
  */
 export function createCachePreset(preset: 'short' | 'medium' | 'long') {
   const ttls = {
-    short: 60,     // 1 minuto
-    medium: 300,   // 5 minutos
-    long: 900,     // 15 minutos
+    short: 60, // 1 minuto
+    medium: 300, // 5 minutos
+    long: 900, // 15 minutos
   };
 
   return cacheMiddleware({ ttl: ttls[preset] });
@@ -226,7 +229,7 @@ export function createCachePreset(preset: 'short' | 'medium' | 'long') {
 /**
  * Middleware que desabilita cache
  */
-export function noCache(_req: Request, res: Response, next: Function): void {
+export function noCache(_req: Request, res: Response, next: NextFunction): void {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');

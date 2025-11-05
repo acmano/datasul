@@ -31,10 +31,10 @@ import { log } from '../utils/logger';
  * Remove informações sensíveis das mensagens de erro
  * Sanitiza: caminhos, queries SQL, IPs, credenciais
  */
-function sanitizeErrorMessage(error: any): string {
-  const message = error.message || 'Erro desconhecido';
+function sanitizeErrorMessage(error: unknown): string {
+  const message = (error as Error).message || 'Erro desconhecido';
 
-  let sanitized = message
+  const sanitized = message
     // Caminhos de arquivo
     .replace(/\/[^\s]+\.(ts|js|tsx|jsx)/gi, '[arquivo]')
     // Queries SQL
@@ -134,17 +134,11 @@ export function errorHandler(
  * Middleware para capturar rotas não encontradas (404)
  * Deve vir após todas as rotas, antes do errorHandler
  */
-export function notFoundHandler(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
-  const error = new AppError(
-    404,
-    `Rota não encontrada: ${req.method} ${req.originalUrl}`,
-    true,
-    { method: req.method, path: req.originalUrl }
-  );
+export function notFoundHandler(req: Request, res: Response, next: NextFunction) {
+  const error = new AppError(404, `Rota não encontrada: ${req.method} ${req.originalUrl}`, true, {
+    method: req.method,
+    path: req.originalUrl,
+  });
 
   next(error);
 }
@@ -158,7 +152,9 @@ export function notFoundHandler(
  * Captura erros automaticamente e passa para errorHandler
  * Elimina necessidade de try/catch repetitivo
  */
-export function asyncHandler(fn: Function) {
+export function asyncHandler(
+  fn: (req: Request, res: Response, next: NextFunction) => Promise<void>
+) {
   return (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };

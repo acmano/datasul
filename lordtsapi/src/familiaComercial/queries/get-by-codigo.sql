@@ -1,0 +1,31 @@
+-- ============================================================================
+-- Query Fragment: WHERE para Buscar Família Comercial por Código
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula WHERE para buscar uma
+--   família comercial específica pelo seu código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + get-by-codigo.sql
+--
+-- Parâmetros:
+--   ? (varchar) - Código da família comercial a ser buscada (parâmetro ODBC)
+--
+-- Utilizado por:
+--   - familiaComercial/dadosCadastrais/informacoesGerais/repository.ts :: getFamiliaComercialMaster()
+--
+-- Performance:
+--   - WHERE executado no Progress/OpenEdge (banco EMP)
+--   - Retorna no máximo 1 registro
+--   - Usa índice primário da tabela fam-comerc
+--
+-- Exemplo de valor:
+--   ? = '01'   → Busca família comercial com código '01'
+--   ? = 'CONS' → Busca família comercial com código 'CONS'
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+WHERE familiaComercial."fm-cod-com" = ?

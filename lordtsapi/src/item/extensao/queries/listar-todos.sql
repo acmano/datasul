@@ -1,0 +1,32 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todas as Extensões de Itens
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo a ordenação para listar todas as extensões de
+--   itens cadastradas no sistema.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com projection.sql na execução:
+--   Query Final = projection.sql + listar-todos.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - item/extensao/repository.ts :: listarTodos()
+--
+-- Performance:
+--   - Lê toda a tabela PUB."ext-item" (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge (banco ESP)
+--   - Usa índice da coluna "it-codigo" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODAS as extensões de itens cadastradas
+--   - Ordenação alfabética por código do item
+--   - Quantidade depende do total de itens com extensão cadastrados
+--
+-- Última atualização: 2025-10-26
+-- Criado para suportar composição modular
+-- ============================================================================
+
+ORDER BY ei."it-codigo"

@@ -16,15 +16,15 @@ describe('Service - InformacoesGeraisService (FamiliaComercial)', () => {
   });
 
   describe('getInformacoesGerais - Sucesso', () => {
-
     it('deve retornar informações quando encontrado', async () => {
       const mockData = {
         familiaComercialCodigo: 'FC01',
-        familiaComercialDescricao: 'Familia Comercial Teste'
+        familiaComercialDescricao: 'Familia Comercial Teste',
       };
 
-      (FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock)
-        .mockResolvedValue(mockData);
+      (
+        FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock
+      ).mockResolvedValue(mockData);
 
       const result = await InformacoesGeraisService.getInformacoesGerais('FC01');
 
@@ -32,17 +32,17 @@ describe('Service - InformacoesGeraisService (FamiliaComercial)', () => {
       expect(result.codigo).toBe('FC01');
       expect(result.descricao).toBe('Familia Comercial Teste');
     });
-
   });
 
   describe('getInformacoesGerais - Não Encontrado', () => {
     it('deve lançar erro quando não existe', async () => {
-      (FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock)
-        .mockResolvedValue(null);
+      (
+        FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock
+      ).mockResolvedValue(null);
 
-      await expect(
-        InformacoesGeraisService.getInformacoesGerais('INEXISTENTE')
-      ).rejects.toThrow(FamiliaComercialNotFoundError);
+      await expect(InformacoesGeraisService.getInformacoesGerais('INEXISTENTE')).rejects.toThrow(
+        FamiliaComercialNotFoundError
+      );
     });
   });
 
@@ -50,12 +50,13 @@ describe('Service - InformacoesGeraisService (FamiliaComercial)', () => {
     it('deve converter erros de banco em DatabaseError', async () => {
       const dbError = new Error('Conexão perdida');
 
-      (FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock)
-        .mockRejectedValue(dbError);
+      (
+        FamiliaComercialInformacoesGeraisRepository.getFamiliaComercialMaster as jest.Mock
+      ).mockRejectedValue(dbError);
 
-      await expect(
-        InformacoesGeraisService.getInformacoesGerais('TEST123')
-      ).rejects.toThrow(DatabaseError);
+      await expect(InformacoesGeraisService.getInformacoesGerais('TEST123')).rejects.toThrow(
+        DatabaseError
+      );
     });
   });
 });

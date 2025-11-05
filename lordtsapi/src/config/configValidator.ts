@@ -304,11 +304,9 @@ export class ConfigValidator {
     }
 
     // Validar formato de cada origem
-    config.cors.allowedOrigins.forEach(origin => {
+    config.cors.allowedOrigins.forEach((origin) => {
       if (origin !== '*' && !origin.startsWith('http://') && !origin.startsWith('https://')) {
-        this.errors.push(
-          `CORS origin inválido: "${origin}". Deve começar com http:// ou https://`
-        );
+        this.errors.push(`CORS origin inválido: "${origin}". Deve começar com http:// ou https://`);
       }
     });
   }
@@ -336,16 +334,12 @@ export class ConfigValidator {
 
     // Validar timeout de request
     if (timeout.request < 1000) {
-      this.errors.push(
-        `HTTP_REQUEST_TIMEOUT muito baixo: ${timeout.request}ms. Mínimo: 1000ms`
-      );
+      this.errors.push(`HTTP_REQUEST_TIMEOUT muito baixo: ${timeout.request}ms. Mínimo: 1000ms`);
     }
 
     // Validar timeout de health check
     if (timeout.healthCheck < 100) {
-      this.errors.push(
-        `HTTP_HEALTH_TIMEOUT muito baixo: ${timeout.healthCheck}ms. Mínimo: 100ms`
-      );
+      this.errors.push(`HTTP_HEALTH_TIMEOUT muito baixo: ${timeout.healthCheck}ms. Mínimo: 100ms`);
     }
 
     // Health check não pode ser maior que request normal
@@ -381,9 +375,7 @@ export class ConfigValidator {
 
     // Validar max attempts
     if (retry.maxAttempts < 1) {
-      this.errors.push(
-        `DB_RETRY_MAX_ATTEMPTS deve ser >= 1. Atual: ${retry.maxAttempts}`
-      );
+      this.errors.push(`DB_RETRY_MAX_ATTEMPTS deve ser >= 1. Atual: ${retry.maxAttempts}`);
     }
 
     if (retry.maxAttempts > 10) {
@@ -408,9 +400,7 @@ export class ConfigValidator {
 
     // Validar backoff factor
     if (retry.backoffFactor < 1) {
-      this.errors.push(
-        `DB_RETRY_BACKOFF_FACTOR deve ser >= 1. Atual: ${retry.backoffFactor}`
-      );
+      this.errors.push(`DB_RETRY_BACKOFF_FACTOR deve ser >= 1. Atual: ${retry.backoffFactor}`);
     }
   }
 
@@ -466,14 +456,16 @@ export class ConfigValidator {
 
     // Em desenvolvimento, mostrar resumo
     if (config.server.nodeEnv === 'development') {
-      console.log('\n📋 Configuração Atual:');
-      console.log(`   Ambiente: ${config.server.nodeEnv}`);
-      console.log(`   Porta: ${config.server.port}`);
-      console.log(`   API Prefix: ${config.server.apiPrefix}`);
-      console.log(`   Banco: ${config.database.type.toUpperCase()}`);
-      console.log(`   Mock Data: ${config.database.useMockData ? 'SIM' : 'NÃO'}`);
-      console.log(`   Cache: ${config.cache.strategy} (${config.cache.enabled ? 'habilitado' : 'desabilitado'})`);
-      console.log(`   Retry: ${config.database.retry.maxAttempts} tentativas\n`);
+      log.debug('\n📋 Configuração Atual:');
+      log.debug(`   Ambiente: ${config.server.nodeEnv}`);
+      log.debug(`   Porta: ${config.server.port}`);
+      log.debug(`   API Prefix: ${config.server.apiPrefix}`);
+      log.debug(`   Banco: ${config.database.type.toUpperCase()}`);
+      log.debug(`   Mock Data: ${config.database.useMockData ? 'SIM' : 'NÃO'}`);
+      log.debug(
+        `   Cache: ${config.cache.strategy} (${config.cache.enabled ? 'habilitado' : 'desabilitado'})`
+      );
+      log.debug(`   Retry: ${config.database.retry.maxAttempts} tentativas\n`);
     }
   }
 }

@@ -53,6 +53,12 @@ export {
   ExternalServiceError,
 } from './CustomErrors';
 
+// Retry Errors
+export { MaxRetriesExceededError, RetryableError, NonRetryableError } from './RetryErrors';
+
+// Circuit Breaker Errors
+export { CircuitBreakerOpenError, CircuitBreakerError } from './CircuitBreakerErrors';
+
 // Types
 export type ErrorDetails = Record<string, any>;
 

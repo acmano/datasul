@@ -14,11 +14,7 @@ const router = Router();
 /**
  * GET /health - Health check completo
  */
-router.get(
-  '/',
-  healthCheckTimeout,
-  HealthCheckController.healthCheck
-);
+router.get('/', healthCheckTimeout, HealthCheckController.healthCheck);
 
 /**
  * GET /health/live - Liveness probe (Kubernetes)

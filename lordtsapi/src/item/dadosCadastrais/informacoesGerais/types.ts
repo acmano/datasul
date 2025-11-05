@@ -2,7 +2,7 @@
 
 /**
  * Types específicos do módulo Item - Informações Gerais
- * Types compartilhados importados de @datasul/shared-types
+ * Types compartilhados importados de @acmano/lordtsapi-shared-types
  */
 
 import {
@@ -12,12 +12,62 @@ import {
   FamiliaComercialData,
   GrupoDeEstoqueData,
   EstabelecimentoData,
-  ItemMasterQueryResult,
   ItemEstabelecimentoQueryResult,
   FamiliaMasterQueryResult,
   FamiliaComercialMasterQueryResult,
-  GrupoDeEstoqueMasterQueryResult
-} from '@datasul/shared-types';
+  GrupoDeEstoqueMasterQueryResult,
+} from '@acmano/lordtsapi-shared-types';
+
+// ============================================================================
+// LOCAL TYPE OVERRIDES
+// ============================================================================
+
+/**
+ * Resultado completo da query de item master (get-item-master.sql)
+ * SOBRESCREVE a versão do shared-types que só tem campos básicos
+ */
+export interface ItemMasterQueryResult {
+  // Campos básicos
+  itemCodigo: string;
+  itemDescricao: string;
+  itemUnidade: string;
+  itemUnidadeDescricao: string;
+
+  // Códigos de relacionamento
+  familiaCodigo: string | null;
+  familiaComercialCodigo: string | null;
+  grupoDeEstoqueCodigo: string | null;
+
+  // Campos de controle
+  status: string;
+  deposito: string;
+  codLocalizacao: string;
+  estabelecimentoPadraoCodigo: string;
+
+  // Datas
+  dataImplantacao: string;
+  dataLiberacao: string;
+  dataObsolescencia: string;
+
+  // Descrições estendidas
+  narrativa?: string;
+  endereco?: string;
+  descricaoResumida?: string;
+  descricaoAlternativa?: string;
+
+  // Contenedor
+  contenedorCodigo?: string;
+  contenedorDescricao?: string;
+
+  // Transporte embalagem (SQL retorna como teCodigo/teDescricao)
+  teCodigo?: string;
+  teDescricao?: string;
+
+  // Venda embalagem (SQL retorna vendaEmbItens como número)
+  vendaEmbCodigo?: string;
+  vendaEmbDescricao?: string;
+  vendaEmbItens?: number;
+}
 
 // ============================================================================
 // RE-EXPORTS (para compatibilidade)
@@ -29,11 +79,10 @@ export {
   FamiliaComercialData,
   GrupoDeEstoqueData,
   EstabelecimentoData,
-  ItemMasterQueryResult,
   ItemEstabelecimentoQueryResult,
   FamiliaMasterQueryResult,
   FamiliaComercialMasterQueryResult,
-  GrupoDeEstoqueMasterQueryResult
+  GrupoDeEstoqueMasterQueryResult,
 };
 
 // ============================================================================
@@ -41,14 +90,24 @@ export {
 // ============================================================================
 
 /**
+ * Estabelecimento enriquecido com nome
+ * Estende EstabelecimentoData com campo nome
+ */
+export interface EstabelecimentoEnriquecido {
+  codigo: string;
+  nome: string;
+}
+
+/**
  * Estrutura completa de resposta (aninhada/híbrida)
+ * NOTA: Usa tipos *MasterQueryResult que contêm TODOS os campos retornados pelas queries SQL
  */
 export interface ItemInformacoesGerais {
-  item: ItemData;
-  familia: FamiliaData | null;
-  familiaComercial: FamiliaComercialData | null;
-  grupoDeEstoque: GrupoDeEstoqueData | null;
-  estabelecimentos: EstabelecimentoData[];
+  item: ItemMasterQueryResult | null;
+  familia: FamiliaMasterQueryResult | null;
+  familiaComercial: FamiliaComercialMasterQueryResult | null;
+  grupoDeEstoque: GrupoDeEstoqueMasterQueryResult | null;
+  estabelecimentos: EstabelecimentoEnriquecido[];
 }
 
 /**

@@ -2,10 +2,10 @@
 
 ```
 datasul/
-├── lordtsapi/          # Backend - API REST
-├── shared-types/       # Types compartilhados
-├── lor0138/            # Frontend 1 (futuro)
-└── outros frontends/   # (futuros)
+├── lordtsapi/                # Backend - API REST
+├── lordtsapiSharedTypes/     # Types compartilhados entre backend e frontend
+├── lor0138/                  # Frontend - React + Ant Design
+└── setup_guide.md           # Guia completo de setup
 ```
 
 ## Desenvolvimento
@@ -14,76 +14,80 @@ datasul/
 
 ```bash
 cd lordtsapi
-npm run dev          # Desenvolvimento
+npm run dev          # Desenvolvimento com hot reload
 npm run build        # Build produção
-npm test            # Testes
+npm test             # Testes unitários
+npm run test:integration  # Testes de integração
 ```
 
-### Shared Types
+### Frontend (lor0138)
 
 ```bash
-cd shared-types
-npm run build       # Compila types
-npm run watch      # Watch mode
+cd lor0138
+npm start            # Servidor de desenvolvimento
+npm run build        # Build de produção
+npm test             # Testes
 ```
 
-**Importante:** Rode `npm run build` no shared-types sempre que modificar types!
+### Shared Types (lordtsapiSharedTypes)
 
-### Workflow
+```bash
+cd lordtsapiSharedTypes
+npm run build       # Compila types
+npm run watch       # Watch mode
+```
 
-1. Modificar types em `shared-types/src/`
-2. Build: `cd shared-types && npm run build`
-3. Types disponíveis automaticamente em lordtsapi
+**Importante:** Rode `npm run build` no lordtsapiSharedTypes sempre que modificar types!
+
+### Workflow para Modificar Types
+
+1. Modificar types em `lordtsapiSharedTypes/src/`
+2. Build: `cd lordtsapiSharedTypes && npm run build`
+3. Types disponíveis automaticamente em lordtsapi e lor0138
 
 ## Adicionar Types Compartilhados
 
-### 1. Criar type em shared-types
+### 1. Criar type em lordtsapiSharedTypes
 
 ```typescript
-// shared-types/src/types/api/item.types.ts
-export interface ItemResponse {
-  id: string;
-  nome: string;
+// lordtsapiSharedTypes/src/types/entities/item.types.ts
+export interface ItemData {
+  codigo: string;
+  descricao: string;
+  // ... outros campos
 }
 ```
 
 ### 2. Exportar no index
 
 ```typescript
-// shared-types/src/types/api/index.ts
+// lordtsapiSharedTypes/src/types/entities/index.ts
 export * from './item.types';
 ```
 
 ### 3. Build
 
 ```bash
-cd shared-types
+cd lordtsapiSharedTypes
 npm run build
 ```
 
-### 4. Usar em lordtsapi
+### 4. Usar nos projetos
 
+**No Backend (lordtsapi):**
 ```typescript
-// lordtsapi/src/api/lor0138/item/.../controller.ts
-import { ItemResponse } from '@datasul/shared-types';
+// lordtsapi/src/item/dadosCadastrais/informacoesGerais/types.ts
+import { ItemData } from '@acmano/lordtsapi-shared-types';
 
-const data: ItemResponse = { ... };
+const data: ItemData = { ... };
 ```
 
-## Futuros Frontends
-
-Para adicionar novo frontend:
-
-```bash
-cd datasul
-npx create-react-app lor0138
-cd lor0138
-npm install file:../shared-types
-```
-
-Depois usar:
+**No Frontend (lor0138):**
 ```typescript
-import { ItemResponse } from '@datasul/shared-types';
+// lor0138/src/modules/item/types.ts
+import { ItemData } from '@acmano/lordtsapi-shared-types';
+
+const item: ItemData = { ... };
 ```
 
 ## Git
@@ -94,15 +98,21 @@ Cada projeto tem seu repositório:
 # Backend
 cd lordtsapi
 git init
-git remote add origin <repo-lordtsapi>
+git remote add origin https://github.com/acmano/lordtsapiBackend.git
 
 # Shared Types
-cd shared-types
+cd lordtsapiSharedTypes
 git init
-git remote add origin <repo-shared-types>
+git remote add origin https://github.com/acmano/lordtsapiSharedTypes.git
 
-# Frontend (futuro)
+# Frontend
 cd lor0138
 git init
 git remote add origin <repo-lor0138>
 ```
+
+## URLs de Produção
+
+- **API**: http://lor0138.lorenzetti.ibe:3001
+- **Swagger**: http://lor0138.lorenzetti.ibe:3001/api-docs
+- **Health Check**: http://lor0138.lorenzetti.ibe:3001/health

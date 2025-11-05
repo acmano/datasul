@@ -6,6 +6,7 @@ import { optionalApiKeyAuth } from '@shared/middlewares/apiKeyAuth.middleware';
 import { userRateLimit } from '@shared/middlewares/userRateLimit.middleware';
 import { validate } from '@shared/middlewares/validate.middleware';
 import { familiaParamsSchema } from './validators';
+import { log } from '@shared/utils/logger';
 
 /**
  * Rotas de Informações Gerais de Famílias
@@ -141,13 +142,13 @@ router.get(
   familiaCache,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { InformacoesGeraisController } = await import(
-        './controller'
-      );
+      const { InformacoesGeraisController } = await import('./controller');
 
       await InformacoesGeraisController.getInformacoesGerais(req, res, next);
     } catch (error) {
-      console.error('Erro ao carregar controller:', error);
+      log.error('Erro ao carregar controller:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({
         success: false,
         error: 'Erro interno ao processar requisição',

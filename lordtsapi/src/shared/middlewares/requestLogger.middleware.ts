@@ -17,6 +17,7 @@ import { log } from '../utils/logger';
  * Estende o Request do Express para incluir propriedades customizadas
  */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       requestId: string;
@@ -110,8 +111,8 @@ export function getRequestId(req: Request): string {
  */
 export function withRequestId(
   req: Request,
-  logData: Record<string, any>
-): Record<string, any> {
+  logData: Record<string, unknown>
+): Record<string, unknown> {
   return {
     ...logData,
     requestId: req.requestId,

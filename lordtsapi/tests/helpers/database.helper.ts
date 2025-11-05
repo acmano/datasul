@@ -6,13 +6,14 @@ import path from 'path';
 
 /**
  * Helper para testes de integração com banco real
- * 
+ *
  * Gerencia conexão com banco de produção de forma segura para testes
  */
 
 export class DatabaseTestHelper {
   private static initialized = false;
   private static useRealDatabase = false;
+  private static cleanupInProgress = false; // 🆕 Previne múltiplos cleanups
 
   /**
    * Inicializa conexão com banco para testes
@@ -29,10 +30,10 @@ export class DatabaseTestHelper {
     try {
       // Tentar conectar ao banco real
       await DatabaseManager.initialize();
-      
+
       // Verificar se está realmente conectado
       const status = DatabaseManager.getConnectionStatus();
-      
+
       if (status.mode === 'REAL_DATABASE') {
         this.useRealDatabase = true;
         console.log('✅ Testes usando banco REAL de produção (somente leitura)');
@@ -58,12 +59,34 @@ export class DatabaseTestHelper {
 
   /**
    * Fecha conexões após testes
+   * 🆕 Previne múltiplas chamadas simultâneas
    */
   static async cleanup(): Promise<void> {
-    if (this.initialized) {
+    // Prevenir múltiplos cleanups simultâneos
+    if (this.cleanupInProgress) {
+      console.log('⏭️  Cleanup já em andamento, pulando...');
+      return;
+    }
+
+    if (!this.initialized) {
+      return;
+    }
+
+    this.cleanupInProgress = true;
+
+    try {
       await DatabaseManager.close();
       this.initialized = false;
       this.useRealDatabase = false;
+
+      // Aguardar um pouco para garantir que conexões fechem
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      console.log('✓ DatabaseTestHelper cleanup concluído');
+    } catch (error) {
+      console.error('⚠️  Erro durante cleanup:', error);
+    } finally {
+      this.cleanupInProgress = false;
     }
   }
 
@@ -90,12 +113,12 @@ export class DatabaseTestHelper {
     try {
       const result = await DatabaseManager.queryEmpWithParams(
         `SELECT TOP 1 item."it-codigo" as itemCodigo
-         FROM OPENQUERY(PRD_EMS2EMP, 
+         FROM OPENQUERY(PRD_EMS2EMP,
            'SELECT "it-codigo" FROM pub.item WHERE "it-codigo" = ''${itemCodigo}'''
          ) as item`,
         []
       );
-      
+
       return result && result.length > 0;
     } catch (error) {
       return false;
@@ -120,16 +143,16 @@ export class DatabaseTestHelper {
     return {
       // Item que DEVE existir em produção
       validItem: '7530110',
-      
+
       // Item que NÃO existe
       invalidItem: 'INVALID999',
-      
+
       // Item para teste de caracteres especiais
       specialChars: 'ABC-123',
-      
+
       // Item de 1 caractere
       singleChar: 'A',
-      
+
       // Item de 16 caracteres (máximo)
       maxLength: '1234567890123456',
     };

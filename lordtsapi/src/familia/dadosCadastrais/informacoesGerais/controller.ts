@@ -7,7 +7,7 @@ import { validateFamiliaCodigo } from '@shared/validators/paramValidators';
 
 export class InformacoesGeraisController {
   static getInformacoesGerais = asyncHandler(
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, _next: NextFunction) => {
       const familiaCodigo = validateFamiliaCodigo(req.params.familiaCodigo);
 
       const result = await InformacoesGeraisService.getInformacoesGerais(familiaCodigo);

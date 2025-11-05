@@ -72,8 +72,8 @@ import { DatabaseConfig } from '../types';
  * ```env
  * DB_SERVER=10.105.0.4\LOREN
  * DB_PORT=1433
- * DB_USER=dcloren
- * DB_PASSWORD='#dcloren#'
+ * DB_USER=sysprogress
+ * DB_PASSWORD='sysprogress'
  * DB_DATABASE_EMP=
  * DB_CONNECTION_TIMEOUT=30000
  * DB_REQUEST_TIMEOUT=30000
@@ -84,12 +84,12 @@ import { DatabaseConfig } from '../types';
  * @example Uso básico
  * ```typescript
  * const config = getSqlServerConfigEmp();
- * console.log(config);
+ * log.info(config);
  * // {
  * //   server: '10.105.0.4\\LOREN',
  * //   port: 1433,
- * //   user: 'dcloren',
- * //   password: '#dcloren#',
+ * //   user: 'sysprogress',
+ * //   password: 'sysprogress',
  * //   database: '',  // vazio = usa default do SQL user
  * //   connectionTimeout: 30000,
  * //   requestTimeout: 30000,
@@ -109,7 +109,7 @@ import { DatabaseConfig } from '../types';
  * try {
  *   await connection.connect();
  *   const result = await connection.query('SELECT * FROM item');
- *   console.log(result);
+ *   log.info(result);
  * } finally {
  *   await connection.close();
  * }
@@ -187,8 +187,8 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * # Configurações compartilhadas (usadas por EMP e MULT)
  * DB_SERVER=10.105.0.4\LOREN
  * DB_PORT=1433
- * DB_USER=dcloren
- * DB_PASSWORD='#dcloren#'
+ * DB_USER=sysprogress
+ * DB_PASSWORD='sysprogress'
  * DB_CONNECTION_TIMEOUT=30000
  * DB_REQUEST_TIMEOUT=30000
  *
@@ -200,12 +200,12 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * @example Uso básico
  * ```typescript
  * const config = getSqlServerConfigMult();
- * console.log(config);
+ * log.info(config);
  * // {
  * //   server: '10.105.0.4\\LOREN',
  * //   port: 1433,
- * //   user: 'dcloren',
- * //   password: '#dcloren#',
+ * //   user: 'sysprogress',
+ * //   password: 'sysprogress',
  * //   database: '',  // DB_DATABASE_MULT
  * //   connectionTimeout: 30000,
  * //   requestTimeout: 30000,
@@ -219,10 +219,10 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * const empConfig = getSqlServerConfigEmp();
  * const multConfig = getSqlServerConfigMult();
  *
- * console.log(empConfig.server === multConfig.server);  // true
- * console.log(empConfig.port === multConfig.port);      // true
- * console.log(empConfig.user === multConfig.user);      // true
- * console.log(empConfig.database === multConfig.database);  // false (única diferença)
+ * log.info(empConfig.server === multConfig.server);  // true
+ * log.info(empConfig.port === multConfig.port);      // true
+ * log.info(empConfig.user === multConfig.user);      // true
+ * log.info(empConfig.database === multConfig.database);  // false (única diferença)
  * ```
  *
  * @example Usando ambas as conexões

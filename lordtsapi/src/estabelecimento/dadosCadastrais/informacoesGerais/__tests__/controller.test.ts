@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { InformacoesGeraisController } from '../controller';
 import { InformacoesGeraisService } from '../service';
-import { EstabelecimentoNotFoundError, ValidationError } from '@shared/errors/CustomErrors';
+import {} from '@shared/errors/CustomErrors';
 
 jest.mock('../service');
 
@@ -39,5 +39,4 @@ describe('Controller - InformacoesGeraisController (Estabelecimento)', () => {
       });
     });
   });
-
 });

@@ -2,6 +2,7 @@
 
 import { Router, Request, Response } from 'express';
 import { metricsManager } from '@infrastructure/metrics/MetricsManager';
+import { log } from '@shared/utils/logger';
 
 const router = Router();
 
@@ -31,7 +32,7 @@ router.get('/', async (req: Request, res: Response) => {
     const metrics = await metricsManager.getMetrics();
     res.end(metrics);
   } catch (error) {
-    console.error('Erro ao obter métricas:', error);
+    log.error('Erro ao obter métricas:', error);
     res.status(500).json({
       error: 'Erro ao obter métricas',
       message: (error as Error).message,

@@ -4,46 +4,45 @@ import Joi from 'joi';
 import { secureAlphanumericSchema } from '@shared/validators/secureCode.validator';
 
 export const itemParamsSchema = Joi.object({
-  itemCodigo: secureAlphanumericSchema(1, 16)
-    .messages({
-      'any.required': 'Código do item é obrigatório',
-      'string.min': 'Código do item deve ter pelo menos 1 caractere',
-      'string.max': 'Código do item não pode ter mais de 16 caracteres',
-    }),
+  itemCodigo: secureAlphanumericSchema(1, 16).messages({
+    'any.required': 'Código do item é obrigatório',
+    'string.min': 'Código do item deve ter pelo menos 1 caractere',
+    'string.max': 'Código do item não pode ter mais de 16 caracteres',
+  }),
 });
 
-export interface ValidationResult<T = any> {
+export interface ValidationResult<T = unknown> {
   valid: boolean;
   data?: T;
   error?: string;
 }
 
 export function validateItemInformacoesGeraisRequest(
-  params: any
+  params: unknown
 ): ValidationResult<{ itemCodigo: string }> {
   // Trata string vazia ANTES do Joi
-  if (params && params.itemCodigo === '') {
+  if (params && typeof params === 'object' && 'itemCodigo' in params && params.itemCodigo === '') {
     return {
       valid: false,
-      error: 'Código do item é obrigatório'
+      error: 'Código do item é obrigatório',
     };
   }
 
   const { error, value } = itemParamsSchema.validate(params, {
     abortEarly: false,
-    stripUnknown: true
+    stripUnknown: true,
   });
 
   if (error) {
-    const message = error.details.map(d => d.message).join('; ');
+    const message = error.details.map((d) => d.message).join('; ');
     return {
       valid: false,
-      error: message
+      error: message,
     };
   }
 
   return {
     valid: true,
-    data: value
+    data: value,
   };
 }

@@ -30,7 +30,7 @@ export enum UserTier {
   FREE = 'free',
   PREMIUM = 'premium',
   ENTERPRISE = 'enterprise',
-  ADMIN = 'admin'
+  ADMIN = 'admin',
 }
 
 /**
@@ -58,10 +58,29 @@ export interface ApiKeyConfig {
   createdAt: Date;
 
   /** Data/hora de expiração (opcional, undefined = permanente) */
-  expiresAt?: Date;
+  expiresAt?: Date | undefined;
 
   /** Metadados customizados (IPs permitidos, scopes, analytics, etc) */
-  metadata?: Record<string, any>;
+  metadata?: Record<string, any> | undefined;
+}
+
+/**
+ * Estatísticas de API Keys
+ */
+export interface ApiKeyStats {
+  /** Total de API keys */
+  total: number;
+  /** API keys ativas */
+  active: number;
+  /** API keys inativas */
+  inactive: number;
+  /** Contagem por tier */
+  byTier: {
+    free: number;
+    premium: number;
+    enterprise: number;
+    admin: number;
+  };
 }
 
 /**
@@ -106,37 +125,37 @@ export const RATE_LIMIT_CONFIGS: Record<UserTier, RateLimitConfig> = {
     limits: {
       perMinute: 10,
       perHour: 100,
-      perDay: 1000
+      perDay: 1000,
     },
-    burstAllowance: 5
+    burstAllowance: 5,
   },
   [UserTier.PREMIUM]: {
     tier: UserTier.PREMIUM,
     limits: {
       perMinute: 60,
       perHour: 1000,
-      perDay: 10000
+      perDay: 10000,
     },
-    burstAllowance: 20
+    burstAllowance: 20,
   },
   [UserTier.ENTERPRISE]: {
     tier: UserTier.ENTERPRISE,
     limits: {
       perMinute: 300,
       perHour: 10000,
-      perDay: 100000
+      perDay: 100000,
     },
-    burstAllowance: 100
+    burstAllowance: 100,
   },
   [UserTier.ADMIN]: {
     tier: UserTier.ADMIN,
     limits: {
       perMinute: 1000,
       perHour: 50000,
-      perDay: 1000000
+      perDay: 1000000,
     },
-    burstAllowance: 500
-  }
+    burstAllowance: 500,
+  },
 };
 
 /**
@@ -149,6 +168,7 @@ export const RATE_LIMIT_CONFIGS: Record<UserTier, RateLimitConfig> = {
  * @global
  */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       /**
@@ -159,17 +179,26 @@ declare global {
 
       /**
        * Dados simplificados do usuário autenticado
-       * Populado por: apiKeyAuth ou optionalApiKeyAuth middleware
+       * Populado por: apiKeyAuth, optionalApiKeyAuth ou jwt middleware
        */
       user?: {
         /** User ID único */
         id: string;
 
         /** Nome para exibição */
-        name: string;
+        name?: string;
+
+        /** Email do usuário (JWT auth) */
+        email?: string;
 
         /** Tier para rate limiting */
-        tier: UserTier;
+        tier?: UserTier;
+
+        /** Roles para autorização (JWT auth) */
+        roles?: string[];
+
+        /** Permissões especiais do usuário (export:unlimited, etc) */
+        permissions?: string[];
       };
     }
   }

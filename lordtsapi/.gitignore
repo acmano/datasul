@@ -1,6 +1,5 @@
 # Dependencies
 node_modules/
-package-lock.json
 yarn.lock
 
 # Environment
@@ -39,3 +38,9 @@ tmp/
 temp/
 .jest-cache/
 .stryker-tmp/
+
+# NPM
+.npmrc
+
+# Claude Code
+claude-code-agents-wizard-v2/

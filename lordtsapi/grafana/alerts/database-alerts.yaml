@@ -1,0 +1,387 @@
+groups:
+  - name: database_connection_health
+    interval: 30s
+    rules:
+      - alert: DatabaseConnectionDown
+        expr: db_connection_up == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+        annotations:
+          summary: "Database connection {{ $labels.connection }} is DOWN"
+          description: "Connection {{ $labels.connection }} ({{ $labels.system_type }}/{{ $labels.environment }}) has been unreachable for 2 minutes."
+          impact: "Queries to this connection will fail. Service degradation expected."
+          remediation: "Check database server status at {{ $labels.hostname }}:{{ $labels.port }}. Verify network connectivity and credentials."
+          dashboard: "/d/database-connection-details?var-connection={{ $labels.connection }}"
+
+      - alert: DatabaseConnectionDegraded
+        expr: db_connection_up == 1 and avg_over_time(db_connection_up[5m]) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: availability
+        annotations:
+          summary: "Database connection {{ $labels.connection }} is flapping"
+          description: "Connection {{ $labels.connection }} has been intermittently down (< 95% uptime in last 5 minutes)."
+          impact: "Intermittent query failures and increased latency due to reconnections."
+          remediation: "Investigate network stability and database server health."
+
+  - name: database_error_rates
+    interval: 30s
+    rules:
+      - alert: HighErrorRateCritical
+        expr: |
+          sum(rate(db_queries_failed[5m])) by (connection) /
+          sum(rate(db_queries_total[5m])) by (connection) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: reliability
+        annotations:
+          summary: "Critical error rate on {{ $labels.connection }} (> 5%)"
+          description: "Connection {{ $labels.connection }} has {{ $value | humanizePercentage }} error rate over the last 5 minutes."
+          impact: "More than 5% of queries are failing. Severe service degradation."
+          remediation: "Check circuit breaker state, database logs, and connection pool settings. Consider scaling or failover."
+          dashboard: "/d/database-connection-details?var-connection={{ $labels.connection }}"
+
+      - alert: HighErrorRateWarning
+        expr: |
+          sum(rate(db_queries_failed[5m])) by (connection) /
+          sum(rate(db_queries_total[5m])) by (connection) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: reliability
+        annotations:
+          summary: "Elevated error rate on {{ $labels.connection }} (> 1%)"
+          description: "Connection {{ $labels.connection }} has {{ $value | humanizePercentage }} error rate."
+          impact: "1-5% of queries failing. Partial service degradation."
+          remediation: "Monitor closely. Review query patterns and database performance."
+
+      - alert: ErrorSpike
+        expr: |
+          (sum(rate(db_queries_failed[5m])) by (connection) /
+           sum(rate(db_queries_total[5m])) by (connection)) >
+          (sum(rate(db_queries_failed[1h])) by (connection) /
+           sum(rate(db_queries_total[1h])) by (connection)) * 3
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+          category: anomaly
+        annotations:
+          summary: "Error rate spike on {{ $labels.connection }}"
+          description: "Error rate has tripled compared to the last hour baseline."
+          impact: "Sudden increase in failures may indicate an ongoing issue."
+          remediation: "Investigate recent changes, check for query timeouts or deadlocks."
+
+  - name: database_latency
+    interval: 30s
+    rules:
+      - alert: HighLatencyCritical
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le, connection)
+          ) > 1
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: performance
+        annotations:
+          summary: "Critical latency on {{ $labels.connection }} (P95 > 1s)"
+          description: "95th percentile query latency is {{ $value }}s for {{ $labels.connection }}."
+          impact: "Queries taking over 1 second. Severe performance degradation affecting user experience."
+          remediation: "Check database server load, review slow queries, consider adding indexes or optimizing queries."
+          dashboard: "/d/database-connection-details?var-connection={{ $labels.connection }}"
+
+      - alert: HighLatencyWarning
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le, connection)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "Elevated latency on {{ $labels.connection }} (P95 > 500ms)"
+          description: "95th percentile query latency is {{ $value }}s."
+          impact: "Queries slower than SLA target. May affect user experience."
+          remediation: "Monitor database performance metrics, check for long-running queries."
+
+      - alert: LatencySpike
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le, connection)
+          ) >
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[1h])) by (le, connection)
+          ) * 2
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+          category: anomaly
+        annotations:
+          summary: "Latency spike on {{ $labels.connection }}"
+          description: "P95 latency has doubled compared to the last hour."
+          impact: "Sudden latency increase may indicate resource contention."
+          remediation: "Check database server CPU/memory, review active queries."
+
+  - name: database_circuit_breaker
+    interval: 30s
+    rules:
+      - alert: CircuitBreakerOpen
+        expr: db_circuit_breaker_state{state="OPEN"} == 1
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+        annotations:
+          summary: "Circuit breaker OPEN for {{ $labels.connection }}"
+          description: "Circuit breaker has opened for {{ $labels.connection }} due to repeated failures."
+          impact: "All queries to this connection are being rejected. Service unavailable for this connection."
+          remediation: "Investigate underlying connection issues. Circuit will attempt recovery automatically after timeout."
+          dashboard: "/d/database-connection-details?var-connection={{ $labels.connection }}"
+
+      - alert: CircuitBreakerHalfOpen
+        expr: db_circuit_breaker_state{state="HALF_OPEN"} == 1
+        for: 2m
+        labels:
+          severity: warning
+          component: database
+          category: availability
+        annotations:
+          summary: "Circuit breaker testing recovery for {{ $labels.connection }}"
+          description: "Circuit breaker is in HALF_OPEN state, testing if connection has recovered."
+          impact: "Limited queries allowed to test connection recovery. May fail back to OPEN if tests fail."
+          remediation: "Monitor closely. If repeatedly failing to recover, investigate root cause."
+
+      - alert: FrequentCircuitBreakerTransitions
+        expr: |
+          sum(increase(db_circuit_breaker_transitions_total[15m])) by (connection) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: stability
+        annotations:
+          summary: "Frequent circuit breaker state changes on {{ $labels.connection }}"
+          description: "Circuit breaker has changed state {{ $value }} times in the last 15 minutes."
+          impact: "Connection is unstable, repeatedly failing and recovering."
+          remediation: "Investigate intermittent connection issues, network stability, or database server problems."
+
+  - name: database_connection_pool
+    interval: 30s
+    rules:
+      - alert: ConnectionPoolExhausted
+        expr: |
+          (db_pool_active_connections / db_pool_max_connections) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: capacity
+        annotations:
+          summary: "Connection pool nearly exhausted for {{ $labels.connection }}"
+          description: "Connection pool is {{ $value | humanizePercentage }} utilized (> 95%)."
+          impact: "New queries will be queued or rejected. Service degradation expected."
+          remediation: "Increase pool size, investigate connection leaks, or scale application instances."
+          dashboard: "/d/database-connection-details?var-connection={{ $labels.connection }}"
+
+      - alert: ConnectionPoolHighUtilization
+        expr: |
+          (db_pool_active_connections / db_pool_max_connections) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: capacity
+        annotations:
+          summary: "High connection pool utilization on {{ $labels.connection }}"
+          description: "Connection pool is {{ $value | humanizePercentage }} utilized (> 85%)."
+          impact: "Approaching pool limit. May cause queuing during traffic spikes."
+          remediation: "Monitor traffic patterns, consider increasing pool size or optimizing query performance."
+
+      - alert: ConnectionPoolWaitingRequests
+        expr: db_pool_waiting_requests > 10
+        for: 3m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "Queries waiting for connections on {{ $labels.connection }}"
+          description: "{{ $value }} queries are waiting for available connections in the pool."
+          impact: "Queries experiencing delays waiting for connections. Increased latency."
+          remediation: "Increase pool size, optimize query performance to release connections faster."
+
+  - name: database_retry_exhaustion
+    interval: 30s
+    rules:
+      - alert: HighRetryRate
+        expr: |
+          sum(rate(db_retry_attempts_total[5m])) by (connection) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: reliability
+        annotations:
+          summary: "High retry rate on {{ $labels.connection }}"
+          description: "{{ $value }} retries per second on {{ $labels.connection }}."
+          impact: "Many queries requiring retries. Indicates intermittent failures."
+          remediation: "Investigate connection stability, network issues, or database timeouts."
+
+      - alert: LowRetrySuccessRate
+        expr: |
+          sum(rate(db_retry_success_total[5m])) by (connection) /
+          sum(rate(db_retry_attempts_total[5m])) by (connection) < 0.5
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          category: reliability
+        annotations:
+          summary: "Low retry success rate on {{ $labels.connection }}"
+          description: "Only {{ $value | humanizePercentage }} of retries are succeeding."
+          impact: "Most retries failing. Queries exhausting retry attempts."
+          remediation: "Investigate persistent connection issues. May need to adjust retry strategy or fix underlying problem."
+
+  - name: database_sla
+    interval: 1m
+    rules:
+      - alert: SLAViolation
+        expr: |
+          (sum(rate(db_query_duration_seconds_bucket{le="0.5"}[5m])) /
+           sum(rate(db_query_duration_seconds_count[5m]))) < 0.999
+        for: 10m
+        labels:
+          severity: critical
+          component: database
+          category: sla
+        annotations:
+          summary: "SLA violation: < 99.9% of queries under 500ms"
+          description: "Only {{ $value | humanizePercentage }} of queries are completing within SLA target (< 500ms)."
+          impact: "SLA breach. Performance below acceptable levels."
+          remediation: "Review slow queries, optimize database performance, consider scaling."
+          dashboard: "/d/database-alerts"
+
+      - alert: SLADegraded
+        expr: |
+          (sum(rate(db_query_duration_seconds_bucket{le="0.5"}[5m])) by (connection) /
+           sum(rate(db_query_duration_seconds_count[5m])) by (connection)) < 0.995
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: sla
+        annotations:
+          summary: "SLA degraded on {{ $labels.connection }} (< 99.5% under 500ms)"
+          description: "{{ $value | humanizePercentage }} of queries are within SLA target."
+          impact: "Approaching SLA violation. Performance degradation."
+          remediation: "Monitor closely, investigate slow queries."
+
+  - name: database_system_health
+    interval: 1m
+    rules:
+      - alert: SystemWideErrorRate
+        expr: |
+          sum(rate(db_queries_failed[5m])) /
+          sum(rate(db_queries_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+          category: reliability
+        annotations:
+          summary: "Elevated system-wide error rate (> 1%)"
+          description: "Overall error rate across all 28 connections is {{ $value | humanizePercentage }}."
+          impact: "System-wide issue affecting multiple connections."
+          remediation: "Investigate common factors: network issues, authentication problems, or infrastructure problems."
+
+      - alert: MultipleConnectionsDown
+        expr: count(db_connection_up == 0) > 3
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+        annotations:
+          summary: "Multiple database connections down ({{ $value }} connections)"
+          description: "{{ $value }} out of 28 connections are currently down."
+          impact: "Widespread outage affecting multiple databases. Service severely degraded."
+          remediation: "Investigate infrastructure issues: network outage, authentication service, or datacenter problems."
+
+      - alert: EnvironmentDown
+        expr: |
+          count(db_connection_up{environment="production"} == 0) ==
+          count(db_connection_up{environment="production"})
+        for: 1m
+        labels:
+          severity: critical
+          component: database
+          category: availability
+        annotations:
+          summary: "Entire {{ $labels.environment }} environment is down"
+          description: "All connections in {{ $labels.environment }} environment are unreachable."
+          impact: "Complete outage for {{ $labels.environment }} environment."
+          remediation: "URGENT: Check datacenter/environment status, network connectivity, firewall rules."
+
+      - alert: SystemWideLatencyIncrease
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(db_query_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          category: performance
+        annotations:
+          summary: "System-wide latency increase (P95 > 500ms)"
+          description: "Overall P95 latency across all connections is {{ $value }}s."
+          impact: "Widespread performance degradation affecting all databases."
+          remediation: "Investigate common infrastructure issues: network latency, shared resources, or load balancer problems."
+
+  - name: database_capacity_planning
+    interval: 5m
+    rules:
+      - alert: SustainedHighThroughput
+        expr: |
+          avg_over_time(
+            (sum(rate(db_queries_total[5m])) by (connection))[30m:]
+          ) > 1000
+        for: 30m
+        labels:
+          severity: info
+          component: database
+          category: capacity
+        annotations:
+          summary: "Sustained high throughput on {{ $labels.connection }}"
+          description: "Connection {{ $labels.connection }} averaging {{ $value }} queries/sec over 30 minutes."
+          impact: "No immediate impact, but may need capacity planning."
+          remediation: "Monitor for growth trends. Plan for scaling if trend continues."
+
+      - alert: TrafficGrowth
+        expr: |
+          sum(rate(db_queries_total[1h])) by (connection) >
+          sum(rate(db_queries_total[1h] offset 1d)) by (connection) * 1.5
+        for: 1h
+        labels:
+          severity: info
+          component: database
+          category: capacity
+        annotations:
+          summary: "50% traffic increase on {{ $labels.connection }} vs yesterday"
+          description: "Query volume has increased 50% compared to same time yesterday."
+          impact: "No immediate impact, but significant growth detected."
+          remediation: "Investigate cause of growth. Plan for capacity if sustained."

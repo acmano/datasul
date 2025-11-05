@@ -1,11 +1,11 @@
 // src/grupoDeEstoque/dadosCadastrais/informacoesGerais/__tests__/integration.test.ts
+import { log } from '@shared/utils/logger';
 
 import request from 'supertest';
 import { DatabaseTestHelper } from '@tests/helpers/database.helper';
 import app from '@/app';
 
 describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () => {
-
   let usingRealDatabase = false;
   let testGrupoDeEstoqueCode: string;
 
@@ -15,8 +15,8 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
 
     testGrupoDeEstoqueCode = '01';
 
-    console.log(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
-    console.log(`📦 Grupo de Estoque de teste: ${testGrupoDeEstoqueCode}`);
+    log.debug(`🔗 Banco: ${usingRealDatabase ? 'REAL' : 'MOCK'}`);
+    log.debug(`📦 Grupo de Estoque de teste: ${testGrupoDeEstoqueCode}`);
   });
 
   afterAll(async () => {
@@ -24,16 +24,13 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
   });
 
   describe('Conexão com Banco de Dados', () => {
-
     it('deve conectar com banco ou usar mock', async () => {
       const isReady = await DatabaseTestHelper.waitUntilReady(5000);
       expect(isReady).toBe(true);
     });
-
   });
 
   describe('Buscar Informações Gerais (Dados Reais)', () => {
-
     it('deve buscar grupo de estoque existente com sucesso', async () => {
       const startTime = Date.now();
 
@@ -67,11 +64,9 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
 
       expect(response.body).toHaveProperty('error');
     });
-
   });
 
   describe('Validação de Dados do Banco', () => {
-
     it('deve retornar estrutura de dados correta', async () => {
       const response = await request(app)
         .get(`/api/grupoDeEstoque/dadosCadastrais/informacoesGerais/${testGrupoDeEstoqueCode}`)
@@ -87,20 +82,18 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
         expect(typeof data.descricao).toBe('string');
       }
     });
-
   });
 
   describe('Performance (Banco Real)', () => {
-
     it('deve responder em menos de 2 segundos', async function () {
       if (!usingRealDatabase) {
-        console.log('⏭️  Teste de performance pulado - usando mock');
+        log.debug('⏭️  Teste de performance pulado - usando mock');
         return;
       }
 
       const startTime = Date.now();
 
-      await request(app)
+      const response = await request(app)
         .get(`/api/grupoDeEstoque/dadosCadastrais/informacoesGerais/${testGrupoDeEstoqueCode}`)
         .expect((res) => {
           expect([200, 404]).toContain(res.status);
@@ -109,11 +102,9 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(2000);
     });
-
   });
 
   describe('Edge Cases (Banco Real)', () => {
-
     it('deve validar código alfanumérico', async () => {
       const alphaCode = 'GE123';
 
@@ -149,14 +140,13 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
 
       expect(response.body).toHaveProperty('error');
     });
-
   });
 
   describe('Headers e Correlation ID', () => {
-
     it('deve incluir Correlation ID na resposta', async () => {
-      const response = await request(app)
-        .get(`/api/grupoDeEstoque/dadosCadastrais/informacoesGerais/${testGrupoDeEstoqueCode}`);
+      const response = await request(app).get(
+        `/api/grupoDeEstoque/dadosCadastrais/informacoesGerais/${testGrupoDeEstoqueCode}`
+      );
 
       expect(response.headers['x-correlation-id']).toBeDefined();
     });
@@ -170,11 +160,9 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
 
       expect(response.headers['x-correlation-id']).toBe(customId);
     });
-
   });
 
   describe('Timeout e Resilência', () => {
-
     it('não deve travar em requisição inválida', async () => {
       const response = await request(app)
         .get('/api/grupoDeEstoque/dadosCadastrais/informacoesGerais/INVALID')
@@ -183,13 +171,11 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
       expect(response.status).toBeDefined();
       expect([200, 404, 400]).toContain(response.status);
     });
-
   });
 
   describe('Resumo dos Testes', () => {
-
     it('deve informar fonte de dados usada', () => {
-      console.log(`
+      log.debug(`
         📊 RESULTADO DOS TESTES (GRUPO DE ESTOQUE):
         - Fonte de dados: ${usingRealDatabase ? 'BANCO REAL' : 'MOCK'}
         - Código testado: ${testGrupoDeEstoqueCode}
@@ -198,7 +184,5 @@ describe('INTEGRAÇÃO - API InformacoesGerais GrupoDeEstoque (Banco Real)', () 
 
       expect(usingRealDatabase).toBeDefined();
     });
-
   });
-
 });

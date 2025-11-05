@@ -2,23 +2,29 @@
 
 /**
  * Types específicos do módulo Familia Comercial - Informações Gerais
- * Types compartilhados importados de @datasul/shared-types
+ * Types compartilhados importados de @acmano/lordtsapi-shared-types
  */
 
-import {
-  ApiResponse,
-  FamiliaComercialData,
-  FamiliaComercialMasterQueryResult
-} from '@datasul/shared-types';
+import { ApiResponse, FamiliaComercialData } from '@acmano/lordtsapi-shared-types';
+
+// ============================================================================
+// QUERY RESULT TYPES (ODBC lowercase)
+// ============================================================================
+
+/**
+ * Resultado da query getFamiliaComercialMaster
+ * ODBC retorna colunas em lowercase após normalização
+ */
+export interface FamiliaComercialMasterQueryResult {
+  codigo: string;
+  descricao: string;
+}
 
 // ============================================================================
 // RE-EXPORTS (para compatibilidade)
 // ============================================================================
 
-export {
-  FamiliaComercialData,
-  FamiliaComercialMasterQueryResult
-};
+export { FamiliaComercialData };
 
 // ============================================================================
 // TYPES ESPECÍFICOS DESTE MÓDULO
@@ -39,4 +45,5 @@ export interface FamiliaComercialInformacoesGeraisRequestDTO {
 /**
  * DTO de resposta (usando ApiResponse genérico)
  */
-export type FamiliaComercialInformacoesGeraisResponseDTO = ApiResponse<FamiliaComercialInformacoesGerais>;
+export type FamiliaComercialInformacoesGeraisResponseDTO =
+  ApiResponse<FamiliaComercialInformacoesGerais>;

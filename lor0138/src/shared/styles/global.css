@@ -1,0 +1,438 @@
+/**
+ * 🎨 ESTILOS GLOBAIS
+ * Aplica os design tokens e sobrescreve padrões do Ant Design
+ */
+
+/* Importar tokens */
+@import './design-tokens.css';
+
+/* ========================================
+   1. RESET E BASE
+   ======================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  color: var(--color-text-primary);
+  background: var(--color-bg-layout);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+#root {
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ========================================
+   2. MELHORIAS DO ANT DESIGN
+   ======================================== */
+
+/* Cards com melhor elevação */
+.ant-card {
+  border-radius: var(--border-radius-md) !important;
+  box-shadow: var(--shadow-base) !important;
+  transition: var(--transition-base) !important;
+}
+
+.ant-card:hover {
+  box-shadow: var(--shadow-md) !important;
+}
+
+/* Botões com melhor feedback visual */
+.ant-btn {
+  border-radius: var(--border-radius-base) !important;
+  font-weight: var(--font-weight-medium) !important;
+  transition: var(--transition-base) !important;
+  height: 32px !important;
+  padding: 0 15px !important;
+}
+
+.ant-btn-lg {
+  height: 40px !important;
+  padding: 0 20px !important;
+  font-size: var(--font-size-md) !important;
+}
+
+.ant-btn-sm {
+  height: 24px !important;
+  padding: 0 var(--spacing-2) !important;
+}
+
+.ant-btn-primary {
+  box-shadow: var(--shadow-primary) !important;
+}
+
+.ant-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(24, 144, 255, 0.3) !important;
+}
+
+/* Inputs com melhor aparência */
+.ant-input,
+.ant-input-number,
+.ant-picker,
+.ant-select-selector {
+  border-radius: var(--border-radius-base) !important;
+  border-color: var(--color-border-base) !important;
+  transition: var(--transition-base) !important;
+  height: 32px !important;
+  padding: 4px 11px !important;
+  background-color: transparent !important;
+}
+
+.ant-input::placeholder,
+.ant-select-selection-placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+.ant-input:hover,
+.ant-input-number:hover,
+.ant-picker:hover,
+.ant-select-selector:hover {
+  border-color: var(--color-primary-light) !important;
+}
+
+.ant-input:focus,
+.ant-input-focused,
+.ant-input-number:focus,
+.ant-input-number-focused,
+.ant-picker:focus,
+.ant-picker-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.1) !important;
+}
+
+/* Inputs Large */
+.ant-input-lg,
+.ant-input-number-lg,
+.ant-picker-lg,
+.ant-select-lg .ant-select-selector {
+  height: 40px !important;
+  padding: 8px 12px !important;
+}
+
+/* Labels de formulário */
+.ant-form-item-label > label {
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-text-primary) !important;
+  font-size: var(--font-size-base) !important;
+}
+
+/* Tabelas mais elegantes */
+.ant-table-wrapper {
+  border-radius: var(--border-radius-md) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow-base) !important;
+}
+
+.ant-table-thead > tr > th {
+  background: var(--color-bg-spotlight) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  color: var(--color-text-primary) !important;
+  border-bottom: 2px solid var(--color-border-light) !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: var(--color-bg-spotlight) !important;
+  cursor: pointer;
+}
+
+.ant-table-tbody > tr.selected-row {
+  background: var(--color-primary-lightest) !important;
+}
+
+.ant-table-tbody > tr.selected-row:hover {
+  background: var(--color-primary-lighter) !important;
+}
+
+/* Tabs mais destacadas */
+.ant-tabs-nav {
+  margin-bottom: var(--spacing-6) !important;
+}
+
+.ant-tabs-tab {
+  font-weight: var(--font-weight-medium) !important;
+  font-size: var(--font-size-base) !important;
+  padding: var(--spacing-3) var(--spacing-4) !important;
+  transition: var(--transition-base) !important;
+}
+
+.ant-tabs-tab-active {
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+/* Badges mais visíveis */
+.ant-badge-count {
+  font-size: var(--font-size-xs) !important;
+  font-weight: var(--font-weight-semibold) !important;
+  height: 18px !important;
+  line-height: 18px !important;
+  min-width: 18px !important;
+  border-radius: var(--border-radius-full) !important;
+}
+
+/* Modal com melhor aparência */
+.ant-modal-content {
+  border-radius: var(--border-radius-md) !important;
+  box-shadow: var(--shadow-xl) !important;
+}
+
+.ant-modal-header {
+  border-radius: var(--border-radius-md) var(--border-radius-md) 0 0 !important;
+  padding: var(--spacing-5) var(--spacing-6) !important;
+}
+
+.ant-modal-body {
+  padding: var(--spacing-6) !important;
+}
+
+/* Collapse (acordeão) */
+.ant-collapse-ghost > .ant-collapse-item {
+  border-top: 1px solid var(--color-border-light) !important;
+  margin-top: var(--spacing-4) !important;
+}
+
+.ant-collapse-header {
+  padding: var(--spacing-3) 0 !important;
+  font-weight: var(--font-weight-medium) !important;
+  color: var(--color-primary) !important;
+  transition: var(--transition-base) !important;
+}
+
+.ant-collapse-header:hover {
+  color: var(--color-primary-light) !important;
+}
+
+/* Sidebar (Menu Lateral) */
+.ant-layout-sider {
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.ant-menu-item {
+  margin: var(--spacing-1) var(--spacing-2) !important;
+  border-radius: var(--border-radius-base) !important;
+  transition: var(--transition-base) !important;
+}
+
+.ant-menu-item-selected {
+  background-color: var(--color-primary-lightest) !important;
+  font-weight: var(--font-weight-semibold) !important;
+}
+
+.ant-menu-item:hover {
+  background-color: var(--color-bg-spotlight) !important;
+}
+
+/* ========================================
+   3. ACESSIBILIDADE
+   ======================================== */
+
+/* Foco visível para navegação por teclado */
+.ant-btn:focus-visible,
+.ant-input:focus-visible,
+.ant-select-selector:focus-visible,
+.ant-checkbox-input:focus-visible + .ant-checkbox-inner,
+.ant-radio-input:focus-visible + .ant-radio-inner {
+  outline: 2px solid var(--color-primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* ========================================
+   4. RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+  /* Ajustes para mobile */
+  .ant-card {
+    border-radius: var(--border-radius-base) !important;
+  }
+
+  .ant-card-body {
+    padding: var(--spacing-4) !important;
+  }
+
+  /* Botões e inputs com área de toque adequada */
+  .ant-btn {
+    min-height: 44px !important;
+  }
+
+  .ant-input,
+  .ant-input-number,
+  .ant-picker,
+  .ant-select-selector {
+    min-height: 44px !important;
+  }
+
+  /* Fonte um pouco menor em mobile */
+  body {
+    font-size: var(--font-size-sm) !important;
+  }
+}
+
+/* ========================================
+   5. UTILITÁRIOS CUSTOMIZADOS
+   ======================================== */
+
+/* Classes auxiliares de espaçamento */
+.u-mt-1 {
+  margin-top: var(--spacing-1) !important;
+}
+.u-mt-2 {
+  margin-top: var(--spacing-2) !important;
+}
+.u-mt-3 {
+  margin-top: var(--spacing-3) !important;
+}
+.u-mt-4 {
+  margin-top: var(--spacing-4) !important;
+}
+.u-mt-6 {
+  margin-top: var(--spacing-6) !important;
+}
+.u-mt-8 {
+  margin-top: var(--spacing-8) !important;
+}
+
+.u-mb-1 {
+  margin-bottom: var(--spacing-1) !important;
+}
+.u-mb-2 {
+  margin-bottom: var(--spacing-2) !important;
+}
+.u-mb-3 {
+  margin-bottom: var(--spacing-3) !important;
+}
+.u-mb-4 {
+  margin-bottom: var(--spacing-4) !important;
+}
+.u-mb-6 {
+  margin-bottom: var(--spacing-6) !important;
+}
+.u-mb-8 {
+  margin-bottom: var(--spacing-8) !important;
+}
+
+.u-p-2 {
+  padding: var(--spacing-2) !important;
+}
+.u-p-4 {
+  padding: var(--spacing-4) !important;
+}
+.u-p-6 {
+  padding: var(--spacing-6) !important;
+}
+.u-p-8 {
+  padding: var(--spacing-8) !important;
+}
+
+/* Classes de cor de texto */
+.u-text-primary {
+  color: var(--color-primary) !important;
+}
+.u-text-success {
+  color: var(--color-success) !important;
+}
+.u-text-warning {
+  color: var(--color-warning) !important;
+}
+.u-text-error {
+  color: var(--color-error) !important;
+}
+.u-text-secondary {
+  color: var(--color-text-secondary) !important;
+}
+
+/* Classes de peso de fonte */
+.u-font-light {
+  font-weight: var(--font-weight-light) !important;
+}
+.u-font-normal {
+  font-weight: var(--font-weight-normal) !important;
+}
+.u-font-medium {
+  font-weight: var(--font-weight-medium) !important;
+}
+.u-font-semibold {
+  font-weight: var(--font-weight-semibold) !important;
+}
+.u-font-bold {
+  font-weight: var(--font-weight-bold) !important;
+}
+
+/* ========================================
+   6. ANIMAÇÕES SUAVES
+   ======================================== */
+
+/* Tooltips sempre visíveis */
+.ant-tooltip-inner {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  color: #fff !important;
+  font-weight: 500 !important;
+}
+
+.ant-tooltip-arrow-content {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+}
+
+/* Cards com contraste no modo claro */
+.ant-card {
+  background: #fafafa !important;
+  border: 1px solid #f0f0f0 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+  margin-bottom: 12px !important;
+}
+
+.ant-card:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Card body mais compacto */
+.ant-card-body {
+  padding: 12px !important;
+}
+
+/* Form items mais compactos */
+.ant-form-item {
+  margin-bottom: 8px !important;
+}
+
+/* Label do form item sem padding */
+.ant-form-item-label {
+  padding-bottom: 2px !important;
+}
+
+/* Menu lateral ocupa altura total */
+.ant-menu-inline,
+.ant-menu-vertical {
+  height: 100% !important;
+  border-right: 1px solid var(--color-border-base) !important;
+}
+
+/* Tabelas com header mais destacado */
+.ant-table-thead > tr > th {
+  background: #f0f0f0 !important;
+  font-weight: 600 !important;
+}
+
+.ant-card,
+.ant-btn,
+.ant-input,
+.ant-select-selector,
+.ant-table-row,
+.ant-menu-item,
+.ant-tabs-tab {
+  transition: all var(--transition-duration-base) var(--transition-timing-ease-in-out) !important;
+}

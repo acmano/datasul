@@ -17,6 +17,7 @@
 
 import sql from 'mssql';
 import odbc from 'odbc';
+import { log } from '@shared/utils/logger';
 
 /**
  * Tipos de conexão suportados
@@ -158,8 +159,8 @@ export class DatabaseManager {
    * // {
    * //   server: '10.105.0.4\LOREN',
    * //   database: '',  // Usa default do user
-   * //   user: 'dcloren',
-   * //   password: '#dcloren#',
+   * //   user: 'sysprogress',
+   * //   password: 'sysprogress',
    * //   ...
    * // }
    * ```
@@ -269,9 +270,9 @@ export class DatabaseManager {
    * ```typescript
    * try {
    *   await DatabaseManager.initialize();
-   *   console.log('Banco conectado!');
+   *   log.info('Banco conectado!');
    * } catch (error) {
-   *   console.error('Falha ao conectar:', error);
+   *   log.error('Falha ao conectar:', error);
    * }
    * ```
    *
@@ -315,13 +316,12 @@ export class DatabaseManager {
   private static async doInitialize(): Promise<void> {
     try {
       // Determinar tipo de conexão
-      this.connectionType =
-        (process.env.DB_CONNECTION_TYPE as ConnectionType) || 'odbc';
+      this.connectionType = (process.env.DB_CONNECTION_TYPE as ConnectionType) || 'odbc';
 
       // Verificar se deve usar mock data
       const useMockEnv = process.env.USE_MOCK_DATA?.toLowerCase();
       if (useMockEnv === 'true' || useMockEnv === '1') {
-        console.log('⚠️  MODO MOCK ATIVADO via USE_MOCK_DATA=true');
+        log.info('⚠️  MODO MOCK ATIVADO via USE_MOCK_DATA=true');
         this.useMockData = true;
         this.isInitialized = true;
         return;
@@ -335,15 +335,16 @@ export class DatabaseManager {
       }
 
       this.isInitialized = true;
-      console.log('✅ Banco de dados inicializado com sucesso');
+      log.info('✅ Banco de dados inicializado com sucesso');
     } catch (error) {
       // Fallback para mock data
-      console.error('❌ Erro ao conectar ao banco:', error);
-      console.log('⚠️  Usando MOCK_DATA como fallback');
+      log.error('❌ Erro ao conectar ao banco:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      log.info('⚠️  Usando MOCK_DATA como fallback');
 
       this.useMockData = true;
-      this.connectionError =
-        error instanceof Error ? error.message : String(error);
+      this.connectionError = error instanceof Error ? error.message : String(error);
       this.isInitialized = true;
     }
   }
@@ -370,7 +371,7 @@ export class DatabaseManager {
    * ```
    */
   private static async initializeSqlServer(): Promise<void> {
-    console.log('📡 Inicializando SQL Server...');
+    log.info('📡 Inicializando SQL Server...');
 
     const configEmp = this.getSqlServerConfigEmp();
     const configMult = this.getSqlServerConfigMult();
@@ -382,7 +383,7 @@ export class DatabaseManager {
     // Conectar em paralelo
     await Promise.all([this.poolEmp.connect(), this.poolMult.connect()]);
 
-    console.log('✅ SQL Server conectado com sucesso');
+    log.info('✅ SQL Server conectado com sucesso');
   }
 
   /**
@@ -407,7 +408,7 @@ export class DatabaseManager {
    * ```
    */
   private static async initializeOdbc(): Promise<void> {
-    console.log('📡 Inicializando ODBC...');
+    log.info('📡 Inicializando ODBC...');
 
     const connStrEmp = this.getOdbcConnectionString('EMP');
     const connStrMult = this.getOdbcConnectionString('MULT');
@@ -416,7 +417,7 @@ export class DatabaseManager {
     this.odbcPoolEmp = await odbc.pool(connStrEmp);
     this.odbcPoolMult = await odbc.pool(connStrMult);
 
-    console.log('✅ ODBC conectado com sucesso');
+    log.info('✅ ODBC conectado com sucesso');
   }
 
   // ====================================================================
@@ -453,7 +454,7 @@ export class DatabaseManager {
    * IMPORTANTE: Para queries com parâmetros, use queryEmpWithParams()
    * para prevenir SQL Injection
    */
-  static async queryEmp(sql: string): Promise<any> {
+  static async queryEmp<T = unknown>(sql: string): Promise<T[]> {
     if (this.useMockData) {
       return this.getMockData();
     }
@@ -473,7 +474,7 @@ export class DatabaseManager {
         throw new Error('Pool ODBC EMP não está disponível');
       }
       const result = await this.odbcPoolEmp.query(sql);
-      return result;
+      return result as T[];
     }
   }
 
@@ -503,7 +504,7 @@ export class DatabaseManager {
    * `);
    * ```
    */
-  static async queryMult(sql: string): Promise<any> {
+  static async queryMult<T = unknown>(sql: string): Promise<T[]> {
     if (this.useMockData) {
       return this.getMockData();
     }
@@ -523,7 +524,7 @@ export class DatabaseManager {
         throw new Error('Pool ODBC MULT não está disponível');
       }
       const result = await this.odbcPoolMult.query(sql);
-      return result;
+      return result as T[];
     }
   }
 
@@ -549,8 +550,8 @@ export class DatabaseManager {
    * // { itens: [...] }
    * ```
    */
-  private static getMockData(): any {
-    return this.mockData;
+  private static getMockData<T = unknown>(): T[] {
+    return this.mockData as T[];
   }
 
   /**
@@ -604,7 +605,7 @@ export class DatabaseManager {
   static getConnectionStatus(): {
     type: ConnectionType;
     mode: 'MOCK_DATA' | 'REAL_DATABASE';
-    error?: string;
+    error?: string | undefined;
   } {
     return {
       type: this.connectionType,
@@ -643,7 +644,7 @@ export class DatabaseManager {
    * - Não lança erro se pools já estiverem fechados
    */
   static async close(): Promise<void> {
-    console.log('🔌 Fechando conexões do banco...');
+    log.info('🔌 Fechando conexões do banco...');
 
     try {
       // Fechar pools SQL Server
@@ -671,9 +672,11 @@ export class DatabaseManager {
       this.isInitialized = false;
       this.initializationPromise = null;
 
-      console.log('✅ Conexões fechadas com sucesso');
+      log.info('✅ Conexões fechadas com sucesso');
     } catch (error) {
-      console.error('❌ Erro ao fechar conexões:', error);
+      log.error('❌ Erro ao fechar conexões:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

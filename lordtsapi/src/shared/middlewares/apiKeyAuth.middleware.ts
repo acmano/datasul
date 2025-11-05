@@ -20,17 +20,14 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiKeyService } from '@shared/services/apiKey.service';
 import { AuthenticationError } from '@shared/errors/errors';
 import { log } from '@shared/utils/logger';
+import { addDefaultPermissions } from '@shared/utils/permissions';
 
 /**
  * Middleware de autenticação obrigatória por API Key
  *
  * @throws {AuthenticationError} Se API Key não fornecida ou inválida
  */
-export async function apiKeyAuth(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> {
+export async function apiKeyAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const apiKey = extractApiKey(req);
 
@@ -43,9 +40,7 @@ export async function apiKeyAuth(
     const keyConfig = await ApiKeyService.validateKey(apiKey);
 
     if (!keyConfig) {
-      throw new AuthenticationError(
-        `API Key inválida ou expirada: ${maskApiKey(apiKey)}`
-      );
+      throw new AuthenticationError(`API Key inválida ou expirada: ${maskApiKey(apiKey)}`);
     }
 
     // Adiciona informações ao request
@@ -53,14 +48,15 @@ export async function apiKeyAuth(
     req.user = {
       id: keyConfig.userId,
       name: keyConfig.userName,
-      tier: keyConfig.tier
+      tier: keyConfig.tier,
+      permissions: addDefaultPermissions(keyConfig.tier),
     };
 
     log.debug('Autenticação via API Key', {
       correlationId: req.id,
       userId: keyConfig.userId,
       tier: keyConfig.tier,
-      apiKey: maskApiKey(apiKey)
+      apiKey: maskApiKey(apiKey),
     });
 
     next();
@@ -94,18 +90,19 @@ export async function optionalApiKeyAuth(
       req.user = {
         id: keyConfig.userId,
         name: keyConfig.userName,
-        tier: keyConfig.tier
+        tier: keyConfig.tier,
+        permissions: addDefaultPermissions(keyConfig.tier),
       };
 
       log.debug('Autenticação opcional via API Key', {
         correlationId: req.id,
         userId: keyConfig.userId,
-        tier: keyConfig.tier
+        tier: keyConfig.tier,
       });
     }
 
     next();
-  } catch (error) {
+  } catch {
     // Ignora erros no modo opcional
     next();
   }

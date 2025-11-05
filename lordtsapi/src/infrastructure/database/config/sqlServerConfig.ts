@@ -81,8 +81,8 @@ import { config } from '@config/env.config';
  * ```env
  * DB_SERVER=10.105.0.4\LOREN
  * DB_PORT=1433
- * DB_USER=dcloren
- * DB_PASSWORD='#dcloren#'
+ * DB_USER=sysprogress
+ * DB_PASSWORD='sysprogress'
  * DB_DATABASE_EMP=
  *
  * # ✅ Pode usar formatos legíveis
@@ -98,12 +98,12 @@ import { config } from '@config/env.config';
  * import { getSqlServerConfigEmp } from './sqlServerConfig';
  *
  * const config = getSqlServerConfigEmp();
- * console.log(config);
+ * log.info(config);
  * // {
  * //   server: '10.105.0.4\\LOREN',
  * //   port: 1433,
- * //   user: 'dcloren',
- * //   password: '#dcloren#',
+ * //   user: 'sysprogress',
+ * //   password: 'sysprogress',
  * //   database: '',  // vazio = usa default do SQL user
  * //   connectionTimeout: 30000,  // convertido de '30s'
  * //   requestTimeout: 60000,     // convertido de '60s'
@@ -117,12 +117,12 @@ import { config } from '@config/env.config';
  * // sqlServerConfig.ts (este arquivo)
  * // .env: DB_CONNECTION_TIMEOUT=30s
  * const config1 = getSqlServerConfigEmp();
- * console.log(config1.connectionTimeout);  // 30000ms ✅ CORRETO
+ * log.info(config1.connectionTimeout);  // 30000ms ✅ CORRETO
  *
  * // serverConfig.ts (legacy)
  * // .env: DB_CONNECTION_TIMEOUT=30s
  * const config2 = getSqlServerConfigEmp();
- * console.log(config2.connectionTimeout);  // 30ms ❌ ERRADO (parseInt ignora 's')
+ * log.info(config2.connectionTimeout);  // 30ms ❌ ERRADO (parseInt ignora 's')
  * ```
  *
  * @example Usando em DatabaseManager
@@ -147,12 +147,12 @@ import { config } from '@config/env.config';
  *
  * try {
  *   await connection.connect();
- *   console.log('✅ Conectado ao banco EMP');
+ *   log.info('✅ Conectado ao banco EMP');
  *
  *   const result = await connection.query('SELECT GETDATE() as data');
- *   console.log('Data do servidor:', result.recordset[0].data);
+ *   log.info('Data do servidor:', result.recordset[0].data);
  * } catch (error) {
- *   console.error('❌ Erro ao conectar:', error);
+ *   log.error('❌ Erro ao conectar:', error);
  * } finally {
  *   await connection.close();
  * }
@@ -267,8 +267,8 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * # Configurações compartilhadas (EMP e MULT usam as mesmas)
  * DB_SERVER=10.105.0.4\LOREN
  * DB_PORT=1433
- * DB_USER=dcloren
- * DB_PASSWORD='#dcloren#'
+ * DB_USER=sysprogress
+ * DB_PASSWORD='sysprogress'
  * DB_CONNECTION_TIMEOUT=30s
  * DB_REQUEST_TIMEOUT=60s
  *
@@ -282,12 +282,12 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * import { getSqlServerConfigMult } from './sqlServerConfig';
  *
  * const config = getSqlServerConfigMult();
- * console.log(config);
+ * log.info(config);
  * // {
  * //   server: '10.105.0.4\\LOREN',  // mesmo de EMP
  * //   port: 1433,                    // mesmo de EMP
- * //   user: 'dcloren',               // mesmo de EMP
- * //   password: '#dcloren#',         // mesmo de EMP
+ * //   user: 'sysprogress',           // mesmo de EMP
+ * //   password: 'sysprogress',       // mesmo de EMP
  * //   database: '',                  // DB_DATABASE_MULT
  * //   connectionTimeout: 30000,      // mesmo de EMP
  * //   requestTimeout: 60000,         // mesmo de EMP
@@ -304,13 +304,13 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * const multConfig = getSqlServerConfigMult();
  *
  * // Todas as propriedades são iguais...
- * console.log(empConfig.server === multConfig.server);  // true
- * console.log(empConfig.port === multConfig.port);      // true
- * console.log(empConfig.user === multConfig.user);      // true
- * console.log(empConfig.connectionTimeout === multConfig.connectionTimeout);  // true
+ * log.info(empConfig.server === multConfig.server);  // true
+ * log.info(empConfig.port === multConfig.port);      // true
+ * log.info(empConfig.user === multConfig.user);      // true
+ * log.info(empConfig.connectionTimeout === multConfig.connectionTimeout);  // true
  *
  * // ...exceto o database
- * console.log(empConfig.database === multConfig.database);  // false (única diferença)
+ * log.info(empConfig.database === multConfig.database);  // false (única diferença)
  * ```
  *
  * @example Usando ambas as conexões
@@ -322,11 +322,11 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  *
  * // Query no banco EMP
  * const empResult = await DatabaseManager.queryEmp('SELECT * FROM item WHERE it-codigo = "7530110"');
- * console.log('Item do EMP:', empResult);
+ * log.info('Item do EMP:', empResult);
  *
  * // Query no banco MULT
  * const multResult = await DatabaseManager.queryMult('SELECT * FROM estabelec WHERE cod-estabel = "101"');
- * console.log('Estabelecimento do MULT:', multResult);
+ * log.info('Estabelecimento do MULT:', multResult);
  * ```
  *
  * @example Testando ambas as conexões
@@ -341,9 +341,9 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  *
  *   try {
  *     await empConnection.connect();
- *     console.log('✅ EMP conectado');
+ *     log.info('✅ EMP conectado');
  *   } catch (error) {
- *     console.error('❌ EMP falhou:', error);
+ *     log.error('❌ EMP falhou:', error);
  *   } finally {
  *     await empConnection.close();
  *   }
@@ -354,9 +354,9 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  *
  *   try {
  *     await multConnection.connect();
- *     console.log('✅ MULT conectado');
+ *     log.info('✅ MULT conectado');
  *   } catch (error) {
- *     console.error('❌ MULT falhou:', error);
+ *     log.error('❌ MULT falhou:', error);
  *   } finally {
  *     await multConnection.close();
  *   }
@@ -401,8 +401,8 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  * ```typescript
  * import { getSqlServerConfigEmp, getSqlServerConfigMult } from './sqlServerConfig';
  *
- * console.log('EMP Config:', getSqlServerConfigEmp());
- * console.log('MULT Config:', getSqlServerConfigMult());
+ * log.info('EMP Config:', getSqlServerConfigEmp());
+ * log.info('MULT Config:', getSqlServerConfigMult());
  *
  * // Verificar diferenças
  * const emp = getSqlServerConfigEmp();
@@ -410,7 +410,7 @@ export function getSqlServerConfigEmp(): DatabaseConfig {
  *
  * Object.keys(emp).forEach(key => {
  *   if (emp[key] !== mult[key]) {
- *     console.log(`Diferença em ${key}:`, emp[key], 'vs', mult[key]);
+ *     log.info(`Diferença em ${key}:`, emp[key], 'vs', mult[key]);
  *   }
  * });
  * // Output: Diferença em database: '' vs ''

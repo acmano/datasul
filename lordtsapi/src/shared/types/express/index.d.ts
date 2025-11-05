@@ -5,7 +5,6 @@
  * @module shared/types/express
  */
 
-import { Request } from 'express';
 import { ApiKeyConfig, UserTier } from '../apiKey.types';
 
 /**
@@ -44,11 +43,14 @@ declare global {
       /**
        * Dados simplificados do usuário autenticado
        * @see apiKeyAuth.middleware.ts
+       * @see jwt.middleware.ts
        */
       user?: {
         id: string;
-        name: string;
-        tier: UserTier;
+        name?: string;
+        email?: string;
+        tier?: UserTier;
+        roles?: string[];
       };
     }
   }
@@ -57,4 +59,4 @@ declare global {
 /**
  * Export vazio necessário para módulo TypeScript
  */
-export { };
+export {};

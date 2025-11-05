@@ -27,6 +27,14 @@ import { log } from '../logger';
  */
 
 /**
+ * Tipo para parâmetros de query
+ * Aceita objetos QueryParameter ou valores primitivos
+ */
+export type QueryParams = Array<
+  { name?: string; type?: string; value?: unknown } | string | number | boolean | null | undefined
+>;
+
+/**
  * Opções para cache de queries
  */
 export interface QueryCacheOptions {
@@ -48,12 +56,13 @@ const DEFAULT_PREFIX = 'query';
 
 /** TTLs específicos por tipo de entidade */
 const ENTITY_TTL = {
-  ITEM: 600,               // 10 minutos
-  FAMILIA: 3600,           // 1 hora
+  ITEM: 600, // 10 minutos
+  FAMILIA: 3600, // 1 hora
   FAMILIA_COMERCIAL: 3600, // 1 hora
-  GRUPODEESTOQUE: 3600,    // 1 hora
-  ESTABELECIMENTO: 3600,   // 1 hora
-  HEALTH: 30,              // 30 segundos
+  GRUPODEESTOQUE: 3600, // 1 hora
+  ESTABELECIMENTO: 3600, // 1 hora
+  DEPOSITO: 3600, // 1 hora
+  HEALTH: 30, // 30 segundos
 } as const;
 
 /**
@@ -87,15 +96,11 @@ export class QueryCacheService {
    */
   static async withCache<T>(
     sql: string,
-    params: any[] = [],
+    params: QueryParams = [],
     queryFn: () => Promise<T>,
     options: QueryCacheOptions = {}
   ): Promise<T> {
-    const {
-      ttl = this.DEFAULT_TTL,
-      prefix = this.DEFAULT_PREFIX,
-      skipCache = false,
-    } = options;
+    const { ttl = this.DEFAULT_TTL, prefix = this.DEFAULT_PREFIX, skipCache = false } = options;
 
     // Skip explícito
     if (skipCache) {
@@ -140,11 +145,7 @@ export class QueryCacheService {
    * @returns Chave de cache: prefix:hash
    * @private
    */
-  private static generateCacheKey(
-    sql: string,
-    params: any[],
-    prefix: string
-  ): string {
+  private static generateCacheKey(sql: string, params: QueryParams, prefix: string): string {
     // Normalizar SQL
     const normalizedSql = sql.replace(/\s+/g, ' ').trim();
 
@@ -155,14 +156,19 @@ export class QueryCacheService {
       // Array de QueryParameter: [{ name, type, value }, ...]
       const sortedParams = params
         .map((p) => {
-          if (typeof p === 'object' && p !== null) {
-            return { name: p.name, value: p.value };
+          if (typeof p === 'object' && p !== null && 'name' in p && 'value' in p) {
+            return {
+              name: (p as { name: string; value: unknown }).name,
+              value: (p as { name: string; value: unknown }).value,
+            };
           }
           return p;
         })
         .sort((a, b) => {
-          const nameA = a?.name || '';
-          const nameB = b?.name || '';
+          const nameA =
+            typeof a === 'object' && a !== null && 'name' in a ? (a as { name: string }).name : '';
+          const nameB =
+            typeof b === 'object' && b !== null && 'name' in b ? (b as { name: string }).name : '';
           return nameA.localeCompare(nameB);
         });
 
@@ -215,7 +221,7 @@ export class QueryCacheService {
    */
   static async withItemCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
@@ -233,7 +239,7 @@ export class QueryCacheService {
    */
   static async withFamiliaCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
@@ -251,7 +257,7 @@ export class QueryCacheService {
    */
   static async withFamiliaComercialCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
@@ -269,7 +275,7 @@ export class QueryCacheService {
    */
   static async withGrupoDeEstoqueCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
@@ -287,13 +293,31 @@ export class QueryCacheService {
    */
   static async withEstabelecimentoCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>,
     ttl?: number
   ): Promise<T> {
     return this.withCache(sql, params, queryFn, {
       ttl: ttl || ENTITY_TTL.ESTABELECIMENTO,
       prefix: 'estabelecimento',
+    });
+  }
+
+  /**
+   * Wrapper para queries de depósitos
+   *
+   * TTL padrão: 1 hora
+   * Prefixo: 'deposito'
+   */
+  static async withDepositoCache<T>(
+    sql: string,
+    params: QueryParams,
+    queryFn: () => Promise<T>,
+    ttl?: number
+  ): Promise<T> {
+    return this.withCache(sql, params, queryFn, {
+      ttl: ttl || ENTITY_TTL.DEPOSITO,
+      prefix: 'deposito',
     });
   }
 
@@ -305,7 +329,7 @@ export class QueryCacheService {
    */
   static async withHealthCache<T>(
     sql: string,
-    params: any[],
+    params: QueryParams,
     queryFn: () => Promise<T>
   ): Promise<T> {
     return this.withCache(sql, params, queryFn, {

@@ -1,0 +1,31 @@
+-- ============================================================================
+-- Query Fragment: ORDER BY para Listar Todos os Depósitos
+-- ============================================================================
+-- Descrição:
+--   Fragmento SQL contendo apenas a cláusula ORDER BY para listar todos os
+--   depósitos cadastrados no sistema, ordenados por código.
+--
+-- Uso:
+--   Este arquivo é COMBINADO com deposito-projection.sql na execução:
+--   Query Final = deposito-projection.sql + listar-todos-order.sql
+--
+-- Parâmetros:
+--   Nenhum (lista todos sem filtros)
+--
+-- Utilizado por:
+--   - deposito/listar/repository.ts :: listarTodos()
+--
+-- Performance:
+--   - Lê toda a tabela PUB.deposito (sem WHERE)
+--   - Ordenação executada no Progress/OpenEdge
+--   - Usa índice da coluna "cod-depos" para ordenação eficiente
+--
+-- Comportamento:
+--   - Retorna TODOS os depósitos (ativos e inativos)
+--   - Ordenação crescente por código
+--   - Quantidade depende do total cadastrado no sistema
+--
+-- Última atualização: 2025-10-26
+-- ============================================================================
+
+ORDER BY deposito."cod-depos"

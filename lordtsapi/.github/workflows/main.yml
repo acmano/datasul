@@ -1,0 +1,167 @@
+name: Build and Deploy Backend
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        clean: true
+        submodules: false
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        registry-url: 'https://npm.pkg.github.com'
+        scope: '@acmano'
+
+    - name: Configure NPM for GitHub Packages
+      run: |
+        rm -f .npmrc
+        echo "@acmano:registry=https://npm.pkg.github.com" > .npmrc
+        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+    - name: Install dependencies
+      run: npm ci
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build TypeScript
+      run: npm run build
+
+    - name: Verify build
+      run: test -f dist/server.js || exit 1
+
+    - name: Create production .env
+      run: |
+        cat > /tmp/.env.production << 'EOF'
+        # ============================================
+        # CONFIGURAÇÃO DE PRODUÇÃO - LordtsAPI Backend
+        # ============================================
+
+        # ==================== SERVIDOR ====================
+        HOST=0.0.0.0
+        PORT=3001
+        NODE_ENV=production
+        API_PREFIX=/api
+
+        # ==================== BANCO DE DADOS ====================
+
+        # Tipo de conexão: ODBC (para Datasul/Progress)
+        DB_CONNECTION_TYPE=odbc
+
+        # SQL Server - Credenciais (usado pelo ODBC Linked Server)
+        DB_SERVER=10.105.0.4\LOREN
+        DB_PORT=1433
+        DB_USER=sysprogress
+        DB_PASSWORD='sysprogress'
+
+        # Database vazio = usa default do usuário
+        DB_DATABASE_EMP=
+        DB_DATABASE_MULT=
+
+        # Timeouts
+        DB_CONNECTION_TIMEOUT=15000
+        DB_REQUEST_TIMEOUT=30000
+
+        # SQL Server - Segurança
+        DB_ENCRYPT=false
+        DB_TRUST_SERVER_CERTIFICATE=true
+
+        # ODBC - DSN para Datasul (nomes corretos do /etc/odbc.ini)
+        ODBC_DSN_EMP=DtsPrdEmp
+        ODBC_DSN_MULT=DtsPrdMult
+        ODBC_CONNECTION_TIMEOUT=15000
+
+        # Datasul Environment
+        DATASUL_ENVIRONMENT=production
+
+        # Mock Data (sempre false em produção)
+        USE_MOCK_DATA=false
+
+        # ==================== CORS ====================
+        CORS_ALLOWED_ORIGINS=http://lor0138.lorenzetti.ibe,http://lordtsapi.lorenzetti.ibe
+
+        # ==================== TIMEOUTS HTTP ====================
+        HTTP_REQUEST_TIMEOUT=30s
+        HTTP_HEAVY_TIMEOUT=60s
+        HTTP_HEALTH_TIMEOUT=5s
+
+        # ==================== CACHE (Redis) ====================
+        CACHE_ENABLED=true
+        CACHE_STRATEGY=layered
+        CACHE_REDIS_URL=redis://localhost:6379
+        CACHE_DEFAULT_TTL=5m
+
+        # ==================== LOGGING ====================
+        LOG_LEVEL=info
+        EOF
+
+    - name: Backup current version
+      run: |
+        if [ -d "/opt/aplicacoes/backend/current/dist" ]; then
+          cp -r /opt/aplicacoes/backend/current /opt/aplicacoes/backend/backup-$(date +%Y%m%d-%H%M%S) || true
+        fi
+
+    - name: Deploy files
+      run: |
+        mkdir -p /opt/aplicacoes/backend/current/dist || true
+        mkdir -p /opt/aplicacoes/backend/current/logs || true
+        cp -r dist/* /opt/aplicacoes/backend/current/dist/
+        cp package*.json /opt/aplicacoes/backend/current/
+        cp /tmp/.env.production /opt/aplicacoes/backend/current/.env
+
+    - name: Install production dependencies
+      run: |
+        cd /opt/aplicacoes/backend/current
+        echo "@acmano:registry=https://npm.pkg.github.com" > .npmrc
+        echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+        npm ci --omit=dev
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Restart service
+      run: |
+        # Matar processos antigos
+        pkill -f "node.*server.js" || true
+        sleep 2
+
+        # Tentar systemd user primeiro, depois system
+        if systemctl --user is-active lordtsapi 2>/dev/null; then
+          systemctl --user restart lordtsapi
+        elif systemctl is-active lordtsapi 2>/dev/null; then
+          systemctl restart lordtsapi
+        else
+          # Se serviço não existe, iniciar diretamente
+          cd /opt/aplicacoes/backend/current
+          nohup node dist/server.js > logs/app.log 2>&1 &
+        fi
+
+    - name: Wait for service
+      run: sleep 5
+
+    - name: Health check
+      run: |
+        # Tentar porta 3001
+        if curl -f http://localhost:3001/health 2>/dev/null; then
+          echo "✅ Health check OK na porta 3001"
+        elif curl -f http://lordtsapi.lorenzetti.ibe/health 2>/dev/null; then
+          echo "✅ Health check OK via hostname (proxy)"
+        else
+          echo "❌ Health check FALHOU!"
+          exit 1
+        fi

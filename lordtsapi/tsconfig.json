@@ -1,68 +1,38 @@
 {
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "lib": [
-      "ES2022"
-    ],
-    "outDir": "./dist",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@item/*": [
-        "src/item/*"
-      ],
-      "@familia/*": [
-        "src/familia/*"
-      ],
-      "@grupoDeEstoque/*": [
-        "src/grupoDeEstoque/*"
-      ],
-      "@familiaComercial/*": [
-        "src/familiaComercial/*"
-      ],
-      "@estabelecimento/*": [
-        "src/estabelecimento/*"
-      ],
-      "@config/*": [
-        "src/config/*"
-      ],
-      "@infrastructure/*": [
-        "src/infrastructure/*"
-      ],
-      "@shared/*": [
-        "src/shared/*"
-      ],
-      "@datasul/shared-types": [
-        "../shared-types/src"
-      ],
-      "@datasul/shared-types/*": [
-        "../shared-types/src/*"
-      ],
-      "@tests/*": [
-        "../tests/*"
-      ]
-    },
-    "moduleResolution": "node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "sourceMap": true
+    // Output directory para desenvolvimento
+    "outDir": "./dist"
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "jest.config.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
     "tests",
-    "**/__tests__",
-    "**/*.test.ts"
+    "**/__tests__/**",
+    "src/api/**",
+    "src/application/**",
+    "src/core/**",
+    "src/domain/**",
+    "src/presentation/**",
+    "src/infrastructure/database/DatabaseAdapter.ts",
+    "src/infrastructure/database/QueryBuilder.ts",
+    "src/infrastructure/logging/**",
+    "src/infrastructure/monitoring/**",
+    "src/infrastructure/observability/**",
+    "src/infrastructure/process/**",
+    "src/infrastructure/repositories/**",
+    "src/config/elasticsearch.config.ts",
+    "src/config/security.config.ts",
+    "src/shared/decorators/**",
+    "src/shared/middlewares/jwt.middleware.ts",
+    "src/shared/services/apiKey.service.ts",
+    "src/shared/utils/UserRateLimiter.ts",
+    "src/shared/utils/cache/**",
+    "src/types/**"
   ]
 }

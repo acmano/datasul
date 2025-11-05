@@ -1,6 +1,13 @@
 // src/server.ts
 
+// src/server.ts
+if (!__filename.endsWith('.ts')) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('module-alias/register');
+}
 import dotenv from 'dotenv';
+dotenv.config(); // ← Mover para LINHA 4
+import { envConfig } from '@config/env.config'; // ← Mover para LINHA 5
 import { log } from '@shared/utils/logger';
 import { setupGracefulShutdown } from '@shared/utils/gracefulShutdown';
 import { DatabaseManager } from './infrastructure/database/DatabaseManager';
@@ -9,8 +16,6 @@ import { CacheManager } from '@shared/utils/cacheManager';
 import { configValidator } from '@config/configValidator';
 import { ApiKeyService } from '@shared/services/apiKey.service';
 import { appConfig } from '@config/app.config';
-
-dotenv.config();
 
 /**
  * Type guard para validar estratégia de cache
@@ -41,15 +46,15 @@ async function startServer(): Promise<void> {
 
     // 2. Inicializar cache
     log.info('💾 Inicializando sistema de cache...');
-    const cacheStrategyEnv = process.env.CACHE_STRATEGY || 'memory';
-    const cacheEnabled = process.env.CACHE_ENABLED !== 'false';
+    const cacheStrategyEnv = envConfig.cache.strategy;
+    const cacheEnabled = envConfig.cache.enabled;
     const cacheStrategy = isValidCacheStrategy(cacheStrategyEnv) ? cacheStrategyEnv : 'memory';
 
     if (cacheStrategyEnv !== cacheStrategy) {
       log.warn('⚠️  Estratégia de cache inválida, usando fallback', {
         provided: cacheStrategyEnv,
         fallback: cacheStrategy,
-        validOptions: ['memory', 'redis', 'layered']
+        validOptions: ['memory', 'redis', 'layered'],
       });
     }
 
@@ -63,7 +68,7 @@ async function startServer(): Promise<void> {
         } else {
           log.warn('⚠️  Redis não está pronto, usando fallback L1', {
             strategy: cacheStrategy,
-            fallback: 'memory'
+            fallback: 'memory',
           });
         }
       } else {
@@ -88,28 +93,28 @@ async function startServer(): Promise<void> {
     log.info('🔑 Inicializando sistema de API Keys...');
     ApiKeyService.initialize();
     const apiKeyStats = ApiKeyService.getStats();
-    log.info('✅ API Keys inicializadas', apiKeyStats);
+    log.info('✅ API Keys inicializadas', { total: apiKeyStats.total, active: apiKeyStats.active });
 
     // 5. Inicializar Express
     log.info('🌐 Inicializando servidor HTTP...');
     const app = new App();
-    const PORT = parseInt(process.env.PORT || '3000', 10);
-    const HOST = process.env.HOST || '0.0.0.0';
+    //  const PORT = parseInt(process.env.PORT || '3000', 10);
+    const HOST = appConfig.host;
 
     const server = app.getExpressApp().listen(appConfig.port, appConfig.host, () => {
       log.info('✅ Servidor HTTP iniciado', {
-        port: PORT,
+        port: appConfig.port,
         host: HOST,
         url: appConfig.baseUrl,
-        env: process.env.NODE_ENV || 'development',
+        env: envConfig.server.nodeEnv,
         pid: process.pid,
       });
 
       log.info('📚 Documentação disponível', {
-        swagger: `http://lor0138.lorenzetti.ibe:${PORT}/api-docs`,
-        health: `http://lor0138.lorenzetti.ibe:${PORT}/health`,
-        cache: cacheEnabled ? `http://lor0138.lorenzetti.ibe:${PORT}/cache/stats` : 'disabled',
-        admin: `http://lor0138.lorenzetti.ibe:${PORT}/admin/api-keys`,
+        swagger: `http://${appConfig.host}:${appConfig.port}/api-docs`,
+        health: `http://${appConfig.host}:${appConfig.port}/health`,
+        cache: cacheEnabled ? `http://${appConfig.host}:${appConfig.port}/cache/stats` : 'disabled',
+        admin: `http://${appConfig.host}:${appConfig.port}/admin/api-keys`,
       });
 
       log.info('🔑 API Keys de exemplo:');
@@ -125,7 +130,7 @@ async function startServer(): Promise<void> {
     });
 
     // 6. Graceful Shutdown
-    const shutdownTimeout = parseInt(process.env.SHUTDOWN_TIMEOUT || '10000', 10);
+    const shutdownTimeout = parseInt(process.env.SHUTDOWN_TIMEOUT || '10000', 10); // ✅ CORRETO
 
     setupGracefulShutdown(server, {
       timeout: shutdownTimeout,
@@ -140,7 +145,7 @@ async function startServer(): Promise<void> {
             log.info('✅ Cache fechado com sucesso');
           } catch (error) {
             log.error('❌ Erro ao fechar cache', {
-              error: error instanceof Error ? error.message : 'Unknown error'
+              error: error instanceof Error ? error.message : 'Unknown error',
             });
           }
         }
@@ -151,7 +156,7 @@ async function startServer(): Promise<void> {
           log.info('✅ Banco de dados fechado com sucesso');
         } catch (error) {
           log.error('❌ Erro ao fechar banco de dados', {
-            error: error instanceof Error ? error.message : 'Unknown error'
+            error: error instanceof Error ? error.message : 'Unknown error',
           });
         }
       },
@@ -165,9 +170,8 @@ async function startServer(): Promise<void> {
       cache: cacheEnabled ? cacheStrategy : 'disabled',
       database: dbStatus.mode,
       apiKeys: apiKeyStats.total,
-      port: PORT
+      port: appConfig.port,
     });
-
   } catch (error) {
     log.error('❌ Erro fatal ao iniciar servidor', {
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -179,7 +183,7 @@ async function startServer(): Promise<void> {
       await DatabaseManager.close();
     } catch (closeError) {
       log.error('❌ Erro ao fechar conexões durante erro fatal', {
-        error: closeError instanceof Error ? closeError.message : 'Unknown'
+        error: closeError instanceof Error ? closeError.message : 'Unknown',
       });
     }
 

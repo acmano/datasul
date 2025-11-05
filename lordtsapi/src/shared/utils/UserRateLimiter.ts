@@ -35,7 +35,42 @@ export interface RateLimitResult {
   /** Timestamp quando reseta (ms) */
   resetAt: number;
   /** Segundos até próxima tentativa */
-  retryAfter?: number;
+  retryAfter?: number | undefined;
+}
+
+export interface UserRateLimitStats {
+  userId: string;
+  tier: UserTier;
+  usage: {
+    minute: {
+      current: number;
+      limit: number;
+      remaining: number;
+      resetAt: Date;
+    };
+    hour: {
+      current: number;
+      limit: number;
+      remaining: number;
+      resetAt: Date;
+    };
+    day: {
+      current: number;
+      limit: number;
+      remaining: number;
+      resetAt: Date;
+    };
+  };
+}
+
+export interface UserRateLimitAggregatedStats {
+  totalUsers: number;
+  byTier: {
+    free: number;
+    premium: number;
+    enterprise: number;
+    admin: number;
+  };
 }
 
 export class UserRateLimiter {
@@ -56,31 +91,20 @@ export class UserRateLimiter {
 
     this.resetIfNeeded(record, now);
 
-    const minuteCheck = this.checkWindow(
-      record.minute,
-      config.limits.perMinute,
-      60 * 1000,
-      now
-    );
+    const minuteCheck = this.checkWindow(record.minute, config.limits.perMinute, 60 * 1000, now);
 
-    const hourCheck = this.checkWindow(
-      record.hour,
-      config.limits.perHour,
-      60 * 60 * 1000,
-      now
-    );
+    const hourCheck = this.checkWindow(record.hour, config.limits.perHour, 60 * 60 * 1000, now);
 
-    const dayCheck = this.checkWindow(
-      record.day,
-      config.limits.perDay,
-      24 * 60 * 60 * 1000,
-      now
-    );
+    const dayCheck = this.checkWindow(record.day, config.limits.perDay, 24 * 60 * 60 * 1000, now);
 
     if (!minuteCheck.allowed || !hourCheck.allowed || !dayCheck.allowed) {
       const mostRestrictive = [minuteCheck, hourCheck, dayCheck]
         .filter((c) => !c.allowed)
         .sort((a, b) => a.resetAt - b.resetAt)[0];
+
+      if (!mostRestrictive) {
+        throw new Error('Erro ao calcular rate limit mais restritivo');
+      }
 
       log.warn('Rate limit excedido', {
         userId,
@@ -96,9 +120,11 @@ export class UserRateLimiter {
     record.hour.count++;
     record.day.count++;
 
-    const closest = [minuteCheck, hourCheck, dayCheck].sort(
-      (a, b) => a.remaining - b.remaining
-    )[0];
+    const closest = [minuteCheck, hourCheck, dayCheck].sort((a, b) => a.remaining - b.remaining)[0];
+
+    if (!closest) {
+      throw new Error('Erro ao calcular janela de rate limit mais próxima');
+    }
 
     return closest;
   }
@@ -181,7 +207,7 @@ export class UserRateLimiter {
   /**
    * Retorna estatísticas de uso
    */
-  static getStats(userId?: string): any {
+  static getStats(userId?: string): UserRateLimitStats | UserRateLimitAggregatedStats | null {
     if (userId) {
       const record = this.records.get(userId);
       if (!record) return null;
@@ -217,16 +243,12 @@ export class UserRateLimiter {
     return {
       totalUsers: this.records.size,
       byTier: {
-        free: Array.from(this.records.values()).filter((r) => r.tier === UserTier.FREE)
+        free: Array.from(this.records.values()).filter((r) => r.tier === UserTier.FREE).length,
+        premium: Array.from(this.records.values()).filter((r) => r.tier === UserTier.PREMIUM)
           .length,
-        premium: Array.from(this.records.values()).filter(
-          (r) => r.tier === UserTier.PREMIUM
-        ).length,
-        enterprise: Array.from(this.records.values()).filter(
-          (r) => r.tier === UserTier.ENTERPRISE
-        ).length,
-        admin: Array.from(this.records.values()).filter((r) => r.tier === UserTier.ADMIN)
+        enterprise: Array.from(this.records.values()).filter((r) => r.tier === UserTier.ENTERPRISE)
           .length,
+        admin: Array.from(this.records.values()).filter((r) => r.tier === UserTier.ADMIN).length,
       },
     };
   }
@@ -241,6 +263,9 @@ export class UserRateLimiter {
 }
 
 // Cleanup automático a cada hora
-setInterval(() => {
-  UserRateLimiter.cleanup();
-}, 60 * 60 * 1000);
+setInterval(
+  () => {
+    UserRateLimiter.cleanup();
+  },
+  60 * 60 * 1000
+);

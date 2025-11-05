@@ -1,0 +1,169 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    GPC DATABASE STRUCTURE DIAGRAM                              ║
+║                          (4 Tables Total)                                      ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────────────────┐
+│                         TABLE: gpc_classification                              │
+│                            (Main Hierarchy)                                    │
+├────────────────────────────────────────────────────────────────────────────────┤
+│ PRIMARY KEY: brick_code (VARCHAR 8)                                           │
+│                                                                                │
+│ GPC Hierarchy (4 Levels):                                                     │
+│   ┌─────────────────────────────────────────────────────────────────┐        │
+│   │ SEGMENT (2 digits)  ─┐                                           │        │
+│   │   segment_code       │ Top Level Category                       │        │
+│   │   segment_name_pt    │ Example: "50" = Food/Beverage/Tobacco    │        │
+│   │   segment_name_en    │                                           │        │
+│   └───────────────────────┘                                          │        │
+│                 │                                                     │        │
+│   ┌─────────────▼─────────────────────────────────────────┐         │        │
+│   │ FAMILY (4 digits)    ─┐                                │         │        │
+│   │   family_code         │ Product Group                 │         │        │
+│   │   family_name_pt      │ Example: "5010" = Dairy       │         │        │
+│   │   family_name_en      │                                │         │        │
+│   └───────────────────────┘                                │         │        │
+│                 │                                           │         │        │
+│   ┌─────────────▼─────────────────────────────────────────┐│        │        │
+│   │ CLASS (6 digits)     ─┐                                ││        │        │
+│   │   class_code          │ Product Type                  ││        │        │
+│   │   class_name_pt       │ Example: "501010" = Cheese    ││        │        │
+│   │   class_name_en       │                                ││        │        │
+│   └───────────────────────┘                                ││        │        │
+│                 │                                           ││        │        │
+│   ┌─────────────▼─────────────────────────────────────────┐││       │        │
+│   │ BRICK (8 digits) ★   ─┐ PRIMARY KEY                   │││       │        │
+│   │   brick_code          │ Specific Product              │││       │        │
+│   │   brick_name_pt       │ Example: "50101001" = Fresh   │││       │        │
+│   │   brick_name_en       │          Mozzarella            │││       │        │
+│   └───────────────────────┘                                │││       │        │
+│                                                             │││       │        │
+│ Metadata:                                                   │││       │        │
+│   created_at (DATETIME2)                                    │││       │        │
+│   updated_at (DATETIME2)                                    │││       │        │
+│                                                             │││       │        │
+│ Indexes:                                                    │││       │        │
+│   - idx_gpc_segment (on segment_code)                       │││       │        │
+│   - idx_gpc_family (on family_code)                         │││       │        │
+│   - idx_gpc_class (on class_code)                           │││       │        │
+└─────────────────────────────────────────────────────────────┘││       │        │
+                                                               │││       │        │
+                  ┌────────────────────────────────────────────┘││       │        │
+                  │                                             ││       │        │
+                  │  ┌──────────────────────────────────────────┘│       │        │
+                  │  │                                            │       │        │
+                  │  │  ┌─────────────────────────────────────────┘       │        │
+                  │  │  │                                                 │        │
+                  ▼  ▼  ▼                                                 │        │
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│  MAPPING TABLES (3 Tables - All reference brick_code via FK)                   │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+┌───────────────────────────────┐  ┌───────────────────────────────┐
+│  TABLE: gtin_gpc_mapping      │  │  TABLE: ncm_gpc_mapping       │
+├───────────────────────────────┤  ├───────────────────────────────┤
+│ PRIMARY KEY: gtin (VARCHAR 14)│  │ PRIMARY KEY: ncm (VARCHAR 8)  │
+│ FOREIGN KEY: brick_code  ─────┼──┼─▶ FOREIGN KEY: brick_code     │
+│                               │  │                               │
+│ Fields:                       │  │ Fields:                       │
+│  - gtin (GTIN-13/14)          │  │  - ncm (8 digits)             │
+│  - brick_code (FK)            │  │  - brick_code (FK)            │
+│  - confidence_level           │  │  - confidence_level           │
+│  - source                     │  │  - source                     │
+│  - created_at                 │  │  - created_at                 │
+│  - updated_at                 │  │  - updated_at                 │
+│                               │  │                               │
+│ Indexes:                      │  │ Indexes:                      │
+│  - idx_gtin_brick             │  │  - idx_ncm_brick              │
+│  - idx_gtin_confidence        │  │  - idx_ncm_confidence         │
+│                               │  │                               │
+│ Example:                      │  │ Example:                      │
+│  GTIN: 7896524201051          │  │  NCM: 04061010                │
+│  (Qualy Margarina 500g)       │  │  (Queijo mussarela fresco)    │
+│  brick_code: 50131501         │  │  brick_code: 50101001         │
+└───────────────────────────────┘  └───────────────────────────────┘
+                                   
+┌───────────────────────────────┐
+│  TABLE: cest_gpc_mapping      │
+├───────────────────────────────┤
+│ PRIMARY KEY: cest (VARCHAR 7) │
+│ FOREIGN KEY: brick_code  ─────┼──▶ References gpc_classification.brick_code
+│                               │
+│ Fields:                       │
+│  - cest (7 digits)            │
+│  - brick_code (FK)            │
+│  - confidence_level           │
+│  - source                     │
+│  - created_at                 │
+│  - updated_at                 │
+│                               │
+│ Indexes:                      │
+│  - idx_cest_brick             │
+│  - idx_cest_confidence        │
+│                               │
+│ Example:                      │
+│  CEST: 1701100                │
+│  (Margarinas e cremes)        │
+│  brick_code: 50131501         │
+└───────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                           RELATIONSHIP SUMMARY                                 ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  gpc_classification (1) ──< gtin_gpc_mapping (N)
+       │
+       ├──< ncm_gpc_mapping (N)
+       │
+       └──< cest_gpc_mapping (N)
+
+  One GPC Brick can have:
+    - Multiple GTINs (different brands, package sizes)
+    - Multiple NCMs (tax classification variations)
+    - Multiple CESTs (tax substitution codes)
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                          CONFIDENCE LEVELS                                     ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  ┌─────────────┬────────────────────────────────────────────────────┐
+  │ Level       │ Description                                        │
+  ├─────────────┼────────────────────────────────────────────────────┤
+  │ manual      │ Manually mapped by data operator                   │
+  │ auto        │ Automatically mapped by ML model or rules          │
+  │ verified    │ Auto-mapped and verified by human                  │
+  └─────────────┴────────────────────────────────────────────────────┘
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                           STATISTICS                                           ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  Total Tables:     4
+  Total Indexes:    11 (3 + 2 + 2 + 2 + 2 primary keys)
+  Total FKs:        3 (all reference brick_code)
+  Total Constraints: 6 (3 CHECK constraints + 3 FK constraints)
+
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                         QUERY EXAMPLES                                         ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+  1. Get hierarchy for a product:
+     SELECT * FROM gpc_classification WHERE brick_code = '50101001';
+
+  2. Find GPC by GTIN (barcode):
+     SELECT g.* FROM gtin_gpc_mapping gtm
+     JOIN gpc_classification g ON gtm.brick_code = g.brick_code
+     WHERE gtm.gtin = '7896524201051';
+
+  3. Find all products in a segment:
+     SELECT * FROM gpc_classification WHERE segment_code = '50';
+
+  4. Find all GTINs for a brick:
+     SELECT gtin FROM gtin_gpc_mapping WHERE brick_code = '50101001';
+
+  5. Cross-reference GTIN → NCM:
+     SELECT gtm.gtin, ncm.ncm
+     FROM gtin_gpc_mapping gtm
+     JOIN ncm_gpc_mapping ncm ON gtm.brick_code = ncm.brick_code
+     WHERE gtm.gtin = '7896524201051';
+
