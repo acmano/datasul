@@ -64,7 +64,8 @@ const VisualizationContent: React.FC<VisualizationContentProps> = ({
         display: 'flex',
         flexDirection: 'column',
         padding: 0,
-        height: '100%',
+        flex: 1,
+        minHeight: 0,
         overflow: 'hidden',
       }}
     >
