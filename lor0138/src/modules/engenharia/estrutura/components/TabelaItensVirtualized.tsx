@@ -104,7 +104,9 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
         // Usar clientHeight do container pai para pegar a altura disponível
         const height = containerRef.current.clientHeight;
         if (height > 0) {
-          setContainerHeight(height);
+          // Reservar espaço para a linha de info abaixo (27px: marginTop 8px + fontSize 11px + padding 8px)
+          const INFO_LINE_HEIGHT = 27;
+          setContainerHeight(height - INFO_LINE_HEIGHT);
         }
       }
     };
