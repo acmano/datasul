@@ -31,9 +31,11 @@ describe('Breadcrumb Component', () => {
   it('deve mostrar descrições nos tooltips', () => {
     render(<Breadcrumb items={breadcrumbItems} onNavigate={mockOnNavigate} theme="light" />);
 
-    // O componente renderiza o código junto com a descrição no label
+    // O componente renderiza o código para todos os itens
     expect(screen.getByText(/ITEM-001/)).toBeInTheDocument();
-    expect(screen.getByText(/Item Principal/)).toBeInTheDocument();
+
+    // A descrição só aparece no último item
+    expect(screen.getByText(/SUB-001 - Sub-componente/)).toBeInTheDocument();
   });
 
   it('deve chamar onNavigate quando item é clicado', () => {
