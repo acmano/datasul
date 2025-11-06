@@ -1,6 +1,6 @@
 // src/modules/engenharia/estrutura/components/Main.tsx
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Tabs, message, Layout, Spin, Switch, Space, Typography } from 'antd';
 import { useItemDataCache } from '../../../../shared/contexts/ItemDataContext';
 import { ItemSearchResultItem } from '../../../item/search/types/search.types';
@@ -120,6 +120,9 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
   // Estado de navegação drill-down
   const [isDrillDownLoading, setIsDrillDownLoading] = useState(false);
 
+  // Ref para rastrear quando breadcrumb foi atualizado por navegação
+  const breadcrumbJustUpdated = useRef(false);
+
   // Controles de data e histórico
   const [dataReferencia, setDataReferencia] = useState<string>(
     new Date().toISOString().split('T')[0]
@@ -137,6 +140,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
   // ✅ Cor de fundo baseada no tema
   const [bgColor, setBgColor] = useState(theme === 'dark' ? '#1f1f1f' : '#ffffff');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Estado para controle do nível de expansão da tabela
   const [maxExpandLevel, setMaxExpandLevel] = useState<number>(1);
@@ -345,61 +349,30 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
 
       // Tentar buscar via API de search (retorna dados mais completos)
       try {
-        console.log('🔍 [Main] Tentando buscar via itemSearchService.search...');
         const searchResult = await itemSearchService.search({ itemCodigo });
 
-        console.log('📊 [Main] Resultado da busca:', {
-          total: searchResult.total,
-          items: searchResult.items?.length || 0,
-          primeiroItem: searchResult.items?.[0],
-        });
-
         if (searchResult.items && searchResult.items.length > 0) {
-          const itemData = searchResult.items[0];
-          console.log('✅ [Main] Dados COMPLETOS encontrados via search:', {
-            codigo: itemData.itemCodigo,
-            descricao: itemData.itemDescricao,
-            familia: itemData.familiaCodigo,
-            familiaDesc: itemData.familiaDescricao,
-            grupoEstoque: itemData.grupoEstoqueCodigo,
-            grupoEstoqueDesc: itemData.grupoEstoqueDescricao,
-            gtin: itemData.gtin,
-            tipo: itemData.tipo,
-          });
-          return itemData;
-        } else {
-          console.warn('⚠️ [Main] Search retornou 0 resultados');
+          return searchResult.items[0];
         }
       } catch (searchError: any) {
-        console.error('❌ [Main] Busca via search FALHOU:', {
-          erro: searchError.message,
-          stack: searchError.stack,
-        });
+        console.warn('⚠️ [Main] Busca via search falhou, usando fallback');
       }
 
       // Fallback: usar informações gerais (tem menos dados mas funciona para componentes)
       const infoGerais = await itemInformacoesGeraisService.getByCode(itemCodigo);
 
       if (infoGerais) {
-        console.log('📋 [Main] Dados brutos da API informações gerais:', infoGerais);
-
         // Buscar descrições nos combos já carregados
+        // IMPORTANTE: Normalizar para string pois combos podem vir como number ou string
         const familiaDesc =
-          familias.find((f) => f.value === infoGerais.familiaCodigo)?.label || '';
+          familias.find((f) => String(f.value) === String(infoGerais.familiaCodigo))?.label || '';
         const familiaComercialDesc =
-          familiasComerciais.find((f) => f.value === infoGerais.familiaComercialCodigo)?.label ||
-          '';
+          familiasComerciais.find(
+            (f) => String(f.value) === String(infoGerais.familiaComercialCodigo)
+          )?.label || '';
         const grupoEstoqueDesc =
-          gruposDeEstoque.find((g) => g.value === infoGerais.grupoEstoqueCodigo)?.label || '';
-
-        console.log('🔎 [Main] Descrições encontradas nos combos:', {
-          familiaCodigo: infoGerais.familiaCodigo,
-          familiaDesc,
-          familiaComercialCodigo: infoGerais.familiaComercialCodigo,
-          familiaComercialDesc,
-          grupoEstoqueCodigo: infoGerais.grupoEstoqueCodigo,
-          grupoEstoqueDesc,
-        });
+          gruposDeEstoque.find((g) => String(g.value) === String(infoGerais.grupoEstoqueCodigo))
+            ?.label || '';
 
         const itemData: ItemSearchResultItem = {
           itemCodigo: infoGerais.itemCodigo || itemCodigo,
@@ -414,9 +387,9 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
           grupoEstoqueDescricao: grupoEstoqueDesc,
           codObsoleto: 0,
           gtin: '', // ItemInformacoesGeraisFlat não retorna GTIN
+          tipo: undefined, // API informacoesGerais não retorna tipo
         };
 
-        console.log('✅ [Main] Dados COMPLETOS montados com combos:', itemData);
         return itemData;
       }
 
@@ -477,6 +450,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
     try {
       console.log('📌 [Main] Adicionando ao breadcrumb...');
       // 1. Adicionar ao breadcrumb
+      breadcrumbJustUpdated.current = true;
       onBreadcrumbChange([...breadcrumb, { codigo: itemCodigo, descricao: itemDescricao }]);
 
       // 2. ✅ ATUALIZAR URL E FILTROS
@@ -487,6 +461,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
 
       // 3. ✅ BUSCAR DADOS COMPLETOS E ATUALIZAR FILTROS
       console.log('📝 [Main] Buscando dados completos para atualizar filtros...');
+
       const itemData = await fetchItemData(itemCodigo);
 
       if (itemData) {
@@ -552,6 +527,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
     try {
       // 1. Truncar breadcrumb até o índice clicado
       console.log('✂️ [Main] Truncando breadcrumb...');
+      breadcrumbJustUpdated.current = true;
       onBreadcrumbChange(breadcrumb.slice(0, index + 1));
 
       // 2. ✅ ATUALIZAR URL
@@ -562,6 +538,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
 
       // 3. ✅ BUSCAR DADOS COMPLETOS E ATUALIZAR FILTROS
       console.log('📝 [Main] Buscando dados completos para atualizar filtros...');
+
       const itemData = await fetchItemData(codigo);
 
       if (itemData) {
@@ -607,13 +584,20 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
       return;
     }
 
-    // Verificar se estruturaData.codigo já existe em algum lugar do breadcrumb
-    const isItemInBreadcrumb = breadcrumb.some((item) => item.codigo === estruturaData.codigo);
+    // Se breadcrumb foi atualizado por navegação, não fazer nada
+    if (breadcrumbJustUpdated.current) {
+      breadcrumbJustUpdated.current = false;
+      return;
+    }
+
+    // Verificar se estruturaData.codigo é o ÚLTIMO item do breadcrumb
+    const isLastItemInBreadcrumb =
+      breadcrumb.length > 0 && breadcrumb[breadcrumb.length - 1].codigo === estruturaData.codigo;
 
     // Só reseta se:
     // 1. Breadcrumb vazio (primeira carga) OU
-    // 2. O item carregado NÃO está no breadcrumb (novo root via dock/busca)
-    if (breadcrumb.length === 0 || !isItemInBreadcrumb) {
+    // 2. O item carregado NÃO é o último no breadcrumb (novo root via dock/busca)
+    if (breadcrumb.length === 0 || !isLastItemInBreadcrumb) {
       const itemInicial: BreadcrumbItem = {
         codigo: estruturaData.codigo,
         descricao: estruturaData.descricao,
@@ -937,51 +921,60 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
               }}
             >
               {/* Renderizar lista sumarizada ou visualizações normais */}
-              {tipoEstrutura === 'consumo' && modoApresentacao === 'lista' ? (
-                <ListaSumarizada dados={listaSumarizada} />
-              ) : (
-                <div
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    borderRadius: 8,
-                    background: theme === 'dark' ? '#141414' : '#ffffff',
-                    boxShadow:
-                      theme === 'dark' ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.08)',
-                    border: `1px solid ${theme === 'dark' ? '#303030' : '#d9d9d9'}`,
-                    overflow: 'hidden',
-                    minHeight: 0,
-                  }}
-                >
-                  {/* ControlPanel - Dentro do rounded box */}
-                  {itemHeaderVisible && breadcrumb.length > 0 && (
-                    <ControlPanel
-                      breadcrumb={breadcrumb}
-                      onBreadcrumbNavigate={handleBreadcrumbNavigate}
-                      tipoEstrutura={tipoEstrutura}
-                      onTipoEstruturaChange={setTipoEstrutura}
-                      quantidadeMultiplicador={quantidadeMultiplicador}
-                      onQuantidadeMultiplicadorChange={setQuantidadeMultiplicador}
-                      modoApresentacao={modoApresentacao}
-                      onModoApresentacaoChange={setModoApresentacao}
-                      dataReferencia={dataReferencia}
-                      onDataReferenciaChange={setDataReferencia}
-                      mostrarHistorico={mostrarHistorico}
-                      onMostrarHistoricoChange={setMostrarHistorico}
-                      showQty={showQty}
-                      onShowQtyChange={setShowQty}
-                      baseHex={baseHex}
-                      onBaseHexChange={setBaseHex}
-                      bgColor={bgColor}
-                      onBgColorChange={setBgColor}
-                      maxLevel={maxLevelExcludingRoot}
-                      currentLevel={maxExpandLevel}
-                      onLevelChange={setMaxExpandLevel}
-                      theme={theme}
-                      isLoading={isItemChanging}
-                    />
-                  )}
+              <div
+                style={{
+                  flex: 1,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 8,
+                  background: theme === 'dark' ? '#141414' : '#ffffff',
+                  boxShadow:
+                    theme === 'dark' ? '0 2px 8px rgba(0,0,0,0.4)' : '0 2px 8px rgba(0,0,0,0.08)',
+                  border: `1px solid ${theme === 'dark' ? '#303030' : '#d9d9d9'}`,
+                  overflow: 'hidden',
+                  minHeight: 0,
+                }}
+              >
+                {/* ControlPanel - SEMPRE visível */}
+                {itemHeaderVisible && breadcrumb.length > 0 && (
+                  <ControlPanel
+                    breadcrumb={breadcrumb}
+                    onBreadcrumbNavigate={handleBreadcrumbNavigate}
+                    tipoEstrutura={tipoEstrutura}
+                    onTipoEstruturaChange={setTipoEstrutura}
+                    quantidadeMultiplicador={quantidadeMultiplicador}
+                    onQuantidadeMultiplicadorChange={setQuantidadeMultiplicador}
+                    modoApresentacao={modoApresentacao}
+                    onModoApresentacaoChange={setModoApresentacao}
+                    dataReferencia={dataReferencia}
+                    onDataReferenciaChange={setDataReferencia}
+                    mostrarHistorico={mostrarHistorico}
+                    onMostrarHistoricoChange={setMostrarHistorico}
+                    showQty={showQty}
+                    onShowQtyChange={setShowQty}
+                    baseHex={baseHex}
+                    onBaseHexChange={setBaseHex}
+                    bgColor={bgColor}
+                    onBgColorChange={setBgColor}
+                    maxLevel={maxLevelExcludingRoot}
+                    currentLevel={maxExpandLevel}
+                    onLevelChange={setMaxExpandLevel}
+                    searchTerm={searchTerm}
+                    onSearchTermChange={setSearchTerm}
+                    theme={theme}
+                    isLoading={isItemChanging}
+                  />
+                )}
+
+                {/* Conteúdo: Lista Sumarizada OU Visualizações */}
+                {tipoEstrutura === 'consumo' && modoApresentacao === 'lista' ? (
+                  <ListaSumarizada
+                    dados={listaSumarizada}
+                    getLevelHsl={getLevelHsl}
+                    showQty={showQty}
+                    searchTerm={searchTerm}
+                  />
+                ) : (
                   <VisualizationContent
                     activeVisualizacao={activeVisualizacao as any}
                     loadingEstrutura={loadingEstrutura}
@@ -1001,9 +994,10 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
                     maxExpandLevel={maxExpandLevel}
                     onMaxExpandLevelChange={setMaxExpandLevel}
                     theme={theme}
+                    searchTerm={searchTerm}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </Content>
           </Layout>
         </div>
@@ -1105,13 +1099,10 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
             >
               {/* Renderizar baseado no modo */}
               {modoFinaisApenas && listaFinais ? (
-                // Modo Finais Apenas - Lista Simples
+                // Modo Finais Apenas - Lista Simples (sem controles)
                 <ListaFinais listaFinais={listaFinais} loading={loadingOndeUsado} />
-              ) : tipoEstrutura === 'consumo' && modoApresentacao === 'lista' ? (
-                // Modo Consumo - Lista Sumarizada
-                <ListaSumarizada dados={listaSumarizadaOndeUsado} />
               ) : (
-                // Modo Normal - Visualização Completa
+                // Modo Normal - Com ControlPanel SEMPRE visível
                 <div
                   style={{
                     flex: 1,
@@ -1126,7 +1117,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
                     minHeight: 0,
                   }}
                 >
-                  {/* ControlPanel - Dentro do rounded box */}
+                  {/* ControlPanel - SEMPRE visível */}
                   {itemHeaderVisible && breadcrumb.length > 0 && (
                     <ControlPanel
                       breadcrumb={breadcrumb}
@@ -1150,31 +1141,47 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
                       maxLevel={maxLevelExcludingRoot}
                       currentLevel={maxExpandLevel}
                       onLevelChange={setMaxExpandLevel}
+                      searchTerm={searchTerm}
+                      onSearchTermChange={setSearchTerm}
                       theme={theme}
                       isLoading={isItemChanging}
                     />
                   )}
-                  <VisualizationContent
-                    activeVisualizacao={activeVisualizacao as any}
-                    loadingEstrutura={loadingOndeUsado}
-                    tree={ondeUsadoProcessado as any}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    onItemDrillDown={handleItemDrillDown}
-                    getLevelHsl={getLevelHsl}
-                    getLevelCss={getLevelCss}
-                    getLevelText={getLevelText}
-                    showQty={showQty}
-                    onShowQtyChange={setShowQty}
-                    baseHex={baseHex}
-                    onBaseHexChange={setBaseHex}
-                    bgColor={bgColor}
-                    onBgColorChange={setBgColor}
-                    maxExpandLevel={maxExpandLevel}
-                    onMaxExpandLevelChange={setMaxExpandLevel}
-                    theme={theme}
-                    isOndeUsado={true}
-                  />
+
+                  {/* Conteúdo: Lista Sumarizada OU Visualizações */}
+                  {tipoEstrutura === 'consumo' && modoApresentacao === 'lista' ? (
+                    // Modo Consumo - Lista Sumarizada
+                    <ListaSumarizada
+                      dados={listaSumarizadaOndeUsado}
+                      getLevelHsl={getLevelHsl}
+                      showQty={showQty}
+                      searchTerm={searchTerm}
+                    />
+                  ) : (
+                    // Visualizações normais
+                    <VisualizationContent
+                      activeVisualizacao={activeVisualizacao as any}
+                      loadingEstrutura={loadingOndeUsado}
+                      tree={ondeUsadoProcessado as any}
+                      selectedId={selectedId}
+                      onSelect={setSelectedId}
+                      onItemDrillDown={handleItemDrillDown}
+                      getLevelHsl={getLevelHsl}
+                      getLevelCss={getLevelCss}
+                      getLevelText={getLevelText}
+                      showQty={showQty}
+                      onShowQtyChange={setShowQty}
+                      baseHex={baseHex}
+                      onBaseHexChange={setBaseHex}
+                      bgColor={bgColor}
+                      onBgColorChange={setBgColor}
+                      maxExpandLevel={maxExpandLevel}
+                      onMaxExpandLevelChange={setMaxExpandLevel}
+                      theme={theme}
+                      isOndeUsado={true}
+                      searchTerm={searchTerm}
+                    />
+                  )}
                 </div>
               )}
             </Content>
@@ -1255,6 +1262,7 @@ const EngenhariaMain: React.FC<EngenhariaMainProps> = ({
       >
         <Tabs
           activeKey={activeTabKey}
+          destroyInactiveTabPane={true}
           onChange={onTabChange}
           items={tabItems}
           style={{ flex: 1, display: 'flex', flexDirection: 'column' }}

@@ -182,6 +182,62 @@ When you receive a project:
 ❌ **Creating header/footer links without creating the actual pages** (causes 404s)
 ❌ **Not verifying all links work with tester** (always test navigation!)
 
+## 🚨 CRITICAL: Debugging Visual/UI Problems
+
+When the user reports a visual problem (layout, alignment, styling issues):
+
+**NEVER GUESS. NEVER IMPROVISE. ALWAYS INSPECT FIRST.**
+
+### Mandatory Protocol for Visual Issues:
+
+1. **STOP immediately** - Do NOT attempt any CSS fixes without data
+2. **INVOKE tester agent with Playwright** to inspect the actual rendered HTML
+3. **Extract real computed styles** using browser_evaluate
+4. **Analyze the actual DOM structure** - parent, children, dimensions
+5. **Identify the root cause** based on REAL data, not assumptions
+6. **Apply targeted fix** based on evidence
+7. **Test again** to verify the fix worked
+
+### Example Commands for Visual Inspection:
+
+```javascript
+// Get element dimensions and styles
+const element = document.querySelector('.problematic-class');
+return {
+  outerHTML: element.outerHTML,
+  computedStyles: window.getComputedStyle(element),
+  boundingRect: element.getBoundingClientRect(),
+  parentStyles: window.getComputedStyle(element.parentElement)
+};
+```
+
+### Red Flags That Mean You MUST Inspect:
+
+- User says "it looks wrong"
+- User sends screenshot showing visual problem
+- User says components are "overlapping", "misaligned", "wrong size"
+- User describes "two elements where there should be one"
+- User uses words like "ridículo", "porco", "horrível", "inaceitável"
+
+### What NOT to Do:
+
+❌ Try random CSS fixes hoping one works
+❌ Apply generic solutions without understanding the problem
+❌ Ignore user's visual evidence (screenshots)
+❌ Keep trying variations of the same failed approach
+❌ Assume you know the problem without looking at the DOM
+
+### What TO Do:
+
+✅ Use Playwright to inspect the actual rendered page
+✅ Get computed styles, not just what's in the code
+✅ Measure actual dimensions vs expected dimensions
+✅ Understand the component's internal structure (especially UI libraries like Ant Design)
+✅ Fix based on data, not guesses
+✅ Verify the fix with another inspection
+
+**Remember:** 10 minutes of proper inspection saves 1 hour of random attempts.
+
 ## ✅ Success Looks Like
 
 - Detailed todo list created immediately

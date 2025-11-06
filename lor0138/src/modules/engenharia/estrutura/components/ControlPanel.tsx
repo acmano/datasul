@@ -1,11 +1,38 @@
 // src/modules/engenharia/estrutura/components/ControlPanel.tsx
 
 import React, { useState, useEffect } from 'react';
-import { Radio, InputNumber, DatePicker, Checkbox, Slider, Button } from 'antd';
-import { SettingOutlined, DownOutlined, UpOutlined } from '@ant-design/icons';
+import { Radio, InputNumber, DatePicker, Checkbox, Slider, Button, Input } from 'antd';
+import { SettingOutlined, DownOutlined, UpOutlined, SearchOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import Breadcrumb, { BreadcrumbItem } from './Breadcrumb';
 import { TipoEstrutura, ModoApresentacao } from '../types/estrutura.types';
+
+// Estilo para forçar altura do campo de busca
+const searchInputStyle = `
+  .search-input-fixed {
+    width: 200px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+
+  .search-input-fixed .ant-input {
+    height: 32px !important;
+    line-height: 32px !important;
+    flex: 1 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+
+  .search-input-fixed .ant-input:focus,
+  .search-input-fixed .ant-input-affix-wrapper:focus,
+  .search-input-fixed .ant-input-affix-wrapper-focused {
+    outline: none !important;
+  }
+`;
 
 interface ControlPanelProps {
   // Breadcrumb
@@ -37,6 +64,10 @@ interface ControlPanelProps {
   currentLevel: number;
   onLevelChange: (level: number) => void;
 
+  // Busca/Filtro
+  searchTerm?: string;
+  onSearchTermChange?: (term: string) => void;
+
   // Estado
   theme: 'light' | 'dark';
   isLoading?: boolean;
@@ -64,6 +95,8 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   maxLevel,
   currentLevel,
   onLevelChange,
+  searchTerm = '',
+  onSearchTermChange,
   theme,
   isLoading = false,
 }) => {
@@ -77,6 +110,17 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
   useEffect(() => {
     localStorage.setItem('controlPanelExpanded', String(isExpanded));
   }, [isExpanded]);
+
+  // Injeta CSS para forçar altura do campo de busca
+  useEffect(() => {
+    const styleId = 'search-input-fix';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = searchInputStyle;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   // Cores baseadas no tema
   const borderColor = theme === 'dark' ? '#303030' : '#f0f0f0';
@@ -282,18 +326,43 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 onChange={(date) => date && onDataReferenciaChange(date.format('YYYY-MM-DD'))}
                 format="DD/MM/YYYY"
                 allowClear={false}
-                style={{ width: 140 }}
+                style={{
+                  width: 140,
+                  height: 32,
+                  minHeight: 32,
+                  maxHeight: 32,
+                }}
                 disabled={isLoading}
                 placeholder="Data"
               />
 
-              <Checkbox
-                checked={mostrarHistorico}
-                onChange={(e) => onMostrarHistoricoChange(e.target.checked)}
+              {/* Mostrar histórico - só aparece em modo estrutura */}
+              {modoApresentacao !== 'lista' && (
+                <Checkbox
+                  checked={mostrarHistorico}
+                  onChange={(e) => onMostrarHistoricoChange(e.target.checked)}
+                  disabled={isLoading}
+                >
+                  Mostrar histórico
+                </Checkbox>
+              )}
+
+              {/* Campo de busca */}
+              <Input
+                className="search-input-fixed"
+                placeholder="Buscar código..."
+                prefix={<SearchOutlined />}
+                value={searchTerm}
+                onChange={(e) => onSearchTermChange?.(e.target.value)}
+                allowClear
+                style={{
+                  width: 200,
+                  height: 32,
+                  minHeight: 32,
+                  maxHeight: 32,
+                }}
                 disabled={isLoading}
-              >
-                Mostrar histórico
-              </Checkbox>
+              />
             </div>
           </div>
 
@@ -390,31 +459,40 @@ const ControlPanel: React.FC<ControlPanelProps> = ({
                 }}
               />
 
-              <span
-                style={{ fontSize: 13, color: theme === 'dark' ? '#999' : '#666', marginLeft: 12 }}
-              >
-                Nível de expansão:
-              </span>
-              <Slider
-                min={1}
-                max={maxLevel}
-                value={currentLevel}
-                onChange={onLevelChange}
-                marks={{ 1: '1', [maxLevel]: String(maxLevel) }}
-                style={{ width: 200, margin: '0 8px' }}
-                tooltip={{ formatter: (val) => `Nível ${val}` }}
-                disabled={isLoading}
-              />
-              <span
-                style={{
-                  fontSize: 14,
-                  fontWeight: 600,
-                  color: theme === 'dark' ? '#40a9ff' : '#1890ff',
-                  minWidth: 20,
-                }}
-              >
-                {currentLevel}
-              </span>
+              {/* Nível de expansão - só aparece em modo estrutura */}
+              {modoApresentacao !== 'lista' && (
+                <>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      color: theme === 'dark' ? '#999' : '#666',
+                      marginLeft: 12,
+                    }}
+                  >
+                    Nível de expansão:
+                  </span>
+                  <Slider
+                    min={1}
+                    max={maxLevel}
+                    value={currentLevel}
+                    onChange={onLevelChange}
+                    marks={{ 1: '1', [maxLevel]: String(maxLevel) }}
+                    style={{ width: 200, margin: '0 8px' }}
+                    tooltip={{ formatter: (val) => `Nível ${val}` }}
+                    disabled={isLoading}
+                  />
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: theme === 'dark' ? '#40a9ff' : '#1890ff',
+                      minWidth: 20,
+                    }}
+                  >
+                    {currentLevel}
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

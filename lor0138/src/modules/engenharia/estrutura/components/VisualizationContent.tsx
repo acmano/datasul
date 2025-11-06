@@ -32,6 +32,7 @@ interface VisualizationContentProps {
   onMaxExpandLevelChange?: (level: number) => void;
   theme: 'light' | 'dark';
   isOndeUsado?: boolean; // Inverte fluxo para Onde Usado
+  searchTerm?: string; // Search term for highlighting
 }
 
 /**
@@ -57,6 +58,7 @@ const VisualizationContent: React.FC<VisualizationContentProps> = ({
   maxExpandLevel,
   onMaxExpandLevelChange,
   theme,
+  searchTerm,
 }) => {
   return (
     <div
@@ -130,6 +132,7 @@ const VisualizationContent: React.FC<VisualizationContentProps> = ({
                   maxExpandLevel={maxExpandLevel}
                   onMaxExpandLevelChange={onMaxExpandLevelChange}
                   isOndeUsado={isOndeUsado}
+                  searchTerm={searchTerm}
                 />
               </div>
             )}

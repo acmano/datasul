@@ -9,6 +9,18 @@ import { HSL, hslToCss, contrastTextForHsl } from '../utils/colorUtils';
 import { useTheme } from '../../../../shared/contexts/ThemeContext';
 import { formatarCodigoComEstab } from '../utils/formatters';
 
+// Animation CSS for search highlight pulsating effect
+const pulseAnimation = `
+  @keyframes searchPulse {
+    0%, 100% {
+      filter: brightness(1);
+    }
+    50% {
+      filter: brightness(1.3);
+    }
+  }
+`;
+
 interface TabelaItensVirtualizedProps {
   tree: TreeNode | null;
   selectedId: string | null;
@@ -19,6 +31,16 @@ interface TabelaItensVirtualizedProps {
   maxExpandLevel?: number;
   onMaxExpandLevelChange?: (level: number) => void;
   isOndeUsado?: boolean;
+  // Modo flat: recebe lista diretamente ao invés de tree
+  flatData?: Array<{
+    codigo: string;
+    descricao: string;
+    quantidadeTotal: number;
+    unidadeMedida: string;
+    estabelecimento?: string;
+  }>;
+  isFlatMode?: boolean;
+  searchTerm?: string;
 }
 
 // Constantes para cálculo de altura
@@ -35,6 +57,9 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
   maxExpandLevel: externalMaxExpandLevel,
   onMaxExpandLevelChange,
   isOndeUsado = false,
+  flatData,
+  isFlatMode = false,
+  searchTerm = '',
 }) => {
   const { theme } = useTheme();
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
@@ -44,6 +69,17 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
   const listRef = useRef<VariableSizeList>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState<number>(600); // fallback
+
+  // Inject pulse animation CSS into document
+  useEffect(() => {
+    const styleId = 'search-pulse-animation';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = pulseAnimation;
+      document.head.appendChild(style);
+    }
+  }, []);
 
   // ✅ Cores baseadas no tema
   const colors = useMemo(
@@ -127,6 +163,31 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
 
   // Linhas visíveis da tabela (NÃO MOSTRA O NÍVEL 0)
   const visibleRows = useMemo(() => {
+    // Modo flat: converter flatData para formato FlatNode
+    if (isFlatMode && flatData) {
+      return flatData.map(
+        (item, index) =>
+          ({
+            id: `flat-${index}`,
+            code: item.codigo,
+            name: item.descricao, // ← CORRETO: campo 'name' para descrição
+            description: item.descricao,
+            qty: item.quantidadeTotal, // ← CORRETO: campo 'qty'
+            qtyAcumulada: item.quantidadeTotal, // ← Quantidade acumulada
+            quantity: item.quantidadeTotal,
+            unidadeMedida: item.unidadeMedida,
+            estabelecimento: item.estabelecimento,
+            level: 1, // ← CORRIGIDO: nível 1 (mesma cor dos componentes, não raiz escura)
+            hasChildren: false,
+            parentId: undefined,
+            hasProcess: false,
+            process: [],
+            isValid: true,
+          }) as FlatNode
+      );
+    }
+
+    // Modo hierárquico original
     if (!flat.length || !rootId) {
       return [];
     }
@@ -151,7 +212,7 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
 
     walk(rootId);
     return rows;
-  }, [flat, expandedIds, rootId]);
+  }, [flat, expandedIds, rootId, isFlatMode, flatData]);
 
   // Export handlers
 
@@ -258,6 +319,32 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
     }
   }, [expandedProcessIds]);
 
+  // Auto-scroll para a primeira linha que contém o searchTerm
+  useEffect(() => {
+    if (!searchTerm || !listRef.current) {
+      return;
+    }
+
+    // Pequeno delay para garantir que a lista está renderizada
+    const timeoutId = setTimeout(() => {
+      if (!listRef.current) {
+        return;
+      }
+
+      // Encontrar o índice da primeira linha que contém o searchTerm
+      const firstMatchIndex = visibleRows.findIndex((node) =>
+        node.code.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      if (firstMatchIndex !== -1) {
+        // Rolar para a primeira linha encontrada
+        listRef.current.scrollToItem(firstMatchIndex, 'center');
+      }
+    }, 100); // 100ms de delay
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, visibleRows]);
+
   // Componente Row
   const Row = useCallback(
     ({ index, style }: { index: number; style: React.CSSProperties }) => {
@@ -267,6 +354,9 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
       const textColor = contrastTextForHsl(h, s, l);
       const levelStripe = rowColor;
       const isProcessExpanded = expandedProcessIds.has(r.id);
+
+      // Check if this row matches the search term
+      const isHighlighted = searchTerm && r.code.toLowerCase().includes(searchTerm.toLowerCase());
 
       return (
         <div style={style}>
@@ -310,75 +400,87 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
                   color: textColor,
                   outline: selectedId === r.id ? '2px solid rgba(75,156,255,0.7)' : 'none',
                   outlineOffset: -2,
+                  // Apply search highlight effect with pulsating animation
+                  ...(isHighlighted && {
+                    animation: 'searchPulse 1.5s ease-in-out infinite',
+                    position: 'relative' as const,
+                  }),
                 }}
               >
-                <td
-                  style={{
-                    borderBottom: `1px solid ${colors.border}`,
-                    padding: '6px 10px',
-                    borderLeft: `6px solid ${levelStripe}`,
-                    width: '80px',
-                  }}
-                >
-                  {r.level}
-                </td>
+                {/* Coluna Nível - só em modo hierárquico */}
+                {!isFlatMode && (
+                  <td
+                    style={{
+                      borderBottom: `1px solid ${colors.border}`,
+                      padding: '6px 10px',
+                      borderLeft: `6px solid ${levelStripe}`,
+                      width: '80px',
+                    }}
+                  >
+                    {r.level}
+                  </td>
+                )}
 
                 <td
                   style={{
                     borderBottom: `1px solid ${colors.border}`,
                     padding: '6px 10px',
                     width: '250px',
+                    ...(isFlatMode && { borderLeft: `6px solid ${levelStripe}` }),
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {/* Barrinhas de nível */}
-                    <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                      {Array.from({ length: r.level + 1 }).map((_, i) => {
-                        const barHsl = getLevelHsl(i);
-                        return (
-                          <span
-                            key={i}
-                            style={{
-                              width: 6,
-                              height: 12,
-                              borderRadius: 2,
-                              background: hslToCss(barHsl.h, barHsl.s, barHsl.l),
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-
-                    {/* Toggle */}
-                    {r.hasChildren ? (
-                      <span
-                        title={expandedIds.has(r.id) ? 'Colapsar' : 'Expandir'}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleExpand(r.id);
-                        }}
-                        style={{
-                          width: 14,
-                          textAlign: 'center',
-                          cursor: 'pointer',
-                          userSelect: 'none',
-                          color: textColor,
-                        }}
-                      >
-                        {expandedIds.has(r.id) ? '▾' : '▸'}
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          width: 14,
-                          textAlign: 'center',
-                          opacity: 0.4,
-                          color: textColor,
-                        }}
-                      >
-                        •
-                      </span>
+                    {/* Barrinhas de nível - só em modo hierárquico */}
+                    {!isFlatMode && (
+                      <div style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                        {Array.from({ length: r.level + 1 }).map((_, i) => {
+                          const barHsl = getLevelHsl(i);
+                          return (
+                            <span
+                              key={i}
+                              style={{
+                                width: 6,
+                                height: 12,
+                                borderRadius: 2,
+                                background: hslToCss(barHsl.h, barHsl.s, barHsl.l),
+                              }}
+                            />
+                          );
+                        })}
+                      </div>
                     )}
+
+                    {/* Toggle - só em modo hierárquico */}
+                    {!isFlatMode &&
+                      (r.hasChildren ? (
+                        <span
+                          title={expandedIds.has(r.id) ? 'Colapsar' : 'Expandir'}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleExpand(r.id);
+                          }}
+                          style={{
+                            width: 14,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                            color: textColor,
+                          }}
+                        >
+                          {expandedIds.has(r.id) ? '▾' : '▸'}
+                        </span>
+                      ) : (
+                        <span
+                          style={{
+                            width: 14,
+                            textAlign: 'center',
+                            opacity: 0.4,
+                            color: textColor,
+                          }}
+                        >
+                          •
+                        </span>
+                      ))}
 
                     <span>{formatarCodigoComEstab(r.code, r.estabelecimento)}</span>
                   </div>
@@ -413,37 +515,40 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
                   {r.unidadeMedida || ''}
                 </td>
 
-                <td
-                  style={{
-                    borderBottom: `1px solid ${colors.border}`,
-                    padding: '6px 10px',
-                    width: '150px',
-                  }}
-                >
-                  {r.hasProcess ? (
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: '2px 6px',
-                        borderRadius: 10,
-                        background: isProcessExpanded ? '#f3c37a' : '#ffeacc',
-                        border: '1px solid #f3c37a',
-                        color: '#7a4e00',
-                        cursor: 'pointer',
-                        fontWeight: isProcessExpanded ? 600 : 400,
-                      }}
-                      title={isProcessExpanded ? 'Ocultar processo' : 'Ver processo'}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleProcessExpand(r.id);
-                      }}
-                    >
-                      {isProcessExpanded ? '▾' : '▸'} Processo
-                    </span>
-                  ) : (
-                    <span style={{ opacity: 0.4, color: textColor }}>—</span>
-                  )}
-                </td>
+                {/* Coluna Processo - só em modo hierárquico */}
+                {!isFlatMode && (
+                  <td
+                    style={{
+                      borderBottom: `1px solid ${colors.border}`,
+                      padding: '6px 10px',
+                      width: '150px',
+                    }}
+                  >
+                    {r.hasProcess ? (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          padding: '2px 6px',
+                          borderRadius: 10,
+                          background: isProcessExpanded ? '#f3c37a' : '#ffeacc',
+                          border: '1px solid #f3c37a',
+                          color: '#7a4e00',
+                          cursor: 'pointer',
+                          fontWeight: isProcessExpanded ? 600 : 400,
+                        }}
+                        title={isProcessExpanded ? 'Ocultar processo' : 'Ver processo'}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleProcessExpand(r.id);
+                        }}
+                      >
+                        {isProcessExpanded ? '▾' : '▸'} Processo
+                      </span>
+                    ) : (
+                      <span style={{ opacity: 0.4, color: textColor }}>—</span>
+                    )}
+                  </td>
+                )}
               </tr>
 
               {/* Linhas de processo expandido */}
@@ -547,13 +652,23 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
       selectById,
       toggleExpand,
       toggleProcessExpand,
+      isFlatMode,
+      searchTerm,
     ]
   );
 
-  if (!tree) {
+  if (!tree && !isFlatMode) {
     return (
       <div style={{ padding: 24, textAlign: 'center', color: colors.emptyText }}>
         Selecione um item na aba Resultado para visualizar sua estrutura
+      </div>
+    );
+  }
+
+  if (isFlatMode && (!flatData || flatData.length === 0)) {
+    return (
+      <div style={{ padding: 24, textAlign: 'center', color: colors.emptyText }}>
+        Nenhum item para exibir
       </div>
     );
   }
@@ -572,18 +687,21 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr>
-              <th
-                style={{
-                  background: colors.headerBg,
-                  borderBottom: '1px solid #ddd',
-                  padding: '8px 10px',
-                  textAlign: 'left',
-                  color: colors.headerText,
-                  width: '80px',
-                }}
-              >
-                Nível
-              </th>
+              {/* Coluna Nível - só em modo hierárquico */}
+              {!isFlatMode && (
+                <th
+                  style={{
+                    background: colors.headerBg,
+                    borderBottom: '1px solid #ddd',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    color: colors.headerText,
+                    width: '80px',
+                  }}
+                >
+                  Nível
+                </th>
+              )}
               <th
                 style={{
                   background: colors.headerBg,
@@ -629,20 +747,23 @@ const TabelaItensVirtualized: React.FC<TabelaItensVirtualizedProps> = ({
                   width: '80px',
                 }}
               >
-                UN
+                UM
               </th>
-              <th
-                style={{
-                  background: colors.headerBg,
-                  borderBottom: '1px solid #ddd',
-                  padding: '8px 10px',
-                  textAlign: 'left',
-                  color: colors.headerText,
-                  width: '150px',
-                }}
-              >
-                Processo
-              </th>
+              {/* Coluna Processo - só em modo hierárquico */}
+              {!isFlatMode && (
+                <th
+                  style={{
+                    background: colors.headerBg,
+                    borderBottom: '1px solid #ddd',
+                    padding: '8px 10px',
+                    textAlign: 'left',
+                    color: colors.headerText,
+                    width: '150px',
+                  }}
+                >
+                  Processo
+                </th>
+              )}
             </tr>
           </thead>
         </table>
