@@ -43,12 +43,12 @@ SELECT  item."it-codigo"                as codigo
       , grupoEstoque.descricao          as grupoDeEstoqueDescricao
       , SUBSTRING(iue."char-1", 133, 2) as tipo
   FROM  pub.item item
-  INNER JOIN pub.familia familia
+  LEFT  OUTER JOIN pub.familia familia
     ON  familia."fm-codigo" = item."fm-codigo"
-  INNER JOIN pub."fam-comerc" familiaComercial
+  LEFT  OUTER JOIN pub."fam-comerc" familiaComercial
     ON  familiaComercial."fm-cod-com" = item."fm-cod-com"
-  INNER JOIN pub."grup-estoque" grupoEstoque
+  LEFT  OUTER JOIN pub."grup-estoque" grupoEstoque
     ON  grupoEstoque."ge-codigo" = item."ge-codigo"
-  INNER JOIN pub."item-uni-estab" iue
+  LEFT  OUTER JOIN pub."item-uni-estab" iue
     ON  iue."it-codigo" = item."it-codigo"
     AND iue."cod-estabel" = item."cod-estabel"

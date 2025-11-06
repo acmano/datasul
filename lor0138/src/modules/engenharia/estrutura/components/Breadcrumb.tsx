@@ -25,7 +25,9 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, onNavigate, theme }) => 
   const breadcrumbItems = items.map((item, index) => {
     const isLast = index === items.length - 1;
     const codigoFormatado = formatarCodigoComEstab(item.codigo, item.estabelecimento);
-    const label = item.descricao ? `${codigoFormatado} - ${item.descricao}` : codigoFormatado;
+    // Show description only for the last item, just code for others
+    const label =
+      isLast && item.descricao ? `${codigoFormatado} - ${item.descricao}` : codigoFormatado;
 
     return {
       key: item.codigo + index,
